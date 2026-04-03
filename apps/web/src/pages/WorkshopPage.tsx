@@ -207,7 +207,6 @@ export function WorkshopPage() {
   })
   const [loaded, setLoaded] = React.useState(false)
 
-  const [editingBotId, setEditingBotId] = React.useState<SlotId>('BOT1')
   const [selectedBotId, setSelectedBotId] = React.useState<SlotId>('BOT1')
 
   const [running, setRunning] = React.useState(false)
@@ -305,6 +304,14 @@ export function WorkshopPage() {
       BOT4: normalizeOpponentLabel(opponentPoolById.get(opponents.BOT4)?.displayName ?? 'BOT4'),
     }
   }, [opponents.BOT2, opponents.BOT3, opponents.BOT4, opponentPoolById, selectedMyBot.name])
+
+  const opponentCards = React.useMemo(() => {
+    return OPPONENT_SLOTS.map((slotId) => ({
+      slotId,
+      opponent: opponentPoolById.get(opponents[slotId]),
+      loadout: loadoutBySlot[slotId],
+    }))
+  }, [loadoutBySlot, opponentPoolById, opponents])
 
   const currentBotSpecHashBySlot: Record<SlotId, number> = React.useMemo(() => {
     const sig = (loadout: Loadout) => loadout.map((s) => (s == null ? 'EMPTY' : s)).join(',')
@@ -651,7 +658,6 @@ export function WorkshopPage() {
         bots: [...prev.bots, { id, name: id, sourceText: applyLoadoutHeaderDirectives(starterSourceText, loadout), loadout }],
       }
     })
-    setEditingBotId('BOT1')
   }
 
   function renameSelectedBot() {
@@ -685,13 +691,10 @@ export function WorkshopPage() {
         bots: remaining.length ? remaining : prev.bots,
       }
     })
-
-    setEditingBotId('BOT1')
   }
 
   function selectBotAsBot1(id: string) {
     setMyBots((prev) => ({ ...prev, selectedBotId: id }))
-    setEditingBotId('BOT1')
   }
 
   function loadStarter() {
@@ -705,7 +708,6 @@ export function WorkshopPage() {
           : b,
       ),
     }))
-    setEditingBotId('BOT1')
   }
 
   function setMyBotLoadoutSlot(slotIndex: 0 | 1 | 2, nextMod: ModuleId | null) {
@@ -778,11 +780,11 @@ export function WorkshopPage() {
   const speedButtons = [0.5, 1, 2, 6] as const
   const effectiveTickCap = replay?.tickCap ?? tickCap
 
-  const editorSourceText = sourcesBySlot[editingBotId]
-  const editorReadOnly = editingBotId !== 'BOT1'
+  const editorSourceText = selectedMyBot.sourceText
+  const selectedMyBotLoadout = selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT
 
   const bot1LoadoutWarnings = React.useMemo(() => {
-    const loadout = selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT
+    const loadout = selectedMyBotLoadout
 
     const counts = new Map<ModuleId, number>()
     for (const mod of loadout) {
@@ -801,7 +803,7 @@ export function WorkshopPage() {
     if (weaponCount > 1) warnings.push('More than one weapon selected (BULLET/SAW)')
 
     return warnings
-  }, [selectedMyBot.loadout])
+  }, [selectedMyBotLoadout])
 
   return (
     <>
@@ -876,351 +878,269 @@ export function WorkshopPage() {
         </div>
       ) : null}
 
-      <div className="workshop-grid" style={{ marginTop: 16 }}>
-        <section className="panel">
-          <div className="panel-title">My Bots</div>
-
-          <div className="tab-row" style={{ marginTop: 10 }}>
-            {myBots.bots.map((b) => (
-              <button
-                key={b.id}
-                className={['tab', b.id === myBots.selectedBotId ? 'active' : ''].join(' ')}
-                onClick={() => selectBotAsBot1(b.id)}
-                title={b.id}
-              >
-                {b.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="controls" style={{ marginTop: 10 }}>
-            <button className="ui-button ui-button-secondary" type="button" onClick={createNewBot}>
-              New bot
-            </button>
-            <button className="ui-button ui-button-secondary" type="button" onClick={renameSelectedBot}>
-              Rename
-            </button>
-            <button
-              className="ui-button ui-button-secondary"
-              type="button"
-              onClick={deleteSelectedBot}
-              disabled={myBots.bots.length <= 1}
-            >
-              Delete
-            </button>
-          </div>
-
-          <div className="panel-title" style={{ marginTop: 18 }}>
-            Bot editor
-          </div>
-
-          <div className="tab-row" style={{ marginTop: 10 }}>
-            {SLOT_IDS.map((id) => (
-              <button
-                key={id}
-                className={['tab', id === editingBotId ? 'active' : ''].join(' ')}
-                onClick={() => setEditingBotId(id)}
-              >
-                {id}
-              </button>
-            ))}
-          </div>
-
-          <div className="controls" style={{ marginTop: 10 }}>
-            <button className="ui-button ui-button-secondary" type="button" onClick={loadStarter}>
-              Load starter
-            </button>
-
-            <label className="mini-field">
-              <div className="mini-label">BOT2</div>
-              <select
-                className="mini-input"
-                value={opponents.BOT2}
-                onChange={(e) => setOpponent('BOT2', e.target.value)}
-              >
-                {optionsForOpponentSlot('BOT2').map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="mini-field">
-              <div className="mini-label">BOT3</div>
-              <select
-                className="mini-input"
-                value={opponents.BOT3}
-                onChange={(e) => setOpponent('BOT3', e.target.value)}
-              >
-                {optionsForOpponentSlot('BOT3').map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="mini-field">
-              <div className="mini-label">BOT4</div>
-              <select
-                className="mini-input"
-                value={opponents.BOT4}
-                onChange={(e) => setOpponent('BOT4', e.target.value)}
-              >
-                {optionsForOpponentSlot('BOT4').map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <button className="ui-button ui-button-secondary" type="button" onClick={randomizeOpponents}>
-              Randomize opponents
-            </button>
-          </div>
-
-          {editorReadOnly ? (
-            <div className="muted" style={{ marginTop: 10 }}>
-              Opponent code is read-only. Select <strong style={{ color: 'var(--text)' }}>BOT1</strong> to edit your bot.
+      <section className="panel workshop-setup-panel" style={{ marginTop: 16 }}>
+        <div className="workshop-setup-header">
+          <div>
+            <div className="panel-title">Match setup</div>
+            <div className="muted" style={{ marginTop: 6 }}>
+              Pick your BOT1 candidate, review the equipped loadouts, and choose the opponent field for the next run.
             </div>
-          ) : null}
+          </div>
 
-          {!editorReadOnly ? (
-            <>
-              <div className="controls" style={{ marginTop: 10 }}>
-                <label className="mini-field">
-                  <div className="mini-label">slot1</div>
-                  <select
-                    className="mini-input"
-                    value={formatLoadoutOptionValue((selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT)[0] ?? null)}
-                    onChange={(e) => setMyBotLoadoutSlot(0, parseLoadoutOptionValue(e.target.value))}
-                  >
-                    {LOADOUT_OPTION_VALUES.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+          <button className="ui-button ui-button-secondary" type="button" onClick={randomizeOpponents}>
+            Randomize opponents
+          </button>
+        </div>
 
-                <label className="mini-field">
-                  <div className="mini-label">slot2</div>
-                  <select
-                    className="mini-input"
-                    value={formatLoadoutOptionValue((selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT)[1] ?? null)}
-                    onChange={(e) => setMyBotLoadoutSlot(1, parseLoadoutOptionValue(e.target.value))}
-                  >
-                    {LOADOUT_OPTION_VALUES.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+        <div className="workshop-setup-grid" style={{ marginTop: 14 }}>
+          <section className="workshop-bot-card">
+            <div className="workshop-bot-card-label">BOT1 · Your bot</div>
+            <div className="workshop-bot-card-title">{selectedMyBot.name}</div>
+            <div className="workshop-bot-card-subtitle">Selected from My Bots for the next deterministic run.</div>
+            <div className="workshop-loadout-summary" style={{ marginTop: 14 }}>
+              {selectedMyBotLoadout.map((mod, index) => (
+                <div key={`bot1-loadout-${index}`} className="workshop-loadout-chip">
+                  <span className="mini-label">Slot {index + 1}</span>
+                  <strong>{formatLoadoutOptionValue(mod ?? null)}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
 
-                <label className="mini-field">
-                  <div className="mini-label">slot3</div>
-                  <select
-                    className="mini-input"
-                    value={formatLoadoutOptionValue((selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT)[2] ?? null)}
-                    onChange={(e) => setMyBotLoadoutSlot(2, parseLoadoutOptionValue(e.target.value))}
-                  >
-                    {LOADOUT_OPTION_VALUES.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+          {opponentCards.map(({ slotId, opponent, loadout }) => (
+            <section key={slotId} className="workshop-bot-card">
+              <div className="workshop-bot-card-label">{slotId} · Opponent</div>
+              <label className="mini-field">
+                <div className="mini-label">Opponent bot</div>
+                <select className="mini-input workshop-select" value={opponents[slotId]} onChange={(e) => setOpponent(slotId, e.target.value)}>
+                  {optionsForOpponentSlot(slotId).map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.displayName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="workshop-bot-card-subtitle">{opponent?.displayName ?? displayNameBySlot[slotId]}</div>
+              <div className="workshop-loadout-summary" style={{ marginTop: 14 }}>
+                {loadout.map((mod, index) => (
+                  <div key={`${slotId}-loadout-${index}`} className="workshop-loadout-chip">
+                    <span className="mini-label">Slot {index + 1}</span>
+                    <strong>{formatLoadoutOptionValue(mod ?? null)}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </section>
+
+      <div className="workshop-grid" style={{ marginTop: 16 }}>
+        <div className="workshop-stage-column">
+          <section className="panel">
+            <div className="panel-title">Arena</div>
+
+            <div className="arena-wrap" style={{ marginTop: 10 }}>
+              <ArenaCanvas renderState={renderState} selectedBotId={selectedBotId} />
+            </div>
+
+            <div className="controls" style={{ marginTop: 12 }}>
+              <button
+                className="ui-button ui-button-secondary"
+                onClick={() => dispatch({ type: 'TOGGLE_PLAY' })}
+                disabled={!replay}
+              >
+                {playback.playing ? 'Pause' : 'Play'}
+              </button>
+
+              <button
+                className="ui-button ui-button-secondary"
+                onClick={() => dispatch({ type: 'STEP', delta: 1 })}
+                disabled={!replay || playback.playing}
+              >
+                Step
+              </button>
+
+              <button
+                className="ui-button ui-button-secondary"
+                onClick={() => dispatch({ type: 'RESTART' })}
+                disabled={!replay}
+              >
+                Restart
+              </button>
+
+              <span className="muted" style={{ marginLeft: 8 }}>
+                tick {playback.tick} / {effectiveTickCap}
+              </span>
+            </div>
+
+            <div className="controls" style={{ marginTop: 10 }}>
+              <div className="muted">Speed</div>
+              {speedButtons.map((s) => (
+                <button
+                  key={s}
+                  className={['chip', playback.speed === s ? 'active' : ''].join(' ')}
+                  onClick={() => dispatch({ type: 'SET_SPEED', speed: s })}
+                  disabled={!replay}
+                >
+                  {s}×
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <input
+                type="range"
+                min={0}
+                max={effectiveTickCap}
+                value={clamp(playback.tick, 0, effectiveTickCap)}
+                onChange={(e) => dispatch({ type: 'SET_TICK', tick: Number(e.target.value) })}
+                disabled={!replay || playback.playing}
+              />
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-title">Replay analysis</div>
+
+            <div className="tab-row" style={{ marginTop: 10 }}>
+              {SLOT_IDS.map((id) => (
+                <button
+                  key={id}
+                  className={['tab', id === selectedBotId ? 'active' : ''].join(' ')}
+                  onClick={() => setSelectedBotId(id)}
+                >
+                  {id}
+                </button>
+              ))}
+            </div>
+
+            <div className="workshop-analysis-grid" style={{ marginTop: 14 }}>
+              <section className="workshop-analysis-card">
+                <div className="panel-title">Inspector</div>
+
+                <div style={{ marginTop: 12 }} className="muted">
+                  {selectedBotSnapshot ? (
+                    <>
+                      <div>
+                        <strong style={{ color: 'var(--text)' }}>{selectedBotId}</strong>
+                      </div>
+                      <div style={{ marginTop: 8 }}>HP: {selectedBotSnapshot.hp}</div>
+                      <div>Ammo: {selectedBotSnapshot.ammo}</div>
+                      <div>Energy: {selectedBotSnapshot.energy}</div>
+                      <div>Alive: {selectedBotSnapshot.alive ? 'yes' : 'no'}</div>
+                    </>
+                  ) : (
+                    'Run a replay to inspect bots.'
+                  )}
+                </div>
+              </section>
+
+              <section className="workshop-analysis-card">
+                <div className="panel-title">Execution</div>
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: 10,
+                    borderRadius: 10,
+                    background: 'rgba(0,0,0,0.35)',
+                  }}
+                >
+                  {(() => {
+                    if (!replay) return <div className="muted">Run a match to inspect execution.</div>
+
+                    const exec = selectedTickEvents.find((e): e is Extract<KnownReplayEvent, { type: 'BOT_EXEC' }> => isKnownReplayEventType(e, 'BOT_EXEC'))
+                    if (!exec) return <div className="muted">(no BOT_EXEC)</div>
+
+                    return (
+                      <div className="muted" style={{ lineHeight: 1.5 }}>
+                        <div>
+                          <strong style={{ color: 'var(--text)' }}>{exec.instrText}</strong>
+                        </div>
+                        <div style={{ marginTop: 6 }}>
+                          pc {exec.pcBefore} → {exec.pcAfter}
+                          {' • '}
+                          result <strong style={{ color: 'var(--text)' }}>{exec.result}</strong>
+                          {exec.reason ? (
+                            <>
+                              {' • '}
+                              reason <strong style={{ color: '#fecaca' }}>{exec.reason}</strong>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
+              </section>
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <div className="panel-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>Tick events</span>
+                <button
+                  type="button"
+                  className={['chip', showRawTickEvents ? 'active' : ''].join(' ')}
+                  onClick={() => setShowRawTickEvents((v) => !v)}
+                  disabled={!replay}
+                  title="Toggle raw JSON"
+                >
+                  Raw
+                </button>
               </div>
 
-              {bot1LoadoutWarnings.length ? (
-                <div style={{ marginTop: 10, color: '#fecaca', fontSize: 12, lineHeight: 1.5 }}>
-                  {bot1LoadoutWarnings.map((w) => (
-                    <div key={w}>{w}</div>
-                  ))}
-                </div>
-              ) : null}
-            </>
-          ) : null}
+              {replay ? (
+                showRawTickEvents ? (
+                  <pre
+                    style={{
+                      marginTop: 8,
+                      padding: 10,
+                      borderRadius: 10,
+                      background: 'rgba(0,0,0,0.35)',
+                      overflow: 'auto',
+                      height: 240,
+                    }}
+                  >
+                    {selectedTickEvents.length ? JSON.stringify(selectedTickEvents, null, 2) : '(no events)'}
+                  </pre>
+                ) : (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: 10,
+                      borderRadius: 10,
+                      background: 'rgba(0,0,0,0.35)',
+                      overflow: 'auto',
+                      height: 240,
+                      fontFamily:
+                        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                      fontSize: 12,
+                      lineHeight: 1.55,
+                    }}
+                  >
+                    {selectedTickEventLines.length ? (
+                      selectedTickEventLines.map((l) => {
+                        const color =
+                          l.tone === 'bad'
+                            ? '#fecaca'
+                            : l.tone === 'good'
+                              ? 'rgba(134, 239, 172, 0.95)'
+                              : 'rgba(148, 163, 184, 0.95)'
 
-          <textarea
-            className="code-editor"
-            value={editorSourceText}
-            readOnly={editorReadOnly}
-            onChange={(e) => {
-              if (editingBotId !== 'BOT1') return
-              const nextSourceText = e.target.value
-              setMyBots((prev) => {
-                const current = prev.bots.find((b) => b.id === prev.selectedBotId)
-                if (!current) return prev
-
-                const nextText = applyLoadoutHeaderDirectives(nextSourceText, current.loadout ?? DEFAULT_WORKSHOP_LOADOUT)
-
-                return {
-                  ...prev,
-                  bots: prev.bots.map((b) => (b.id === prev.selectedBotId ? { ...b, sourceText: nextText } : b)),
-                }
-              })
-            }}
-            spellCheck={false}
-          />
-
-          <div className="muted" style={{ marginTop: 10 }}>
-            Loadout directives <code>;@slot1</code>, <code>;@slot2</code>, <code>;@slot3</code> are locked and kept in sync with the dropdowns.
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-title">Arena</div>
-
-          <div className="arena-wrap" style={{ marginTop: 10 }}>
-            <ArenaCanvas renderState={renderState} selectedBotId={selectedBotId} />
-          </div>
-
-          <div className="controls" style={{ marginTop: 12 }}>
-            <button
-              className="ui-button ui-button-secondary"
-              onClick={() => dispatch({ type: 'TOGGLE_PLAY' })}
-              disabled={!replay}
-            >
-              {playback.playing ? 'Pause' : 'Play'}
-            </button>
-
-            <button
-              className="ui-button ui-button-secondary"
-              onClick={() => dispatch({ type: 'STEP', delta: 1 })}
-              disabled={!replay || playback.playing}
-            >
-              Step
-            </button>
-
-            <button
-              className="ui-button ui-button-secondary"
-              onClick={() => dispatch({ type: 'RESTART' })}
-              disabled={!replay}
-            >
-              Restart
-            </button>
-
-            <span className="muted" style={{ marginLeft: 8 }}>
-              tick {playback.tick} / {effectiveTickCap}
-            </span>
-          </div>
-
-          <div className="controls" style={{ marginTop: 10 }}>
-            <div className="muted">Speed</div>
-            {speedButtons.map((s) => (
-              <button
-                key={s}
-                className={['chip', playback.speed === s ? 'active' : ''].join(' ')}
-                onClick={() => dispatch({ type: 'SET_SPEED', speed: s })}
-                disabled={!replay}
-              >
-                {s}×
-              </button>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 10 }}>
-            <input
-              type="range"
-              min={0}
-              max={effectiveTickCap}
-              value={clamp(playback.tick, 0, effectiveTickCap)}
-              onChange={(e) => dispatch({ type: 'SET_TICK', tick: Number(e.target.value) })}
-              disabled={!replay || playback.playing}
-            />
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-title">Inspector</div>
-
-          <div className="tab-row" style={{ marginTop: 10 }}>
-            {SLOT_IDS.map((id) => (
-              <button
-                key={id}
-                className={['tab', id === selectedBotId ? 'active' : ''].join(' ')}
-                onClick={() => setSelectedBotId(id)}
-              >
-                {id}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 12 }} className="muted">
-            {selectedBotSnapshot ? (
-              <>
-                <div>
-                  <strong style={{ color: 'var(--text)' }}>{selectedBotId}</strong>
-                </div>
-                <div style={{ marginTop: 8 }}>HP: {selectedBotSnapshot.hp}</div>
-                <div>Ammo: {selectedBotSnapshot.ammo}</div>
-                <div>Energy: {selectedBotSnapshot.energy}</div>
-                <div>Alive: {selectedBotSnapshot.alive ? 'yes' : 'no'}</div>
-              </>
-            ) : (
-              'Run a replay to inspect bots.'
-            )}
-          </div>
-
-          <div style={{ marginTop: 18 }}>
-            <div className="panel-title">Execution</div>
-            <div
-              style={{
-                marginTop: 8,
-                padding: 10,
-                borderRadius: 10,
-                background: 'rgba(0,0,0,0.35)',
-              }}
-            >
-              {(() => {
-                if (!replay) return <div className="muted">Run a match to inspect execution.</div>
-
-                const exec = selectedTickEvents.find((e): e is Extract<KnownReplayEvent, { type: 'BOT_EXEC' }> => isKnownReplayEventType(e, 'BOT_EXEC'))
-                if (!exec) return <div className="muted">(no BOT_EXEC)</div>
-
-                return (
-                  <div className="muted" style={{ lineHeight: 1.5 }}>
-                    <div>
-                      <strong style={{ color: 'var(--text)' }}>{exec.instrText}</strong>
-                    </div>
-                    <div style={{ marginTop: 6 }}>
-                      pc {exec.pcBefore} → {exec.pcAfter}
-                      {' • '}
-                      result <strong style={{ color: 'var(--text)' }}>{exec.result}</strong>
-                      {exec.reason ? (
-                        <>
-                          {' • '}
-                          reason <strong style={{ color: '#fecaca' }}>{exec.reason}</strong>
-                        </>
-                      ) : null}
-                    </div>
+                        return (
+                          <div key={l.key} style={{ marginBottom: 6 }}>
+                            <div style={{ color }}>
+                              <strong style={{ color: 'var(--text)' }}>{l.label}</strong>
+                              {l.detail ? <span style={{ marginLeft: 8 }}>{l.detail}</span> : null}
+                            </div>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <div className="muted">(no events)</div>
+                    )}
                   </div>
                 )
-              })()}
-            </div>
-          </div>
-
-          <div style={{ marginTop: 18 }}>
-            <div className="panel-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>Tick events</span>
-              <button
-                type="button"
-                className={['chip', showRawTickEvents ? 'active' : ''].join(' ')}
-                onClick={() => setShowRawTickEvents((v) => !v)}
-                disabled={!replay}
-                title="Toggle raw JSON"
-              >
-                Raw
-              </button>
-            </div>
-
-            {replay ? (
-              showRawTickEvents ? (
+              ) : (
                 <pre
                   style={{
                     marginTop: 8,
@@ -1230,121 +1150,196 @@ export function WorkshopPage() {
                     overflow: 'auto',
                     height: 240,
                   }}
-                >
-                  {selectedTickEvents.length ? JSON.stringify(selectedTickEvents, null, 2) : '(no events)'}
-                </pre>
-              ) : (
-                <div
-                  style={{
-                    marginTop: 8,
-                    padding: 10,
-                    borderRadius: 10,
-                    background: 'rgba(0,0,0,0.35)',
-                    overflow: 'auto',
-                    height: 240,
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                    fontSize: 12,
-                    lineHeight: 1.55,
-                  }}
-                >
-                  {selectedTickEventLines.length ? (
-                    selectedTickEventLines.map((l) => {
-                      const color =
-                        l.tone === 'bad'
-                          ? '#fecaca'
-                          : l.tone === 'good'
-                            ? 'rgba(134, 239, 172, 0.95)'
-                            : 'rgba(148, 163, 184, 0.95)'
-
-                      return (
-                        <div key={l.key} style={{ marginBottom: 6 }}>
-                          <div style={{ color }}>
-                            <strong style={{ color: 'var(--text)' }}>{l.label}</strong>
-                            {l.detail ? <span style={{ marginLeft: 8 }}>{l.detail}</span> : null}
-                          </div>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <div className="muted">(no events)</div>
-                  )}
-                </div>
-              )
-            ) : (
-              <pre
-                style={{
-                  marginTop: 8,
-                  padding: 10,
-                  borderRadius: 10,
-                  background: 'rgba(0,0,0,0.35)',
-                  overflow: 'auto',
-                  height: 240,
-                }}
-              >{'Run a match to see events.'}</pre>
-            )}
-          </div>
-
-          <div style={{ marginTop: 18 }}>
-            <div className="panel-title">Loadout</div>
-            {(() => {
-              const configured = loadoutBySlot[selectedBotId] ?? DEFAULT_WORKSHOP_LOADOUT
-              const headerBot = replay?.bots?.find((b) => b.slotId === selectedBotId)
-              const resolved = headerBot?.loadout ?? configured
-              const issues = headerBot?.loadoutIssues ?? []
-
-              const row = (label: string, l: Loadout) => (
-                <div style={{ marginTop: 6, lineHeight: 1.5 }}>
-                  <div className="muted" style={{ fontSize: 12 }}>{label}</div>
-                  <div>
-                    slot1:{' '}
-                    <strong style={{ color: 'var(--text)' }}>{formatLoadoutOptionValue(l?.[0] ?? null)}</strong>
-                    {'  '}slot2:{' '}
-                    <strong style={{ color: 'var(--text)' }}>{formatLoadoutOptionValue(l?.[1] ?? null)}</strong>
-                    {'  '}slot3:{' '}
-                    <strong style={{ color: 'var(--text)' }}>{formatLoadoutOptionValue(l?.[2] ?? null)}</strong>
-                  </div>
-                </div>
-              )
-
-              const showResolved =
-                Boolean(replay) && (resolved[0] !== configured[0] || resolved[1] !== configured[1] || resolved[2] !== configured[2])
-
-              return (
-                <div className="muted" style={{ marginTop: 8 }}>
-                  {row('Configured (input)', configured)}
-                  {showResolved ? row('Resolved by engine', resolved) : null}
-
-                  {issues.length ? (
-                    <div style={{ marginTop: 10, color: '#fecaca', fontSize: 12, lineHeight: 1.5 }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text)' }}>Loadout issues</div>
-                      {issues.map((i, idx) => (
-                        <div key={idx}>
-                          {i.kind} (slot {i.slot}{i.module ? `: ${i.module}` : ''})
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  {selectedBotId === 'BOT1' ? (
-                    <div style={{ marginTop: 10 }}>
-                      Edit BOT1 loadout in the bot editor. The <code>;@slot</code> header directives are locked and kept in sync with the dropdowns.
-                    </div>
-                  ) : null}
-                </div>
-              )
-            })()}
-          </div>
-
-          <div style={{ marginTop: 18 }}>
-            <div className="panel-title">Instruction reference</div>
-            <div style={{ marginTop: 10 }}>
-              <Link className="ui-button ui-button-secondary" to="/docs">
-                Open bot instructions
-              </Link>
+                >{'Run a match to see events.'}</pre>
+              )}
             </div>
-          </div>
-        </section>
+
+            <div style={{ marginTop: 18 }}>
+              <div className="panel-title">Loadout</div>
+              {(() => {
+                const configured = loadoutBySlot[selectedBotId] ?? DEFAULT_WORKSHOP_LOADOUT
+                const headerBot = replay?.bots?.find((b) => b.slotId === selectedBotId)
+                const resolved = headerBot?.loadout ?? configured
+                const issues = headerBot?.loadoutIssues ?? []
+
+                const row = (label: string, l: Loadout) => (
+                  <div style={{ marginTop: 6, lineHeight: 1.5 }}>
+                    <div className="muted" style={{ fontSize: 12 }}>{label}</div>
+                    <div>
+                      slot1:{' '}
+                      <strong style={{ color: 'var(--text)' }}>{formatLoadoutOptionValue(l?.[0] ?? null)}</strong>
+                      {'  '}slot2:{' '}
+                      <strong style={{ color: 'var(--text)' }}>{formatLoadoutOptionValue(l?.[1] ?? null)}</strong>
+                      {'  '}slot3:{' '}
+                      <strong style={{ color: 'var(--text)' }}>{formatLoadoutOptionValue(l?.[2] ?? null)}</strong>
+                    </div>
+                  </div>
+                )
+
+                const showResolved =
+                  Boolean(replay) && (resolved[0] !== configured[0] || resolved[1] !== configured[1] || resolved[2] !== configured[2])
+
+                return (
+                  <div className="muted" style={{ marginTop: 8 }}>
+                    {row('Configured (input)', configured)}
+                    {showResolved ? row('Resolved by engine', resolved) : null}
+
+                    {issues.length ? (
+                      <div style={{ marginTop: 10, color: '#fecaca', fontSize: 12, lineHeight: 1.5 }}>
+                        <div style={{ fontWeight: 700, color: 'var(--text)' }}>Loadout issues</div>
+                        {issues.map((i, idx) => (
+                          <div key={idx}>
+                            {i.kind} (slot {i.slot}{i.module ? `: ${i.module}` : ''})
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {selectedBotId === 'BOT1' ? (
+                      <div style={{ marginTop: 10 }}>
+                        Edit BOT1 loadout in the bot editor. The <code>;@slot</code> header directives are locked and kept in sync with the dropdowns.
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })()}
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <div className="panel-title">Instruction reference</div>
+              <div style={{ marginTop: 10 }}>
+                <Link className="ui-button ui-button-secondary" to="/docs">
+                  Open bot instructions
+                </Link>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="workshop-side-column">
+          <section className="panel">
+            <div className="panel-title">My Bots</div>
+
+            <div className="tab-row" style={{ marginTop: 10 }}>
+              {myBots.bots.map((b) => (
+                <button
+                  key={b.id}
+                  className={['tab', b.id === myBots.selectedBotId ? 'active' : ''].join(' ')}
+                  onClick={() => selectBotAsBot1(b.id)}
+                  title={b.id}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+
+            <div className="controls" style={{ marginTop: 10 }}>
+              <button className="ui-button ui-button-secondary" type="button" onClick={createNewBot}>
+                New bot
+              </button>
+              <button className="ui-button ui-button-secondary" type="button" onClick={renameSelectedBot}>
+                Rename
+              </button>
+              <button
+                className="ui-button ui-button-secondary"
+                type="button"
+                onClick={deleteSelectedBot}
+                disabled={myBots.bots.length <= 1}
+              >
+                Delete
+              </button>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-title">Bot editor</div>
+
+            <div className="controls" style={{ marginTop: 10 }}>
+              <button className="ui-button ui-button-secondary" type="button" onClick={loadStarter}>
+                Load starter
+              </button>
+            </div>
+
+            <div className="controls" style={{ marginTop: 12 }}>
+              <label className="mini-field">
+                <div className="mini-label">Slot 1 · {formatLoadoutOptionValue(selectedMyBotLoadout[0] ?? null)}</div>
+                <select
+                  className="mini-input"
+                  value={formatLoadoutOptionValue(selectedMyBotLoadout[0] ?? null)}
+                  onChange={(e) => setMyBotLoadoutSlot(0, parseLoadoutOptionValue(e.target.value))}
+                >
+                  {LOADOUT_OPTION_VALUES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="mini-field">
+                <div className="mini-label">Slot 2 · {formatLoadoutOptionValue(selectedMyBotLoadout[1] ?? null)}</div>
+                <select
+                  className="mini-input"
+                  value={formatLoadoutOptionValue(selectedMyBotLoadout[1] ?? null)}
+                  onChange={(e) => setMyBotLoadoutSlot(1, parseLoadoutOptionValue(e.target.value))}
+                >
+                  {LOADOUT_OPTION_VALUES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="mini-field">
+                <div className="mini-label">Slot 3 · {formatLoadoutOptionValue(selectedMyBotLoadout[2] ?? null)}</div>
+                <select
+                  className="mini-input"
+                  value={formatLoadoutOptionValue(selectedMyBotLoadout[2] ?? null)}
+                  onChange={(e) => setMyBotLoadoutSlot(2, parseLoadoutOptionValue(e.target.value))}
+                >
+                  {LOADOUT_OPTION_VALUES.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {bot1LoadoutWarnings.length ? (
+              <div style={{ marginTop: 10, color: '#fecaca', fontSize: 12, lineHeight: 1.5 }}>
+                {bot1LoadoutWarnings.map((w) => (
+                  <div key={w}>{w}</div>
+                ))}
+              </div>
+            ) : null}
+
+            <textarea
+              className="code-editor"
+              value={editorSourceText}
+              onChange={(e) => {
+                const nextSourceText = e.target.value
+                setMyBots((prev) => {
+                  const current = prev.bots.find((b) => b.id === prev.selectedBotId)
+                  if (!current) return prev
+
+                  const nextText = applyLoadoutHeaderDirectives(nextSourceText, current.loadout ?? DEFAULT_WORKSHOP_LOADOUT)
+
+                  return {
+                    ...prev,
+                    bots: prev.bots.map((b) => (b.id === prev.selectedBotId ? { ...b, sourceText: nextText } : b)),
+                  }
+                })
+              }}
+              spellCheck={false}
+            />
+
+            <div className="muted" style={{ marginTop: 10 }}>
+              Loadout directives <code>;@slot1</code>, <code>;@slot2</code>, <code>;@slot3</code> are locked and kept in sync with the dropdowns.
+            </div>
+          </section>
+        </div>
       </div>
     </>
   )
