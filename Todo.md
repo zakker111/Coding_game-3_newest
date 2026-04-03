@@ -18,10 +18,13 @@ Recently completed (this merge set)
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
 - Phase 6 golden determinism fixtures committed + enforced in CI.
 
-Next slice (Phase 4 — simulation correctness + invariants hardening)
-- Harden bullet movement/collision edge cases (avoid any missed/ambiguous hits).
-- Add/extend invariants so replays never contain NaNs/out-of-bounds positions and every bullet despawns with a reason.
-- Keep golden determinism fixtures updated when intentional behavior changes occur.
+Next slice (Phase 5 — replay/debug parity + Workshop export affordances)
+- Bring the React Workshop tick-events inspector up to parity with the richer deploy controls:
+  - `All` toggle
+  - filter/search
+  - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
+- Add `Copy replay JSON` / `Download replay JSON` affordances to the React Workshop.
+- Sync roadmap/docs to the shipped engine state so future planning starts from reality.
 
 ### Checklist (done vs. not done)
 
@@ -35,7 +38,8 @@ Done (shipped)
 - [x] Bullet targeting + `MOVE_AWAY_FROM_TARGET` available and smoke-tested.
 
 Next up
-- [ ] Phase 4: correctness + invariants hardening.
+- [x] Phase 4: correctness + invariants hardening.
+- [ ] Phase 5: replay/debug parity + Workshop export affordances.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
 ---
@@ -239,19 +243,20 @@ QA checklist
 
 ## Phase 4 — Simulation correctness + invariants hardening
 
+Status: ✅ implemented
+
 Goal: tighten simulation math and invariants so future mechanics don’t create subtle replay drift or edge-case bugs.
 
-Concrete tasks
-- [ ] Collision correctness:
-  - improve bullet collision math so high-speed bullets can’t “tunnel” through thin targets/walls.
-  - specify collision resolution ordering for multi-hit edge cases.
-- [ ] Event and damage invariants:
-  - bullets always despawn with an explicit reason and position.
-  - no out-of-bounds positions; no NaNs.
-  - optional: de-dupe `BUMP_BOT` events per bot-pair per tick (if it improves log readability) while keeping damage/credit deterministic.
-- [ ] Add invariant-focused tests:
-  - regression tests for known tricky collision scenarios.
-  - tests that assert invariants on full replay output for a set of seeds.
+Completed
+- [x] Collision correctness:
+  - bullet movement now resolves the earliest collision along the segment for the tick.
+  - collision ordering is explicit and regression-tested for wall/bot ties and bot/bot ties.
+- [x] Event and damage invariants:
+  - bullets despawn with an explicit reason and position.
+  - invariant tests assert finite/in-bounds bullet move/despawn positions and absence after despawn.
+- [x] Invariant-focused tests:
+  - `simBulletCollisionEdgeCases.test.js`
+  - `simBulletsInvariants.test.js`
 
 Acceptance criteria
 - Invariant tests fail on NaNs/out-of-bounds/despawn-without-reason.
@@ -269,19 +274,20 @@ QA checklist
 Goal: make debugging and viewing matches pleasant enough for frequent iteration.
 
 Concrete tasks
-- [ ] Bullet despawn smoothing:
-  - avoid “pop” on HIT/WALL/TTL; ensure interpolation remains deterministic.
-- [ ] Instruction-level debugging:
-  - show executed instruction per tick
-  - `pc` highlight
-  - prominent `BOT_EXEC.reason` display
+- [ ] Tick-events parity with deploy Workshop:
+  - add `All` toggle
+  - add filter/search
+  - make raw JSON include `nameMap`, `eventsWithNames`, and query metadata
 - [ ] Quality-of-life:
-  - improve event log filtering/search
-  - add a one-click “copy replay JSON” / “download replay” affordance (if not already present)
+  - add a one-click `Copy replay JSON` / `Download replay JSON` affordance
+- [ ] Follow-on debugging polish:
+  - bullet despawn smoothing
+  - source-line / `pc` highlighting once compile metadata is intentionally wired through the app boundary
 
 Acceptance criteria
-- Visual replay playback does not jump/pop on despawn cases.
-- For any bot, a developer can answer “what instruction ran and why did it NOP?” from the UI.
+- For any bot, a developer can switch between selected-bot events and full-tick events and search within them.
+- Raw tick-events JSON is self-describing enough to paste into bug reports without additional annotation.
+- Replay JSON can be copied/downloaded from the UI without opening devtools.
 
 QA checklist
 - `pnpm -C apps/web test` (or `pnpm test:all`)

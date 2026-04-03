@@ -192,6 +192,198 @@ type AppliedRunInfo = {
   botSpecHashBySlot: Record<SlotId, number>
 }
 
+type TickEventLine = {
+  key: string
+  label: string
+  detail?: string
+  tone?: 'muted' | 'bad' | 'good'
+}
+
+const BOT_ID_NAME_FIELDS = [
+  ['botId', 'botName'],
+  ['otherBotId', 'otherBotName'],
+  ['ownerBotId', 'ownerBotName'],
+  ['targetBotId', 'targetBotName'],
+  ['victimBotId', 'victimBotName'],
+  ['sourceBotId', 'sourceBotName'],
+  ['creditedBotId', 'creditedBotName'],
+] as const
+
+function formatTickEventLine(e: KnownReplayEvent): TickEventLine {
+  switch (e.type) {
+    case 'BOT_EXEC': {
+      const tone = e.result === 'EXECUTED' ? 'good' : e.reason ? 'bad' : 'muted'
+      return {
+        key: `BOT_EXEC:${e.botId}:${e.pcBefore}:${e.pcAfter}`,
+        label: `${e.botId} BOT_EXEC`,
+        detail: `${e.instrText}  (pc ${e.pcBefore}→${e.pcAfter}, ${e.result}${e.reason ? `, ${e.reason}` : ''})`,
+        tone,
+      }
+    }
+    case 'BOT_MOVED':
+      return {
+        key: `BOT_MOVED:${e.botId}:${e.fromPos.x},${e.fromPos.y}->${e.toPos.x},${e.toPos.y}`,
+        label: `${e.botId} moved`,
+        detail: `${e.fromPos.x},${e.fromPos.y} → ${e.toPos.x},${e.toPos.y}${e.dir ? ` (${e.dir})` : ''}`,
+      }
+    case 'BUMP_WALL':
+      return {
+        key: `BUMP_WALL:${e.botId}:${e.dir}`,
+        label: `${e.botId} bumped wall`,
+        detail: `${e.dir} (damage ${e.damage})`,
+        tone: e.damage > 0 ? 'bad' : 'muted',
+      }
+    case 'BUMP_BOT':
+      return {
+        key: `BUMP_BOT:${e.botId}:${e.otherBotId}:${e.dir}`,
+        label: `bump`,
+        detail: `${e.botId} ↔ ${e.otherBotId} (${e.dir})`,
+      }
+    case 'RESOURCE_DELTA': {
+      const parts = []
+      if (e.healthDelta) parts.push(`HP ${e.healthDelta > 0 ? '+' : ''}${e.healthDelta}`)
+      if (e.ammoDelta) parts.push(`AMMO ${e.ammoDelta > 0 ? '+' : ''}${e.ammoDelta}`)
+      if (e.energyDelta) parts.push(`ENERGY ${e.energyDelta > 0 ? '+' : ''}${e.energyDelta}`)
+      return {
+        key: `RESOURCE_DELTA:${e.botId}:${e.cause}:${parts.join(',')}`,
+        label: `${e.botId} resources`,
+        detail: `${parts.join(', ') || '(no delta)'} (${e.cause})`,
+        tone: e.healthDelta < 0 ? 'bad' : e.healthDelta > 0 ? 'good' : 'muted',
+      }
+    }
+    case 'DAMAGE':
+      return {
+        key: `DAMAGE:${e.victimBotId}:${e.amount}:${e.source}:${e.sourceBotId ?? ''}`,
+        label: `damage`,
+        detail: `${e.victimBotId} -${e.amount} (${e.source}${e.sourceBotId ? ` by ${e.sourceBotId}` : ''}, ${e.kind})`,
+        tone: 'bad',
+      }
+    case 'BOT_DIED':
+      return {
+        key: `BOT_DIED:${e.victimBotId}:${e.creditedBotId ?? ''}`,
+        label: `death`,
+        detail: `${e.victimBotId} died${e.creditedBotId ? ` (credited ${e.creditedBotId})` : ''}`,
+        tone: 'bad',
+      }
+    case 'BULLET_SPAWN':
+      return {
+        key: `BULLET_SPAWN:${e.bulletId}`,
+        label: `bullet spawn`,
+        detail: `${e.ownerBotId} @ ${e.pos.x},${e.pos.y} vel ${e.vel.x},${e.vel.y}`,
+      }
+    case 'BULLET_HIT':
+      return {
+        key: `BULLET_HIT:${e.bulletId}:${e.victimBotId}`,
+        label: `bullet hit`,
+        detail: `${e.bulletId} hit ${e.victimBotId} (${e.damage})`,
+        tone: 'bad',
+      }
+    case 'BULLET_DESPAWN':
+      return {
+        key: `BULLET_DESPAWN:${e.bulletId}:${e.reason}`,
+        label: `bullet despawn`,
+        detail: `${e.bulletId} (${e.reason})`,
+        tone: 'muted',
+      }
+    case 'POWERUP_PICKUP':
+      return {
+        key: `POWERUP_PICKUP:${e.powerupId}:${e.botId}`,
+        label: `powerup pickup`,
+        detail: `${e.botId} picked ${e.powerupType} (${e.loc.sector}/${e.loc.zone})`,
+        tone: 'good',
+      }
+    case 'POWERUP_SPAWN':
+      return {
+        key: `POWERUP_SPAWN:${e.powerupId}`,
+        label: `powerup spawn`,
+        detail: `${e.powerupType} at ${e.loc.sector}/${e.loc.zone}`,
+        tone: 'muted',
+      }
+    case 'POWERUP_DESPAWN':
+      return {
+        key: `POWERUP_DESPAWN:${e.powerupId}:${e.reason}`,
+        label: `powerup despawn`,
+        detail: `${e.powerupId} (${e.reason})`,
+        tone: 'muted',
+      }
+    case 'MATCH_END':
+      return { key: 'MATCH_END', label: 'match end', detail: e.endReason, tone: 'muted' }
+    default:
+      return { key: e.type, label: e.type, detail: JSON.stringify(e), tone: 'muted' }
+  }
+}
+
+function tickEventSearchText(e: KnownReplayEvent, displayNameBySlot: Record<SlotId, string>) {
+  const { label, detail } = formatTickEventLine(e)
+  const parts = [label, detail]
+  const eventRecord = e as Record<string, unknown>
+
+  for (const [idKey] of BOT_ID_NAME_FIELDS) {
+    const id = eventRecord[idKey]
+    if (typeof id !== 'string') continue
+    parts.push(id)
+    const displayName = displayNameBySlot[id as SlotId]
+    if (displayName && displayName !== id) parts.push(displayName)
+  }
+
+  return parts.filter(Boolean).join(' ')
+}
+
+function tickEventMatchesFilter(e: KnownReplayEvent, displayNameBySlot: Record<SlotId, string>, query: string) {
+  const qq = typeof query === 'string' ? query.trim().toLowerCase() : ''
+  if (!qq) return true
+  return tickEventSearchText(e, displayNameBySlot).toLowerCase().includes(qq)
+}
+
+function withTickEventNames(e: KnownReplayEvent, displayNameBySlot: Record<SlotId, string>) {
+  const eventRecord = e as Record<string, unknown>
+  const out: Record<string, unknown> = { ...eventRecord }
+
+  for (const [idKey, nameKey] of BOT_ID_NAME_FIELDS) {
+    const id = eventRecord[idKey]
+    if (typeof id !== 'string') continue
+    const displayName = displayNameBySlot[id as SlotId]
+    if (displayName) out[nameKey] = displayName
+  }
+
+  return out
+}
+
+function buildRawTickEventsPayload(params: {
+  events: KnownReplayEvent[]
+  displayNameBySlot: Record<SlotId, string>
+  selectedBotId: SlotId
+  showAllTickEvents: boolean
+  query: string
+  totalCount: number
+}) {
+  const { events, displayNameBySlot, selectedBotId, showAllTickEvents, query, totalCount } = params
+  const eventsWithNames = events.map((e) => withTickEventNames(e, displayNameBySlot))
+
+  if (!query) {
+    return {
+      scope: showAllTickEvents ? 'all' : selectedBotId,
+      nameMap: displayNameBySlot,
+      events,
+      eventsWithNames,
+    }
+  }
+
+  return {
+    scope: showAllTickEvents ? 'all' : selectedBotId,
+    nameMap: displayNameBySlot,
+    query,
+    totalCount,
+    matchedCount: events.length,
+    events,
+    eventsWithNames,
+  }
+}
+
+function serializeReplay(replay: Replay) {
+  return JSON.stringify(replay, null, 2)
+}
+
 export function WorkshopPage() {
   const [seed, setSeed] = React.useState<number>(12345)
   const [tickCap, setTickCap] = React.useState<number>(200)
@@ -214,7 +406,10 @@ export function WorkshopPage() {
   const [runError, setRunError] = React.useState<string | null>(null)
   const [appliedRun, setAppliedRun] = React.useState<AppliedRunInfo | null>(null)
 
+  const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
+  const [tickEventsFilter, setTickEventsFilter] = React.useState('')
+  const [replayExportNotice, setReplayExportNotice] = React.useState<{ tone: 'good' | 'bad'; text: string } | null>(null)
 
   const [playback, dispatch] = React.useReducer(playbackReducer, initialPlaybackState)
   const [alpha, setAlpha] = React.useState(1)
@@ -373,6 +568,10 @@ export function WorkshopPage() {
 
   const replay = playback.replay
 
+  React.useEffect(() => {
+    setReplayExportNotice(null)
+  }, [replay])
+
   const appearanceMap = React.useMemo(() => {
     return replay ? getAppearanceColorMap(replay) : ({} as Record<SlotId, string>)
   }, [replay])
@@ -512,141 +711,113 @@ export function WorkshopPage() {
     }
   }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, powerupsForRender])
 
-  const selectedBotSnapshot = botsForRender.find((b) => b.botId === selectedBotId)
-
-  const selectedTickEvents = React.useMemo(() => {
-    if (!replay) return []
+  const selectedBotState = React.useMemo(() => {
+    if (!replay) return null
     const t = clamp(playback.tick, 0, replay.tickCap)
-    return (replay.events[t] ?? []).filter((e): e is KnownReplayEvent => isRelevantEvent(e, selectedBotId))
+    return replay.state[t]?.bots.find((b) => b.botId === selectedBotId) ?? null
   }, [playback.tick, replay, selectedBotId])
 
+  const allTickEvents = React.useMemo(() => {
+    if (!replay) return []
+    const t = clamp(playback.tick, 0, replay.tickCap)
+    return (replay.events[t] ?? []) as KnownReplayEvent[]
+  }, [playback.tick, replay])
+
+  const scopedTickEvents = React.useMemo(() => {
+    if (showAllTickEvents) return allTickEvents
+    return allTickEvents.filter((e) => isRelevantEvent(e, selectedBotId))
+  }, [allTickEvents, selectedBotId, showAllTickEvents])
+
+  const selectedBotExecEvent = React.useMemo(() => {
+    return (
+      allTickEvents.find(
+        (e): e is Extract<KnownReplayEvent, { type: 'BOT_EXEC' }> =>
+          isKnownReplayEventType(e, 'BOT_EXEC') && e.botId === selectedBotId,
+      ) ?? null
+    )
+  }, [allTickEvents, selectedBotId])
+
+  const tickEventsQuery = tickEventsFilter.trim()
+
+  const filteredTickEvents = React.useMemo(() => {
+    if (!tickEventsQuery) return scopedTickEvents
+    return scopedTickEvents.filter((e) => tickEventMatchesFilter(e, displayNameBySlot, tickEventsQuery))
+  }, [displayNameBySlot, scopedTickEvents, tickEventsQuery])
+
+  const listTickEvents = React.useMemo(() => {
+    return scopedTickEvents.filter((e) => {
+      if (e.type !== 'BOT_EXEC') return true
+      if (!showAllTickEvents) return false
+      return e.botId !== selectedBotId
+    })
+  }, [scopedTickEvents, selectedBotId, showAllTickEvents])
+
+  const filteredListTickEvents = React.useMemo(() => {
+    if (!tickEventsQuery) return listTickEvents
+    return listTickEvents.filter((e) => tickEventMatchesFilter(e, displayNameBySlot, tickEventsQuery))
+  }, [displayNameBySlot, listTickEvents, tickEventsQuery])
+
   const selectedTickEventLines = React.useMemo(() => {
-    if (!selectedTickEvents.length) return []
+    return filteredListTickEvents.map((e, index) => {
+      const line = formatTickEventLine(e)
+      return { ...line, key: `${line.key}:${index}` }
+    })
+  }, [filteredListTickEvents])
 
-    const lines: Array<{ key: string; label: string; detail?: string; tone?: 'muted' | 'bad' | 'good' }> = []
+  const tickEventsFilterStatusText = React.useMemo(() => {
+    if (!tickEventsQuery) return ''
+    if (showRawTickEvents) return `${filteredTickEvents.length} / ${scopedTickEvents.length} match “${tickEventsQuery}”`
+    return `${filteredListTickEvents.length} / ${listTickEvents.length} match “${tickEventsQuery}”`
+  }, [filteredListTickEvents.length, filteredTickEvents.length, listTickEvents.length, scopedTickEvents.length, showRawTickEvents, tickEventsQuery])
 
-    for (let i = 0; i < selectedTickEvents.length; i++) {
-      const e = selectedTickEvents[i]
-      switch (e.type) {
-        case 'BOT_EXEC': {
-          const tone = e.result === 'EXECUTED' ? 'good' : e.reason ? 'bad' : 'muted'
-          lines.push({
-            key: `BOT_EXEC:${e.botId}:${e.pcBefore}:${e.pcAfter}`,
-            label: `${e.botId} BOT_EXEC`,
-            detail: `${e.instrText}  (pc ${e.pcBefore}→${e.pcAfter}, ${e.result}${e.reason ? `, ${e.reason}` : ''})`,
-            tone,
-          })
-          break
-        }
-        case 'BOT_MOVED':
-          lines.push({
-            key: `BOT_MOVED:${e.botId}:${e.fromPos.x},${e.fromPos.y}->${e.toPos.x},${e.toPos.y}`,
-            label: `${e.botId} moved`,
-            detail: `${e.fromPos.x},${e.fromPos.y} → ${e.toPos.x},${e.toPos.y}${e.dir ? ` (${e.dir})` : ''}`,
-          })
-          break
-        case 'BUMP_WALL':
-          lines.push({
-            key: `BUMP_WALL:${e.botId}:${e.dir}`,
-            label: `${e.botId} bumped wall`,
-            detail: `${e.dir} (damage ${e.damage})`,
-            tone: e.damage > 0 ? 'bad' : 'muted',
-          })
-          break
-        case 'BUMP_BOT':
-          lines.push({
-            key: `BUMP_BOT:${e.botId}:${e.otherBotId}:${e.dir}`,
-            label: `bump`,
-            detail: `${e.botId} ↔ ${e.otherBotId} (${e.dir})`,
-          })
-          break
-        case 'RESOURCE_DELTA': {
-          const parts = []
-          if (e.healthDelta) parts.push(`HP ${e.healthDelta > 0 ? '+' : ''}${e.healthDelta}`)
-          if (e.ammoDelta) parts.push(`AMMO ${e.ammoDelta > 0 ? '+' : ''}${e.ammoDelta}`)
-          if (e.energyDelta) parts.push(`ENERGY ${e.energyDelta > 0 ? '+' : ''}${e.energyDelta}`)
-          lines.push({
-            key: `RESOURCE_DELTA:${e.botId}:${e.cause}:${parts.join(',')}`,
-            label: `${e.botId} resources`,
-            detail: `${parts.join(', ') || '(no delta)'} (${e.cause})`,
-            tone: e.healthDelta < 0 ? 'bad' : e.healthDelta > 0 ? 'good' : 'muted',
-          })
-          break
-        }
-        case 'DAMAGE':
-          lines.push({
-            key: `DAMAGE:${e.victimBotId}:${e.amount}:${e.source}:${e.sourceBotId ?? ''}`,
-            label: `damage`,
-            detail: `${e.victimBotId} -${e.amount} (${e.source}${e.sourceBotId ? ` by ${e.sourceBotId}` : ''}, ${e.kind})`,
-            tone: 'bad',
-          })
-          break
-        case 'BOT_DIED':
-          lines.push({
-            key: `BOT_DIED:${e.victimBotId}:${e.creditedBotId ?? ''}`,
-            label: `death`,
-            detail: `${e.victimBotId} died${e.creditedBotId ? ` (credited ${e.creditedBotId})` : ''}`,
-            tone: 'bad',
-          })
-          break
-        case 'BULLET_SPAWN':
-          lines.push({
-            key: `BULLET_SPAWN:${e.bulletId}`,
-            label: `bullet spawn`,
-            detail: `${e.ownerBotId} @ ${e.pos.x},${e.pos.y} vel ${e.vel.x},${e.vel.y}`,
-          })
-          break
-        case 'BULLET_HIT':
-          lines.push({
-            key: `BULLET_HIT:${e.bulletId}:${e.victimBotId}`,
-            label: `bullet hit`,
-            detail: `${e.bulletId} hit ${e.victimBotId} (${e.damage})`,
-            tone: 'bad',
-          })
-          break
-        case 'BULLET_DESPAWN':
-          lines.push({
-            key: `BULLET_DESPAWN:${e.bulletId}:${e.reason}`,
-            label: `bullet despawn`,
-            detail: `${e.bulletId} (${e.reason})`,
-            tone: 'muted',
-          })
-          break
-        case 'POWERUP_PICKUP':
-          lines.push({
-            key: `POWERUP_PICKUP:${e.powerupId}:${e.botId}`,
-            label: `powerup pickup`,
-            detail: `${e.botId} picked ${e.powerupType} (${e.loc.sector}/${e.loc.zone})`,
-            tone: 'good',
-          })
-          break
-        case 'POWERUP_SPAWN':
-          lines.push({
-            key: `POWERUP_SPAWN:${e.powerupId}`,
-            label: `powerup spawn`,
-            detail: `${e.powerupType} at ${e.loc.sector}/${e.loc.zone}`,
-            tone: 'muted',
-          })
-          break
-        case 'POWERUP_DESPAWN':
-          lines.push({
-            key: `POWERUP_DESPAWN:${e.powerupId}:${e.reason}`,
-            label: `powerup despawn`,
-            detail: `${e.powerupId} (${e.reason})`,
-            tone: 'muted',
-          })
-          break
-        case 'MATCH_END':
-          lines.push({ key: 'MATCH_END', label: 'match end', detail: e.endReason, tone: 'muted' })
-          break
-        default:
-          lines.push({ key: `${e.type}:${i}`, label: e.type, detail: JSON.stringify(e), tone: 'muted' })
-          break
+  const rawTickEventsText = React.useMemo(() => {
+    if (!replay) return 'Run a match to see events.'
+    if (!tickEventsQuery && !scopedTickEvents.length) return '(no events)'
+
+    return JSON.stringify(
+      buildRawTickEventsPayload({
+        events: filteredTickEvents,
+        displayNameBySlot,
+        selectedBotId,
+        showAllTickEvents,
+        query: tickEventsQuery,
+        totalCount: scopedTickEvents.length,
+      }),
+      null,
+      2,
+    )
+  }, [displayNameBySlot, filteredTickEvents, replay, scopedTickEvents.length, selectedBotId, showAllTickEvents, tickEventsQuery])
+
+  async function handleCopyReplayJson() {
+    if (!replay) return
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API unavailable in this browser context')
       }
-    }
 
-    return lines
-  }, [selectedTickEvents])
+      await navigator.clipboard.writeText(serializeReplay(replay))
+      setReplayExportNotice({ tone: 'good', text: 'Replay JSON copied to clipboard.' })
+    } catch (err) {
+      setReplayExportNotice({
+        tone: 'bad',
+        text: err instanceof Error ? `Copy failed: ${err.message}` : 'Copy failed.',
+      })
+    }
+  }
+
+  function handleDownloadReplayJson() {
+    if (!replay) return
+
+    const blob = new Blob([serializeReplay(replay)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `replay-seed-${appliedRun?.seed ?? seed}-tick-${replay.tickCap}.json`
+    anchor.click()
+    URL.revokeObjectURL(url)
+    setReplayExportNotice({ tone: 'good', text: 'Replay JSON download started.' })
+  }
 
   function createNewBot() {
     setMyBots((prev) => {
@@ -1022,15 +1193,17 @@ export function WorkshopPage() {
                 <div className="panel-title">Inspector</div>
 
                 <div style={{ marginTop: 12 }} className="muted">
-                  {selectedBotSnapshot ? (
+                  {selectedBotState ? (
                     <>
                       <div>
                         <strong style={{ color: 'var(--text)' }}>{selectedBotId}</strong>
                       </div>
-                      <div style={{ marginTop: 8 }}>HP: {selectedBotSnapshot.hp}</div>
-                      <div>Ammo: {selectedBotSnapshot.ammo}</div>
-                      <div>Energy: {selectedBotSnapshot.energy}</div>
-                      <div>Alive: {selectedBotSnapshot.alive ? 'yes' : 'no'}</div>
+                      <div style={{ marginTop: 8 }}>HP: {selectedBotState.hp}</div>
+                      <div>Ammo: {selectedBotState.ammo}</div>
+                      <div>Energy: {selectedBotState.energy}</div>
+                      <div>Alive: {selectedBotState.alive ? 'yes' : 'no'}</div>
+                      <div>PC: {selectedBotState.pc}</div>
+                      <div>Pos: {selectedBotState.pos.x.toFixed(3)}, {selectedBotState.pos.y.toFixed(3)}</div>
                     </>
                   ) : (
                     'Run a replay to inspect bots.'
@@ -1051,7 +1224,7 @@ export function WorkshopPage() {
                   {(() => {
                     if (!replay) return <div className="muted">Run a match to inspect execution.</div>
 
-                    const exec = selectedTickEvents.find((e): e is Extract<KnownReplayEvent, { type: 'BOT_EXEC' }> => isKnownReplayEventType(e, 'BOT_EXEC'))
+                    const exec = selectedBotExecEvent
                     if (!exec) return <div className="muted">(no BOT_EXEC)</div>
 
                     return (
@@ -1078,18 +1251,42 @@ export function WorkshopPage() {
             </div>
 
             <div style={{ marginTop: 18 }}>
-              <div className="panel-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="panel-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <span>Tick events</span>
-                <button
-                  type="button"
-                  className={['chip', showRawTickEvents ? 'active' : ''].join(' ')}
-                  onClick={() => setShowRawTickEvents((v) => !v)}
-                  disabled={!replay}
-                  title="Toggle raw JSON"
-                >
-                  Raw
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className={['chip', showAllTickEvents ? 'active' : ''].join(' ')}
+                    onClick={() => setShowAllTickEvents((v) => !v)}
+                    disabled={!replay}
+                    title="Toggle all tick events"
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className={['chip', showRawTickEvents ? 'active' : ''].join(' ')}
+                    onClick={() => setShowRawTickEvents((v) => !v)}
+                    disabled={!replay}
+                    title="Toggle raw JSON"
+                  >
+                    Raw
+                  </button>
+                  <input
+                    aria-label="Tick events filter"
+                    className="mini-input"
+                    type="text"
+                    value={tickEventsFilter}
+                    onChange={(e) => setTickEventsFilter(e.target.value)}
+                    placeholder="Filter…"
+                    disabled={!replay}
+                    style={{ width: 150 }}
+                  />
+                </div>
               </div>
+              {tickEventsFilterStatusText ? (
+                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>{tickEventsFilterStatusText}</div>
+              ) : null}
 
               {replay ? (
                 showRawTickEvents ? (
@@ -1103,7 +1300,7 @@ export function WorkshopPage() {
                       height: 240,
                     }}
                   >
-                    {selectedTickEvents.length ? JSON.stringify(selectedTickEvents, null, 2) : '(no events)'}
+                    {rawTickEventsText}
                   </pre>
                 ) : (
                   <div
@@ -1155,6 +1352,29 @@ export function WorkshopPage() {
                   }}
                 >{'Run a match to see events.'}</pre>
               )}
+            </div>
+
+            <div style={{ marginTop: 18 }}>
+              <div className="panel-title">Replay export</div>
+              <div className="controls" style={{ marginTop: 10 }}>
+                <button className="ui-button ui-button-secondary" type="button" onClick={handleCopyReplayJson} disabled={!replay}>
+                  Copy replay JSON
+                </button>
+                <button className="ui-button ui-button-secondary" type="button" onClick={handleDownloadReplayJson} disabled={!replay}>
+                  Download replay JSON
+                </button>
+              </div>
+              {replayExportNotice ? (
+                <div
+                  className="muted"
+                  style={{
+                    marginTop: 8,
+                    color: replayExportNotice.tone === 'bad' ? '#fecaca' : 'rgba(134, 239, 172, 0.95)',
+                  }}
+                >
+                  {replayExportNotice.text}
+                </div>
+              ) : null}
             </div>
 
             <div style={{ marginTop: 18 }}>

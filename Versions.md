@@ -32,12 +32,18 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   These are UI/UX metadata comments; authoritative loadout is still the match config / structured UI state.
 - Workshop "My Bots" selection now uses a single BOT1 dropdown instead of per-bot tab chips, and local custom bots are capped at 3 entries.
 - Workshop wording pass: "My Bots" is now "Bot library", "New bot" is now "Add bot", and the BOT1 selector copy is clearer about choosing the next-run bot.
+- Roadmap/docs now reflect the shipped engine state: Phase 4 collision/invariant hardening is complete, and the next UI slice is Workshop replay/debug parity.
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:
   - explicit per-bot 3-slot loadouts (default-empty if omitted + deterministic normalization + `loadoutIssues`)
   - invalid loadouts surface as **visible, non-blocking warnings/errors** via `loadoutIssues` (match still runs)
 - `ARMOR` semantics: passive mitigation (~33%) + speed penalty + SHIELD→ARMOR ordering.
+- React Workshop replay analysis now includes:
+  - `All` tick-events toggle
+  - tick-events filter/search
+  - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
+  - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
 
 ### Fixed
 - `packages/engine`: fixed VM init corruption in `initBotVm` (could break execution).
@@ -54,7 +60,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ### Deferred
 - Workshop UX polish: make `loadoutIssues` more prominent (still non-blocking).
-- Phase 4+ correctness work: tighten invariants (no NaNs/out-of-bounds) and harden bullet collision edge cases.
+- Follow-on debug polish: source-line / `pc` highlighting and bullet-despawn smoothing.
 
 ---
 

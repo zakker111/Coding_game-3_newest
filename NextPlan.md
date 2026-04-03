@@ -31,16 +31,22 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: Phase 4 — simulation correctness + invariants hardening
+## 3) Next slice: Phase 5 — replay/debug parity + Workshop export affordances
+
+Why this is next:
+- Phase 4 collision/invariant hardening is already landed in the engine and covered by tests.
+- The live React Workshop still lags behind the richer deploy prototype for tick-event inspection/debugging.
 
 Scope:
-- Harden bullet movement/collision edge cases (avoid missed/ambiguous hits).
-- Add/extend invariants so replays never contain NaNs/out-of-bounds positions.
-- Ensure every bullet despawns with a reason and state/event consistency is enforced.
+- Add `All` + filter/search controls to the React Workshop tick-events panel.
+- Enrich raw tick-events JSON with `nameMap`, `eventsWithNames`, and query metadata.
+- Add `Copy replay JSON` / `Download replay JSON` affordances.
+- Sync roadmap/docs so they stop pointing at already-completed Phase 4 work.
 
 Acceptance criteria:
-- Engine tests cover invariants (no NaNs/out-of-bounds; bullet spawn/move/despawn consistency).
-- Golden fixtures updated only when behavior changes intentionally.
+- The React Workshop can switch between selected-bot and all-events views for the current tick.
+- Tick events can be filtered in both list and raw JSON modes.
+- Replay JSON can be copied/downloaded from the UI.
 - Workshop still runs a full match without errors.
 
 ---
@@ -65,6 +71,7 @@ Manual checks:
 
 ---
 
-## 5) After Phase 4
+## 5) After Phase 5
 
+- Phase 5b: source-line / `pc` highlighting once compile metadata is intentionally wired into the app boundary.
 - Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
