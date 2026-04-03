@@ -1,9 +1,10 @@
 export const ARENA_SIZE_WORLD = 192
 export const ZONE_SIZE_WORLD = 32
 export const SECTOR_SIZE_WORLD = 64
+const MAX_ARENA_SCALE = 8
 
 export function pickScale(availablePx: number, arenaSizeWorld: number = ARENA_SIZE_WORLD): number {
-  for (let s = 6; s >= 1; s--) {
+  for (let s = MAX_ARENA_SCALE; s >= 1; s--) {
     if (arenaSizeWorld * s <= availablePx) return s
   }
   return 1
