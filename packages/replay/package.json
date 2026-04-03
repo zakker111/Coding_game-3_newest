@@ -1,0 +1,21 @@
+{
+  "name": "@coding-game/replay",
+  "private": true,
+  "version": "0.0.3",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "build": "node -e \"import('./src/index.js')\"",
+    "test": "node --test"
+  }
+}
