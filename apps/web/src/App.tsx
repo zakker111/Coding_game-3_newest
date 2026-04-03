@@ -1,7 +1,10 @@
 import React from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 export default function App() {
+  const location = useLocation()
+  const isWorkshopRoute = location.pathname === '/workshop'
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -25,7 +28,7 @@ export default function App() {
         </nav>
       </header>
 
-      <main className="page">
+      <main className={['page', isWorkshopRoute ? 'page--workshop' : ''].filter(Boolean).join(' ')}>
         <Outlet />
       </main>
 

@@ -16,6 +16,7 @@ export type LocalBotLibraryV2 = {
 }
 
 export const LOCAL_BOTS_STORAGE_KEY = 'nowt:workshop:myBots:v1'
+export const MAX_LOCAL_BOTS = 3
 
 // Legacy per-slot drafts (pre "My Bots" library).
 const LEGACY_DRAFTS_STORAGE_KEY = 'nowt:workshop:drafts:v1'
@@ -42,7 +43,7 @@ export function createDefaultLocalBotLibrary(starterSourceText: string): LocalBo
   return {
     version: 2,
     selectedBotId: 'my-bot-1',
-    bots: [1, 2, 3].map((i) => normalizeBotFromSource(`my-bot-${i}`, `my-bot-${i}`, starterSourceText)),
+    bots: [1, 2, 3].slice(0, MAX_LOCAL_BOTS).map((i) => normalizeBotFromSource(`my-bot-${i}`, `my-bot-${i}`, starterSourceText)),
   }
 }
 
@@ -85,13 +86,14 @@ function normalizeParsedLibrary(parsed: unknown, starterSourceText: string): Loc
 
   if (!uniqueBots.length) return createDefaultLocalBotLibrary(starterSourceText)
 
-  const selectedBotId = isNonEmptyString(anyParsed.selectedBotId) ? anyParsed.selectedBotId : uniqueBots[0].id
-  const selectedExists = uniqueBots.some((b) => b.id === selectedBotId)
+  const cappedBots = uniqueBots.slice(0, MAX_LOCAL_BOTS)
+  const selectedBotId = isNonEmptyString(anyParsed.selectedBotId) ? anyParsed.selectedBotId : cappedBots[0].id
+  const selectedExists = cappedBots.some((b) => b.id === selectedBotId)
 
   return {
     version: 2,
-    selectedBotId: selectedExists ? selectedBotId : uniqueBots[0].id,
-    bots: uniqueBots,
+    selectedBotId: selectedExists ? selectedBotId : cappedBots[0].id,
+    bots: cappedBots,
   }
 }
 
@@ -121,7 +123,7 @@ function createLibraryFromLegacyDrafts(legacy: LegacyDrafts, starterSourceText: 
     return normalizeBotFromSource(`my-bot-${botNumber}`, `my-bot-${botNumber}`, sourceText)
   })
 
-  if (typeof legacy.BOT4 === 'string' && legacy.BOT4.length > 0) {
+  if (bots.length < MAX_LOCAL_BOTS && typeof legacy.BOT4 === 'string' && legacy.BOT4.length > 0) {
     bots.push(normalizeBotFromSource('my-bot-4', 'my-bot-4', legacy.BOT4))
   }
 

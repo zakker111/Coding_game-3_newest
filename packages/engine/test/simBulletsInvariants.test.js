@@ -2,7 +2,14 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { runMatchToReplay } from '@coding-game/engine'
-import { BULLET_SPEED_UNITS_PER_TICK } from '../src/sim/constants.js'
+import { ARENA_MAX, ARENA_MIN, BULLET_SPEED_UNITS_PER_TICK } from '../src/sim/constants.js'
+
+function assertFiniteArenaPos(pos, msg) {
+  assert.ok(Number.isFinite(pos?.x), `${msg}: expected finite x`)
+  assert.ok(Number.isFinite(pos?.y), `${msg}: expected finite y`)
+  assert.ok(pos.x >= ARENA_MIN && pos.x <= ARENA_MAX, `${msg}: expected x within arena bounds`)
+  assert.ok(pos.y >= ARENA_MIN && pos.y <= ARENA_MAX, `${msg}: expected y within arena bounds`)
+}
 
 test('runMatchToReplay: bullets despawn and ammo only decreases via SHOOT', () => {
   const bots = [
@@ -52,8 +59,19 @@ test('runMatchToReplay: bullets despawn and ammo only decreases via SHOOT', () =
 
       if (e.type === 'BULLET_DESPAWN') {
         despawnByBulletId.set(e.bulletId, { tick: t, reason: e.reason })
+        assertFiniteArenaPos(e.pos, `expected BULLET_DESPAWN.pos to be finite and in bounds for ${e.bulletId} at t=${t}`)
+        assert.ok(['WALL', 'TTL', 'HIT'].includes(e.reason), 'expected BULLET_DESPAWN.reason to be WALL/TTL/HIT')
         const bulletIdsInState = bulletIdsInStateByTick.get(t)
         assert.ok(bulletIdsInState && !bulletIdsInState.has(e.bulletId), 'expected despawned bullet to be absent in end-of-tick state')
+      }
+
+      if (e.type === 'BULLET_MOVE') {
+        assertFiniteArenaPos(e.fromPos, `expected BULLET_MOVE.fromPos to be finite and in bounds for ${e.bulletId} at t=${t}`)
+        assertFiniteArenaPos(e.toPos, `expected BULLET_MOVE.toPos to be finite and in bounds for ${e.bulletId} at t=${t}`)
+      }
+
+      if (e.type === 'BULLET_HIT') {
+        assertFiniteArenaPos(e.hitPos, `expected BULLET_HIT.hitPos to be finite and in bounds for ${e.bulletId} at t=${t}`)
       }
 
       if (e.type === 'RESOURCE_DELTA' && e.ammoDelta < 0) {

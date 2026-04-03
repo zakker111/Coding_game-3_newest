@@ -56,7 +56,12 @@ test('runMatchToReplay: SAW drains energy and deals damage (hp decreases determi
   assert.equal(hp0, 100)
 
   const totalSawDamage = sawDamages.reduce((n, e) => n + e.amount, 0)
-  assert.equal(hpEnd, hp0 - totalSawDamage, 'expected BOT2 hp decrease to match summed SAW DAMAGE events')
+  const totalDamageToBot2 = allEvents
+    .filter((e) => e && e.type === 'DAMAGE' && e.victimBotId === 'BOT2')
+    .reduce((n, e) => n + e.amount, 0)
+
+  assert.equal(totalSawDamage, 48, 'expected stable SAW damage total for this scenario')
+  assert.equal(hpEnd, hp0 - totalDamageToBot2, 'expected BOT2 hp decrease to match summed DAMAGE events')
 })
 
 test('runMatchToReplay: SAW match is deterministic for same seed + bots', () => {

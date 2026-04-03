@@ -61,6 +61,18 @@ const LEGACY_KINDS = new Set([
   'MOVE_TO_ARENA_EDGE',
 ])
 
+function flattenInstructions(instructions) {
+  /** @type {any[]} */
+  const flat = []
+
+  for (const instr of instructions) {
+    flat.push(instr)
+    if (instr?.kind === 'IF_DO' && instr.instruction) flat.push(...flattenInstructions([instr.instruction]))
+  }
+
+  return flat
+}
+
 test('compileBotSource emits a very small canonical core IR', () => {
   const src = [
     '; core IR smoke test',
@@ -69,6 +81,7 @@ test('compileBotSource emits a very small canonical core IR', () => {
     'TARGET_NEAREST',
     'IF (HEALTH < 10) DO TARGET_POWERUP HEALTH',
     'IF (HEALTH < 10) GOTO LOOP',
+    'GOTO LOOP',
     'SET_TARGET BOT3',
     'CLEAR_TARGET_BOT',
     'SET_MOVE_TO_SECTOR 5 ZONE 2',
@@ -85,6 +98,7 @@ test('compileBotSource emits a very small canonical core IR', () => {
   assert.deepStrictEqual(r.errors, [])
 
   const instrs = r.program.instructions
+  const flatInstrs = flattenInstructions(instrs)
   assert.ok(instrs.length > 0)
 
   // 1) Every instruction kind must be from the canonical set.
@@ -95,22 +109,22 @@ test('compileBotSource emits a very small canonical core IR', () => {
   }
 
   // 2) Spot-check key normalizations.
-  assert.ok(instrs.some((i) => i.kind === 'SET_TARGET_BOT' && i.selector === 'CLOSEST_BOT'))
-  assert.ok(instrs.some((i) => i.kind === 'SET_TARGET_POWERUP' && i.type === 'HEALTH'))
-  assert.ok(instrs.some((i) => i.kind === 'CLEAR_TARGET' && i.which === 'BOT'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_TARGET_BOT' && i.selector === 'CLOSEST_BOT'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_TARGET_POWERUP' && i.type === 'HEALTH'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'CLEAR_TARGET' && i.which === 'BOT'))
 
   // Control flow is numeric.
-  assert.ok(instrs.some((i) => i.kind === 'JUMP' && Number.isInteger(i.targetPc)))
-  assert.ok(instrs.some((i) => i.kind === 'IF_JUMP' && Number.isInteger(i.targetPc)))
+  assert.ok(flatInstrs.some((i) => i.kind === 'JUMP' && Number.isInteger(i.targetPc)))
+  assert.ok(flatInstrs.some((i) => i.kind === 'IF_JUMP' && Number.isInteger(i.targetPc)))
 
   // Movement normalization.
-  assert.ok(instrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'SECTOR' && i.target?.sector === 5))
-  assert.ok(instrs.some((i) => i.kind === 'MOVE_DIR' && i.dir === 'UP_LEFT'))
-  assert.ok(instrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'BOT' && i.target?.token === 'CLOSEST_BOT'))
-  assert.ok(instrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'ARENA_EDGE' && i.target?.dir === 'LEFT'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'SECTOR' && i.target?.sector === 5))
+  assert.ok(flatInstrs.some((i) => i.kind === 'MOVE_DIR' && i.dir === 'UP_LEFT'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'BOT' && i.target?.token === 'CLOSEST_BOT'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'ARENA_EDGE' && i.target?.dir === 'LEFT'))
 
   // Slot alias normalization.
-  const useSlot = instrs.find((i) => i.kind === 'USE_SLOT' && i.slot === 1)
+  const useSlot = flatInstrs.find((i) => i.kind === 'USE_SLOT' && i.slot === 1)
   assert.ok(useSlot, 'expected USE_SLOT slot=1')
   assert.equal(useSlot.target, 'CLOSEST_BOT')
 })

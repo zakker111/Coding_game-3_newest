@@ -30,12 +30,24 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - `;@slot2 <MODULE|EMPTY>`
   - `;@slot3 <MODULE|EMPTY>`
   These are UI/UX metadata comments; authoritative loadout is still the match config / structured UI state.
+- Workshop "My Bots" selection now uses a single BOT1 dropdown instead of per-bot tab chips, and local custom bots are capped at 3 entries.
+- Workshop wording pass: "My Bots" is now "Bot library", "New bot" is now "Add bot", and the BOT1 selector copy is clearer about choosing the next-run bot.
+- Roadmap/docs now reflect the shipped engine state: Phases 4, 5, and 5b are complete, and the next major slice is the server runner MVP.
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:
   - explicit per-bot 3-slot loadouts (default-empty if omitted + deterministic normalization + `loadoutIssues`)
   - invalid loadouts surface as **visible, non-blocking warnings/errors** via `loadoutIssues` (match still runs)
 - `ARMOR` semantics: passive mitigation (~33%) + speed penalty + SHIELD→ARMOR ordering.
+- React Workshop replay analysis now includes:
+  - `All` tick-events toggle
+  - tick-events filter/search
+  - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
+  - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
+- React Workshop debug tooling now includes BOT1 source-line inspection:
+  - local compile metadata in the app
+  - `pc` → source-line mapping
+  - BOT1 source-focus panel and editor gutter highlighting
 
 ### Fixed
 - `packages/engine`: fixed VM init corruption in `initBotVm` (could break execution).
@@ -43,10 +55,16 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - `packages/replay` sample generator no longer source-scans for module capability; it is loadout-driven (consistent with `rulesetVersion = 0.2.0`).
 - Sample replay starter bot source includes the same `;@slot*` header directives for consistency.
 - Phase 6: golden determinism fixtures committed + enforced in CI.
+- `packages/engine` test harness no longer mutates golden fixtures during ordinary `pnpm test` runs; fixture regeneration stays behind `pnpm golden:update`.
+- Engine tests now match the current DSL/runtime contract:
+  - canonical IR coverage accounts for normalized nested `IF_DO` instructions
+  - expression built-in mocks include bullet-target context when asserting bullet-target predicates
+  - movement/targeting/wall-credit/SAW scenarios use valid DSL labels and non-blocking paths
+- Deployed Workshop deep links now return HTTP `200` for `/workshop/`, `/docs/`, and `/docs/bot-instructions/` via emitted route entry HTML.
 
 ### Deferred
 - Workshop UX polish: make `loadoutIssues` more prominent (still non-blocking).
-- Phase 4+ correctness work: tighten invariants (no NaNs/out-of-bounds) and harden bullet collision edge cases.
+- Follow-on debug polish: bullet-despawn smoothing.
 
 ---
 

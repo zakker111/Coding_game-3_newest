@@ -13,7 +13,7 @@ test('runMatchToReplay: wall-bump death is credited to last damaging bot', () =>
     {
       slotId: 'BOT2',
       loadout: [null, null, null],
-      sourceText: ['WAIT 5', 'LABEL LOOP', 'MOVE LEFT', 'GOTO LOOP', ''].join('\n'),
+      sourceText: ['WAIT 5', 'LABEL LOOP', 'MOVE RIGHT', 'GOTO LOOP', ''].join('\n'),
     },
     { slotId: 'BOT3', loadout: [null, null, null], sourceText: 'LABEL LOOP\nWAIT 10\nGOTO LOOP\n' },
     { slotId: 'BOT4', loadout: [null, null, null], sourceText: 'LABEL LOOP\nWAIT 10\nGOTO LOOP\n' },

@@ -7,12 +7,15 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: Phase 4 — simulation correctness + invariants hardening
+## Next slice: Phase 8 — server: daily runner + submissions
 
 Goals:
-- Improve bullet collision math edge cases (current stepped approach can miss/alias rare geometries).
-- Strengthen invariants (no NaNs/out-of-bounds; bullet spawn/move/despawn consistency).
-- Keep golden determinism fixtures updated when intentional behavior changes occur.
+- Start the smallest viable server-backed product slice:
+  - auth
+  - persistent user bots / submissions
+  - deterministic headless match execution
+  - replay storage
+- Keep server simulation aligned with the existing engine contract instead of introducing a parallel runtime.
 
 ---
 
@@ -52,13 +55,23 @@ Nice-to-have hardening:
 
 ---
 
+## Phase 4 — Simulation correctness + invariants hardening
+
+Status: ✅ done
+
+Implemented:
+- Bullet collision resolution now uses an explicit first-collision resolver in `packages/engine/src/sim/bulletSim.js`.
+- Adversarial edge cases are covered in `packages/engine/test/simBulletCollisionEdgeCases.test.js`.
+- Bullet invariants are covered in `packages/engine/test/simBulletsInvariants.test.js`.
+
 ## Phase 5 — Replay/UI polish (Workshop ergonomics)
 
-Status: ⏳ later
+Status: ✅ done
 
-Ideas:
-- Bullet despawn-tick smoothing (avoid “pop” on HIT/WALL/TTL).
-- Richer debugging UI (executed instruction per tick + prominent `BOT_EXEC.reason`).
+Implemented:
+- Tick-events parity with deploy Workshop (`All`, filter/search, richer raw JSON).
+- Replay export affordances in the React Workshop.
+- Follow-on source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app.
 
 ---
 

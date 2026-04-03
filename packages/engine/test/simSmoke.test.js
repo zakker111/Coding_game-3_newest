@@ -65,6 +65,11 @@ function assertFiniteNumber(n, msg) {
   assert.ok(Number.isFinite(n), msg)
 }
 
+function assertFinitePos(pos, msg) {
+  assertFiniteNumber(pos?.x, `${msg}: expected finite x`)
+  assertFiniteNumber(pos?.y, `${msg}: expected finite y`)
+}
+
 test('runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs', () => {
   const sources = [0, 4, 5, 6].map((n) => loadExampleBot(n))
 
@@ -120,6 +125,29 @@ test('runMatchToReplay: end-to-end example match replay is deterministic, ends, 
       assertFiniteNumber(bl.pos.y, `expected finite bullet.pos.y at t=${s.t} (${bl.bulletId})`)
       assertFiniteNumber(bl.vel.x, `expected finite bullet.vel.x at t=${s.t} (${bl.bulletId})`)
       assertFiniteNumber(bl.vel.y, `expected finite bullet.vel.y at t=${s.t} (${bl.bulletId})`)
+    }
+  }
+
+  for (const event of allEvents) {
+    if (!event) continue
+
+    if (event.type === 'BULLET_SPAWN') {
+      assertFinitePos(event.pos, `expected finite BULLET_SPAWN.pos for ${event.bulletId}`)
+      assertFinitePos(event.vel, `expected finite BULLET_SPAWN.vel for ${event.bulletId}`)
+    }
+
+    if (event.type === 'BULLET_MOVE') {
+      assertFinitePos(event.fromPos, `expected finite BULLET_MOVE.fromPos for ${event.bulletId}`)
+      assertFinitePos(event.toPos, `expected finite BULLET_MOVE.toPos for ${event.bulletId}`)
+    }
+
+    if (event.type === 'BULLET_HIT') {
+      assertFinitePos(event.hitPos, `expected finite BULLET_HIT.hitPos for ${event.bulletId}`)
+      assertFiniteNumber(event.damage, `expected finite BULLET_HIT.damage for ${event.bulletId}`)
+    }
+
+    if (event.type === 'BULLET_DESPAWN') {
+      assertFinitePos(event.pos, `expected finite BULLET_DESPAWN.pos for ${event.bulletId}`)
     }
   }
 })
