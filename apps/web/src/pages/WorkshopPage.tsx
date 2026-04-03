@@ -8,6 +8,7 @@ import {
   createNewLocalBotId,
   createDefaultLocalBotLibrary,
   loadLocalBotLibrary,
+  MAX_LOCAL_BOTS,
   saveLocalBotLibrary,
   type LocalBotLibraryV2,
 } from '../localBots'
@@ -649,6 +650,8 @@ export function WorkshopPage() {
 
   function createNewBot() {
     setMyBots((prev) => {
+      if (prev.bots.length >= MAX_LOCAL_BOTS) return prev
+
       const id = createNewLocalBotId(prev.bots.map((b) => b.id))
       const loadout = deriveLoadoutFromScriptOrDefault(starterSourceText)
 
@@ -1220,21 +1223,33 @@ export function WorkshopPage() {
           <section className="panel">
             <div className="panel-title">My Bots</div>
 
-            <div className="tab-row" style={{ marginTop: 10 }}>
-              {myBots.bots.map((b) => (
-                <button
-                  key={b.id}
-                  className={['tab', b.id === myBots.selectedBotId ? 'active' : ''].join(' ')}
-                  onClick={() => selectBotAsBot1(b.id)}
-                  title={b.id}
-                >
-                  {b.name}
-                </button>
-              ))}
+            <label className="mini-field" style={{ marginTop: 10 }}>
+              <div className="mini-label">BOT1 candidate</div>
+              <select
+                aria-label="BOT1 candidate"
+                className="mini-input workshop-select"
+                value={myBots.selectedBotId}
+                onChange={(e) => selectBotAsBot1(e.target.value)}
+              >
+                {myBots.bots.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="muted" style={{ marginTop: 10 }}>
+              Up to {MAX_LOCAL_BOTS} local bots.
             </div>
 
             <div className="controls" style={{ marginTop: 10 }}>
-              <button className="ui-button ui-button-secondary" type="button" onClick={createNewBot}>
+              <button
+                className="ui-button ui-button-secondary"
+                type="button"
+                onClick={createNewBot}
+                disabled={myBots.bots.length >= MAX_LOCAL_BOTS}
+              >
                 New bot
               </button>
               <button className="ui-button ui-button-secondary" type="button" onClick={renameSelectedBot}>

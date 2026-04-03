@@ -35,6 +35,8 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   expect(screen.getByText('Match setup')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Randomize opponents' })).toBeInTheDocument()
   expect(screen.getByText('Tick events')).toBeInTheDocument()
+  expect(screen.getByRole('combobox', { name: 'BOT1 candidate' })).toBeInTheDocument()
+  expect(screen.getByText('Up to 3 local bots.')).toBeInTheDocument()
   expect(screen.queryByText(/Opponent code is read-only/i)).not.toBeInTheDocument()
   expect(screen.getByText('Slot 1 · BULLET')).toBeInTheDocument()
   expect(container.querySelectorAll('textarea')).toHaveLength(1)
