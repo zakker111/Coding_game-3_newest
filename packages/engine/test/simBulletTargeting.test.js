@@ -9,7 +9,7 @@ const BOT_WITH_ARMOR = `;@slot1 EMPTY
 
 ;@name evader
 
-LOOP:
+LABEL LOOP
   TARGET_CLOSEST_BULLET
   MOVE_AWAY_FROM_TARGET
   GOTO LOOP
@@ -21,7 +21,7 @@ const BOT_SHOOTER = `;@slot1 BULLET
 
 ;@name shooter
 
-LOOP:
+LABEL LOOP
   SET_TARGET BOT2
   USE_SLOT1 TARGET
   WAIT 1

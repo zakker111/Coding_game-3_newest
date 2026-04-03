@@ -163,9 +163,9 @@ test('runMatchToReplay: ARMOR applies to bot bump damage source (even if mitigat
 
 test('runMatchToReplay: ARMOR applies a deterministic movement speed penalty', () => {
   const bots = [
-    { slotId: 'BOT1', loadout: [null, null, null], sourceText: 'LABEL LOOP\nMOVE RIGHT\nGOTO LOOP\n' },
+    { slotId: 'BOT1', loadout: [null, null, null], sourceText: 'MOVE RIGHT\n' },
     { slotId: 'BOT2', loadout: [null, null, null], sourceText: 'WAIT 10\n' },
-    { slotId: 'BOT3', loadout: ['ARMOR', null, null], sourceText: 'LABEL LOOP\nMOVE RIGHT\nGOTO LOOP\n' },
+    { slotId: 'BOT3', loadout: ['ARMOR', null, null], sourceText: 'MOVE RIGHT\n' },
     { slotId: 'BOT4', loadout: [null, null, null], sourceText: 'WAIT 10\n' },
   ]
 

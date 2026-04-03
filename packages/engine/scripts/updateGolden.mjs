@@ -2,14 +2,14 @@ import { writeFileSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { compileBotSource, runMatchToReplay } from '../../src/index.js'
+import { compileBotSource, runMatchToReplay } from '../src/index.js'
 
-import { stableStringify } from '../_util/stableStringify.js'
-import { extractTextFence, buildMatchBotsFromSources, hashReplayCore, hashTicks } from './goldenHarnessUtil.js'
+import { stableStringify } from '../test/_util/stableStringify.js'
+import { extractTextFence, buildMatchBotsFromSources, hashReplayCore, hashTicks } from '../test/golden/goldenHarnessUtil.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const repoRoot = path.resolve(__dirname, '../../../..')
+const repoRoot = path.resolve(__dirname, '../../..')
 
 function loadExampleBot(n) {
   const filename = path.join(repoRoot, 'examples', `bot${n}.md`)
@@ -23,7 +23,7 @@ function stablePrettyJson(obj) {
 }
 
 function writeFixture(name, obj) {
-  const outPath = path.join(__dirname, 'fixtures', `${name}.json`)
+  const outPath = path.join(__dirname, '../test/golden/fixtures', `${name}.json`)
   writeFileSync(outPath, `${stablePrettyJson(obj)}\n`)
   process.stdout.write(`wrote ${path.relative(repoRoot, outPath)}\n`)
 }

@@ -43,6 +43,12 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - `packages/replay` sample generator no longer source-scans for module capability; it is loadout-driven (consistent with `rulesetVersion = 0.2.0`).
 - Sample replay starter bot source includes the same `;@slot*` header directives for consistency.
 - Phase 6: golden determinism fixtures committed + enforced in CI.
+- `packages/engine` test harness no longer mutates golden fixtures during ordinary `pnpm test` runs; fixture regeneration stays behind `pnpm golden:update`.
+- Engine tests now match the current DSL/runtime contract:
+  - canonical IR coverage accounts for normalized nested `IF_DO` instructions
+  - expression built-in mocks include bullet-target context when asserting bullet-target predicates
+  - movement/targeting/wall-credit/SAW scenarios use valid DSL labels and non-blocking paths
+- Deployed Workshop deep links now return HTTP `200` for `/workshop/`, `/docs/`, and `/docs/bot-instructions/` via emitted route entry HTML.
 
 ### Deferred
 - Workshop UX polish: make `loadoutIssues` more prominent (still non-blocking).

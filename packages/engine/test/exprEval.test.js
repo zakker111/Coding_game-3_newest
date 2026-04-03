@@ -81,6 +81,8 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
     botSectors: { BOT2: 1, BOT3: 2 },
     distsToBot: { BOT2: 5 },
     distToTargetBot: 7,
+    hasTargetBullet: true,
+    distToTargetBullet: 9,
     distToSector(sector) {
       return sector === 1 ? 0 : 999
     },
