@@ -18,13 +18,14 @@ Recently completed (this merge set)
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
 - Phase 6 golden determinism fixtures committed + enforced in CI.
 
-Next slice (Phase 5 — replay/debug parity + Workshop export affordances)
-- Bring the React Workshop tick-events inspector up to parity with the richer deploy controls:
-  - `All` toggle
-  - filter/search
-  - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
-- Add `Copy replay JSON` / `Download replay JSON` affordances to the React Workshop.
-- Sync roadmap/docs to the shipped engine state so future planning starts from reality.
+Next slice (Phase 8 — server runner MVP)
+- Define and implement the smallest server slice that adds:
+  - auth
+  - persistent user bots / submissions
+  - deterministic headless match execution
+  - replay storage for server-run matches
+- Keep the server path aligned with the existing `packages/engine` ruleset/runtime contract.
+- Start with a narrow implementation plan before widening into scheduling or leaderboards.
 
 ### Checklist (done vs. not done)
 
@@ -39,7 +40,8 @@ Done (shipped)
 
 Next up
 - [x] Phase 4: correctness + invariants hardening.
-- [ ] Phase 5: replay/debug parity + Workshop export affordances.
+- [x] Phase 5: replay/debug parity + Workshop export affordances.
+- [x] Phase 5b: source-line / `pc` highlighting in the Workshop editor.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
 ---

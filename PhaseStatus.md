@@ -7,15 +7,15 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: Phase 5 — replay/debug parity + Workshop export affordances
+## Next slice: Phase 8 — server: daily runner + submissions
 
 Goals:
-- Bring the React Workshop inspector/debug surface closer to deploy parity:
-  - `All` tick-events toggle
-  - tick-events filter/search
-  - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
-- Add replay export affordances in the live Workshop UI (`Copy replay JSON`, `Download replay JSON`).
-- Sync roadmap/docs to the shipped engine state so future planning starts from the current baseline.
+- Start the smallest viable server-backed product slice:
+  - auth
+  - persistent user bots / submissions
+  - deterministic headless match execution
+  - replay storage
+- Keep server simulation aligned with the existing engine contract instead of introducing a parallel runtime.
 
 ---
 
@@ -66,12 +66,12 @@ Implemented:
 
 ## Phase 5 — Replay/UI polish (Workshop ergonomics)
 
-Status: ⏳ next
+Status: ✅ done
 
-Ideas:
+Implemented:
 - Tick-events parity with deploy Workshop (`All`, filter/search, richer raw JSON).
 - Replay export affordances in the React Workshop.
-- Follow-on: source-line / `pc` highlighting once compile metadata is intentionally wired through the app boundary.
+- Follow-on source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app.
 
 ---
 

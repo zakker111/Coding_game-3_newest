@@ -32,7 +32,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   These are UI/UX metadata comments; authoritative loadout is still the match config / structured UI state.
 - Workshop "My Bots" selection now uses a single BOT1 dropdown instead of per-bot tab chips, and local custom bots are capped at 3 entries.
 - Workshop wording pass: "My Bots" is now "Bot library", "New bot" is now "Add bot", and the BOT1 selector copy is clearer about choosing the next-run bot.
-- Roadmap/docs now reflect the shipped engine state: Phase 4 collision/invariant hardening is complete, and the next UI slice is Workshop replay/debug parity.
+- Roadmap/docs now reflect the shipped engine state: Phases 4, 5, and 5b are complete, and the next major slice is the server runner MVP.
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:
@@ -44,6 +44,10 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - tick-events filter/search
   - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
   - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
+- React Workshop debug tooling now includes BOT1 source-line inspection:
+  - local compile metadata in the app
+  - `pc` → source-line mapping
+  - BOT1 source-focus panel and editor gutter highlighting
 
 ### Fixed
 - `packages/engine`: fixed VM init corruption in `initBotVm` (could break execution).
@@ -60,7 +64,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ### Deferred
 - Workshop UX polish: make `loadoutIssues` more prominent (still non-blocking).
-- Follow-on debug polish: source-line / `pc` highlighting and bullet-despawn smoothing.
+- Follow-on debug polish: bullet-despawn smoothing.
 
 ---
 
