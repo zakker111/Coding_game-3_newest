@@ -7,8 +7,9 @@ import {
   BULLET_SPEED_UNITS_PER_TICK,
   SLOT_IDS,
 } from './constants.js'
-import { bresenhamPoints } from './bresenham.js'
-import { clonePos, normalizeToLen, normalizeToMaxAxis, pointInBotAabb } from './arenaMath.js'
+import { clonePos, normalizeToLen, normalizeToMaxAxis } from './arenaMath.js'
+
+const COLLISION_EPSILON = 1e-9
 
 
 
@@ -57,36 +58,7 @@ export function stepBullets(bullets, bots, tickEvents) {
       y: bullet.pos.y + bullet.vel.y,
     }
 
-    const path = bresenhamPoints(fromPos, candidateTo)
-
-    /** @type {{ kind: 'NONE' } | { kind: 'WALL', pos: {x:number,y:number} } | { kind: 'BOT', pos: {x:number,y:number}, victim: any }} */
-    let hit = { kind: 'NONE' }
-
-    for (const p of path) {
-      if (p.x < ARENA_MIN || p.x > ARENA_MAX || p.y < ARENA_MIN || p.y > ARENA_MAX) {
-        hit = {
-          kind: 'WALL',
-          pos: {
-            x: Math.max(ARENA_MIN, Math.min(ARENA_MAX, p.x)),
-            y: Math.max(ARENA_MIN, Math.min(ARENA_MAX, p.y)),
-          },
-        }
-        break
-      }
-
-      for (const botId of SLOT_IDS) {
-        const bot = botsById(bots, botId)
-        if (!bot || !bot.alive) continue
-        if (bot.botId === bullet.ownerBotId) continue
-
-        if (pointInBotAabb(bot.pos, p)) {
-          hit = { kind: 'BOT', pos: clonePos(p), victim: bot }
-          break
-        }
-      }
-
-      if (hit.kind !== 'NONE') break
-    }
+    const hit = findFirstBulletCollision({ fromPos, toPos: candidateTo, ownerBotId: bullet.ownerBotId }, bots)
 
     const toPos = hit.kind === 'NONE' ? clonePos(candidateTo) : clonePos(hit.pos)
 
@@ -171,6 +143,195 @@ export function stepBullets(bullets, bots, tickEvents) {
   }
 
   return next
+}
+
+/**
+ * Resolve the earliest collision along the continuous bullet segment for this tick.
+ *
+ * Tie-breaks are explicit:
+ * - lower segment travel distance wins
+ * - exact ties prefer WALL over BOT
+ * - exact BOT ties resolve by SLOT_IDS order
+ *
+ * This keeps collision winner selection independent from rasterization order while
+ * preserving stable, integer-valued replay/event positions.
+ *
+ * @param {{ fromPos: {x:number,y:number}, toPos: {x:number,y:number}, ownerBotId: string }} params
+ * @param {any[]} bots
+ * @returns {{ kind: 'NONE' } | { kind: 'WALL', pos: {x:number,y:number}, t: number } | { kind: 'BOT', pos: {x:number,y:number}, t: number, victim: any }}
+ */
+function findFirstBulletCollision(params, bots) {
+  const { fromPos, toPos, ownerBotId } = params
+
+  /** @type {{ kind: 'NONE' } | { kind: 'WALL', pos: {x:number,y:number}, t: number } | { kind: 'BOT', pos: {x:number,y:number}, t: number, victim: any }} */
+  let winner = findFirstWallCollision(fromPos, toPos)
+
+  for (const botId of SLOT_IDS) {
+    const bot = botsById(bots, botId)
+    if (!bot || !bot.alive) continue
+    if (bot.botId === ownerBotId) continue
+
+    winner = compareCollisionCandidates(winner, findFirstBotCollision(fromPos, toPos, bot))
+  }
+
+  return winner
+}
+
+/**
+ * @param {{ kind: 'NONE' } | { kind: 'WALL', pos: {x:number,y:number}, t: number } | { kind: 'BOT', pos: {x:number,y:number}, t: number, victim: any }} current
+ * @param {{ kind: 'NONE' } | { kind: 'WALL', pos: {x:number,y:number}, t: number } | { kind: 'BOT', pos: {x:number,y:number}, t: number, victim: any }} candidate
+ */
+function compareCollisionCandidates(current, candidate) {
+  if (current.kind === 'NONE') return candidate
+  if (candidate.kind === 'NONE') return current
+
+  if (candidate.t < current.t - COLLISION_EPSILON) return candidate
+  if (current.t < candidate.t - COLLISION_EPSILON) return current
+
+  if (current.kind !== candidate.kind) return current.kind === 'WALL' ? current : candidate
+  if (current.kind !== 'BOT' || candidate.kind !== 'BOT') return current
+
+  return SLOT_IDS.indexOf(candidate.victim.botId) < SLOT_IDS.indexOf(current.victim.botId) ? candidate : current
+}
+
+/**
+ * @param {{x:number,y:number}} fromPos
+ * @param {{x:number,y:number}} toPos
+ * @returns {{ kind: 'NONE' } | { kind: 'WALL', pos: {x:number,y:number}, t: number }}
+ */
+function findFirstWallCollision(fromPos, toPos) {
+  const range = intersectSegmentWithRect(fromPos, toPos, {
+    minX: ARENA_MIN,
+    maxX: ARENA_MAX,
+    minY: ARENA_MIN,
+    maxY: ARENA_MAX,
+  })
+
+  if (!range) {
+    return {
+      kind: 'WALL',
+      pos: quantizePointOnSegment(fromPos, toPos, 0, {
+        minX: ARENA_MIN,
+        maxX: ARENA_MAX,
+        minY: ARENA_MIN,
+        maxY: ARENA_MAX,
+      }),
+      t: 0,
+    }
+  }
+
+  if (range.tExit >= 1 - COLLISION_EPSILON) return { kind: 'NONE' }
+
+  return {
+    kind: 'WALL',
+    pos: quantizePointOnSegment(fromPos, toPos, range.tExit, {
+      minX: ARENA_MIN,
+      maxX: ARENA_MAX,
+      minY: ARENA_MIN,
+      maxY: ARENA_MAX,
+    }),
+    t: range.tExit,
+  }
+}
+
+/**
+ * @param {{x:number,y:number}} fromPos
+ * @param {{x:number,y:number}} toPos
+ * @param {any} bot
+ * @returns {{ kind: 'NONE' } | { kind: 'BOT', pos: {x:number,y:number}, t: number, victim: any }}
+ */
+function findFirstBotCollision(fromPos, toPos, bot) {
+  const bounds = {
+    minX: bot.pos.x - BOT_HALF_SIZE,
+    maxX: bot.pos.x + BOT_HALF_SIZE,
+    minY: bot.pos.y - BOT_HALF_SIZE,
+    maxY: bot.pos.y + BOT_HALF_SIZE,
+  }
+
+  const range = intersectSegmentWithRect(fromPos, toPos, bounds)
+  if (!range) return { kind: 'NONE' }
+
+  const t = Math.max(0, range.tEnter)
+
+  return {
+    kind: 'BOT',
+    pos: quantizePointOnSegment(fromPos, toPos, t, bounds),
+    t,
+    victim: bot,
+  }
+}
+
+/**
+ * @param {{x:number,y:number}} fromPos
+ * @param {{x:number,y:number}} toPos
+ * @param {{ minX: number, maxX: number, minY: number, maxY: number }} bounds
+ * @returns {{ tEnter: number, tExit: number } | null}
+ */
+function intersectSegmentWithRect(fromPos, toPos, bounds) {
+  const dx = toPos.x - fromPos.x
+  const dy = toPos.y - fromPos.y
+
+  let tEnter = 0
+  let tExit = 1
+
+  if (!clipRange(-dx, fromPos.x - bounds.minX, (nextEnter, nextExit) => {
+    tEnter = nextEnter
+    tExit = nextExit
+  }, tEnter, tExit)) return null
+  if (!clipRange(dx, bounds.maxX - fromPos.x, (nextEnter, nextExit) => {
+    tEnter = nextEnter
+    tExit = nextExit
+  }, tEnter, tExit)) return null
+  if (!clipRange(-dy, fromPos.y - bounds.minY, (nextEnter, nextExit) => {
+    tEnter = nextEnter
+    tExit = nextExit
+  }, tEnter, tExit)) return null
+  if (!clipRange(dy, bounds.maxY - fromPos.y, (nextEnter, nextExit) => {
+    tEnter = nextEnter
+    tExit = nextExit
+  }, tEnter, tExit)) return null
+
+  return { tEnter, tExit }
+}
+
+/**
+ * @param {number} p
+ * @param {number} q
+ * @param {(nextEnter:number, nextExit:number) => void} update
+ * @param {number} tEnter
+ * @param {number} tExit
+ */
+function clipRange(p, q, update, tEnter, tExit) {
+  if (Math.abs(p) <= COLLISION_EPSILON) return q >= 0
+
+  const r = q / p
+
+  if (p < 0) {
+    if (r > tExit + COLLISION_EPSILON) return false
+    update(Math.max(tEnter, r), tExit)
+    return true
+  }
+
+  if (r < tEnter - COLLISION_EPSILON) return false
+  update(tEnter, Math.min(tExit, r))
+  return true
+}
+
+/**
+ * @param {{x:number,y:number}} fromPos
+ * @param {{x:number,y:number}} toPos
+ * @param {number} t
+ * @param {{ minX: number, maxX: number, minY: number, maxY: number }} bounds
+ */
+function quantizePointOnSegment(fromPos, toPos, t, bounds) {
+  const clampedT = Math.max(0, Math.min(1, t))
+  const rawX = fromPos.x + (toPos.x - fromPos.x) * clampedT
+  const rawY = fromPos.y + (toPos.y - fromPos.y) * clampedT
+
+  return {
+    x: Math.max(bounds.minX, Math.min(bounds.maxX, Math.round(rawX))),
+    y: Math.max(bounds.minY, Math.min(bounds.maxY, Math.round(rawY))),
+  }
 }
 
 /**
