@@ -31,6 +31,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - `;@slot3 <MODULE|EMPTY>`
   These are UI/UX metadata comments; authoritative loadout is still the match config / structured UI state.
 - Workshop "My Bots" selection now uses a single BOT1 dropdown instead of per-bot tab chips, and local custom bots are capped at 3 entries.
+- Workshop wording pass: "My Bots" is now "Bot library", "New bot" is now "Add bot", and the BOT1 selector copy is clearer about choosing the next-run bot.
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:

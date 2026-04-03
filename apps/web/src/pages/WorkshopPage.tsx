@@ -886,7 +886,7 @@ export function WorkshopPage() {
           <div>
             <div className="panel-title">Match setup</div>
             <div className="muted" style={{ marginTop: 6 }}>
-              Pick your BOT1 candidate, review the equipped loadouts, and choose the opponent field for the next run.
+              Choose the bot for BOT1, review the equipped loadouts, and choose the opponent field for the next run.
             </div>
           </div>
 
@@ -899,7 +899,7 @@ export function WorkshopPage() {
           <section className="workshop-bot-card">
             <div className="workshop-bot-card-label">BOT1 · Your bot</div>
             <div className="workshop-bot-card-title">{selectedMyBot.name}</div>
-            <div className="workshop-bot-card-subtitle">Selected from My Bots for the next deterministic run.</div>
+            <div className="workshop-bot-card-subtitle">Selected from your local bot library for the next deterministic run.</div>
             <div className="workshop-loadout-summary" style={{ marginTop: 14 }}>
               {selectedMyBotLoadout.map((mod, index) => (
                 <div key={`bot1-loadout-${index}`} className="workshop-loadout-chip">
@@ -1221,12 +1221,12 @@ export function WorkshopPage() {
 
         <div className="workshop-side-column">
           <section className="panel">
-            <div className="panel-title">My Bots</div>
+            <div className="panel-title">Bot library</div>
 
             <label className="mini-field" style={{ marginTop: 10 }}>
-              <div className="mini-label">BOT1 candidate</div>
+              <div className="mini-label">BOT1 selection</div>
               <select
-                aria-label="BOT1 candidate"
+                aria-label="BOT1 selection"
                 className="mini-input workshop-select"
                 value={myBots.selectedBotId}
                 onChange={(e) => selectBotAsBot1(e.target.value)}
@@ -1250,7 +1250,7 @@ export function WorkshopPage() {
                 onClick={createNewBot}
                 disabled={myBots.bots.length >= MAX_LOCAL_BOTS}
               >
-                New bot
+                Add bot
               </button>
               <button className="ui-button ui-button-secondary" type="button" onClick={renameSelectedBot}>
                 Rename
