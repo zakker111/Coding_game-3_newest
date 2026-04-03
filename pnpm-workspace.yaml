@@ -1,0 +1,5 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Note: `site/` is a legacy prototype and is intentionally excluded from the pnpm workspace.
