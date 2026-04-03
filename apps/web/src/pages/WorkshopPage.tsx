@@ -1,8 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { compileBotSource } from '@coding-game/engine'
 import type { KnownReplayEvent, Loadout, ModuleId, Replay, ReplayEvent, SlotId } from '@coding-game/replay'
 
+import { getLineRangeForLine, getSourceLineForPc, getSourceLineText, getSourceLines } from '../botSourceDebug'
 import { EXAMPLE_BOTS, EXAMPLE_OPPONENT_IDS } from '../exampleBots'
 import {
   createNewLocalBotId,
@@ -385,6 +387,7 @@ function serializeReplay(replay: Replay) {
 }
 
 export function WorkshopPage() {
+  const editorTextareaRef = React.useRef<HTMLTextAreaElement | null>(null)
   const [seed, setSeed] = React.useState<number>(12345)
   const [tickCap, setTickCap] = React.useState<number>(200)
 
@@ -819,6 +822,19 @@ export function WorkshopPage() {
     setReplayExportNotice({ tone: 'good', text: 'Replay JSON download started.' })
   }
 
+  function jumpToHighlightedBot1SourceLine() {
+    if (highlightedBot1SourceLine == null) return
+
+    const editor = editorTextareaRef.current
+    if (!editor) return
+
+    const lineRange = getLineRangeForLine(editorSourceText, highlightedBot1SourceLine)
+    if (!lineRange) return
+
+    editor.focus()
+    editor.setSelectionRange(lineRange.start, lineRange.end)
+  }
+
   function createNewBot() {
     setMyBots((prev) => {
       if (prev.bots.length >= MAX_LOCAL_BOTS) return prev
@@ -956,6 +972,27 @@ export function WorkshopPage() {
 
   const editorSourceText = selectedMyBot.sourceText
   const selectedMyBotLoadout = selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT
+  const editorSourceLines = React.useMemo(() => getSourceLines(editorSourceText), [editorSourceText])
+  const compiledEditorBot = React.useMemo(() => compileBotSource(editorSourceText), [editorSourceText])
+
+  const bot1ExecEvent = React.useMemo(() => {
+    return (
+      allTickEvents.find(
+        (e): e is Extract<KnownReplayEvent, { type: 'BOT_EXEC' }> =>
+          isKnownReplayEventType(e, 'BOT_EXEC') && e.botId === 'BOT1',
+      ) ?? null
+    )
+  }, [allTickEvents])
+
+  const highlightedBot1SourceLine = React.useMemo(() => {
+    if (!previewUpToDate || compiledEditorBot.errors.length || !bot1ExecEvent) return null
+    return getSourceLineForPc(compiledEditorBot.program.pcToSourceLine, bot1ExecEvent.pcBefore)
+  }, [bot1ExecEvent, compiledEditorBot, previewUpToDate])
+
+  const highlightedBot1SourceText = React.useMemo(() => {
+    if (highlightedBot1SourceLine == null) return null
+    return getSourceLineText(editorSourceText, highlightedBot1SourceLine)
+  }, [editorSourceText, highlightedBot1SourceLine])
 
   const bot1LoadoutWarnings = React.useMemo(() => {
     const loadout = selectedMyBotLoadout
@@ -1550,25 +1587,79 @@ export function WorkshopPage() {
               </div>
             ) : null}
 
-            <textarea
-              className="code-editor"
-              value={editorSourceText}
-              onChange={(e) => {
-                const nextSourceText = e.target.value
-                setMyBots((prev) => {
-                  const current = prev.bots.find((b) => b.id === prev.selectedBotId)
-                  if (!current) return prev
+            <div style={{ marginTop: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255, 255, 255, 0.02)' }}>
+              <div className="panel-title">BOT1 source focus</div>
+              <div className="muted" style={{ marginTop: 8, lineHeight: 1.5 }}>
+                {!playback.replay ? (
+                  'Run a match to map BOT1 pc values back to source lines.'
+                ) : !previewUpToDate ? (
+                  'BOT1 source changed since the last run. Re-run to refresh source-line mapping.'
+                ) : compiledEditorBot.errors.length ? (
+                  <>
+                    Current BOT1 source has compile errors. Highlighting is disabled until the editor compiles cleanly.
+                    <div style={{ marginTop: 6 }}>
+                      First error: line {compiledEditorBot.errors[0].line} — {compiledEditorBot.errors[0].message}
+                    </div>
+                  </>
+                ) : !bot1ExecEvent ? (
+                  '(no BOT1 BOT_EXEC)'
+                ) : highlightedBot1SourceLine == null ? (
+                  'No source line mapping found for the current BOT1 pc.'
+                ) : (
+                  <>
+                    <div>
+                      Tick {playback.tick} • pc {bot1ExecEvent.pcBefore} → {bot1ExecEvent.pcAfter} • source line{' '}
+                      <strong style={{ color: 'var(--text)' }}>{highlightedBot1SourceLine}</strong>
+                    </div>
+                    <div style={{ marginTop: 6 }}>
+                      <code>{highlightedBot1SourceText || '(blank line)'}</code>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                      <button className="ui-button ui-button-secondary" type="button" onClick={jumpToHighlightedBot1SourceLine}>
+                        Jump to highlighted line
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
 
-                  const nextText = applyLoadoutHeaderDirectives(nextSourceText, current.loadout ?? DEFAULT_WORKSHOP_LOADOUT)
+            <div className="code-editor-shell" style={{ marginTop: 12 }}>
+              <div className="code-editor-gutter" aria-hidden="true">
+                {editorSourceLines.map((_, index) => {
+                  const lineNumber = index + 1
+                  return (
+                    <div
+                      key={`source-line-${lineNumber}`}
+                      className={['code-editor-line-number', lineNumber === highlightedBot1SourceLine ? 'active' : ''].join(' ')}
+                    >
+                      {lineNumber}
+                    </div>
+                  )
+                })}
+              </div>
 
-                  return {
-                    ...prev,
-                    bots: prev.bots.map((b) => (b.id === prev.selectedBotId ? { ...b, sourceText: nextText } : b)),
-                  }
-                })
-              }}
-              spellCheck={false}
-            />
+              <textarea
+                ref={editorTextareaRef}
+                className="code-editor code-editor-textarea"
+                value={editorSourceText}
+                onChange={(e) => {
+                  const nextSourceText = e.target.value
+                  setMyBots((prev) => {
+                    const current = prev.bots.find((b) => b.id === prev.selectedBotId)
+                    if (!current) return prev
+
+                    const nextText = applyLoadoutHeaderDirectives(nextSourceText, current.loadout ?? DEFAULT_WORKSHOP_LOADOUT)
+
+                    return {
+                      ...prev,
+                      bots: prev.bots.map((b) => (b.id === prev.selectedBotId ? { ...b, sourceText: nextText } : b)),
+                    }
+                  })
+                }}
+                spellCheck={false}
+              />
+            </div>
 
             <div className="muted" style={{ marginTop: 10 }}>
               Loadout directives <code>;@slot1</code>, <code>;@slot2</code>, <code>;@slot3</code> are locked and kept in sync with the dropdowns.
