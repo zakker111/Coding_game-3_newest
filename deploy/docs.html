@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nowt – Docs</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand"><a href="./">Nowt</a> <span class="muted">/ Docs</span></div>
+      <nav class="nav">
+        <a href="./">Home</a>
+        <a href="./workshop/">Workshop</a>
+        <a class="active" href="./docs.html">Docs</a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h1>Bot instructions</h1>
+        <p class="muted" style="margin-top: 6px">Quick guide + full reference for the stable v1 bot language. Loaded as plain text from <a href="./bot-instructions.md">bot-instructions.md</a>.</p>
+        <pre id="docPre" class="pre" style="max-height: none">Loading…</pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="muted">Client-only deploy (first pass)</div>
+    </footer>
+
+    <script type="module">
+      const pre = document.getElementById('docPre')
+      try {
+        const res = await fetch('./bot-instructions.md')
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        pre.textContent = await res.text()
+      } catch (err) {
+        pre.textContent = `Failed to load bot-instructions.md\n\n${String(err)}`
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nowt</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Nowt</div>
+      <nav class="nav">
+        <a href="./">Home</a>
+        <a href="./workshop/">Workshop</a>
+        <a href="./docs.html">Docs</a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <h1>Nowt</h1>
+        <p class="muted">A deterministic bot-fighting coding game. Write bots, run matches, inspect replays tick-by-tick.</p>
+        <div class="actions">
+          <a class="button primary" href="./workshop/">Start Game</a>
+          <a class="button" href="./docs.html">Bot instructions</a>
+        </div>
+
+        <div style="margin-top: 18px">
+          <div class="feature-title">A tiny bot script</div>
+          <div class="muted" style="margin-top: 6px">
+            Starter bot is now more aggressive. Built-ins include Burst Hunter and Energy Saw Skirmisher.
+          </div>
+          <pre class="pre" style="margin-top: 10px; max-height: 260px">; Aggressive starter (BULLET in SLOT1)
+LABEL LOOP
+IF (HEALTH &lt; 45 &amp;&amp; POWERUP_EXISTS(HEALTH)) DO MOVE_TO_POWERUP HEALTH
+TARGET_CLOSEST
+SET_MOVE_TO_TARGET
+IF (SLOT_READY(SLOT1)) DO FIRE_SLOT1 TARGET
+GOTO LOOP</pre>
+        </div>
+
+        <div class="grid3" style="margin-top: 18px">
+          <div class="feature">
+            <div class="feature-title">Deterministic</div>
+            <div class="muted">Same seed + same inputs → identical replay.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-title">Replayable</div>
+            <div class="muted">Per-tick state + events.</div>
+          </div>
+          <div class="feature">
+            <div class="feature-title">Bot DSL</div>
+            <div class="muted">Loops, IFs, movement, targeting, and module actions.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="muted">Client-only deploy (first pass)</div>
+    </footer>
+  </body>
+</html>

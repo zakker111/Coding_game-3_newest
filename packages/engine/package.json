@@ -1,0 +1,30 @@
+{
+  "name": "@coding-game/engine",
+  "private": true,
+  "version": "0.0.3",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@coding-game/replay": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.json --noEmit && node --test",
+    "test:golden": "node --test test/golden",
+    "golden:update": "node test/golden/updateGolden.mjs",
+    "golden:check": "node test/golden/checkGoldens.mjs --strict"
+  }
+}

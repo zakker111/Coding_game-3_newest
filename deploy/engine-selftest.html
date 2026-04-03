@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nowt – Engine Selftest</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body {
+        font-family: ui-monospace, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        padding: 16px;
+        line-height: 1.4;
+      }
+      pre {
+        background: #0b0f17;
+        color: #e2e8f0;
+        padding: 12px;
+        border-radius: 8px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Engine Selftest</h1>
+    <pre id="out">Running…</pre>
+
+    <script type="module">
+      import { runMatchToReplay } from './engine/src/index.js'
+
+      const out = document.getElementById('out')
+
+      try {
+        const botSourceText = 'LABEL LOOP\nWAIT 1\nGOTO LOOP\n'
+
+        const replay = runMatchToReplay({
+          seed: 1,
+          tickCap: 10,
+          bots: [
+            { slotId: 'BOT1', sourceText: botSourceText },
+            { slotId: 'BOT2', sourceText: botSourceText },
+            { slotId: 'BOT3', sourceText: botSourceText },
+            { slotId: 'BOT4', sourceText: botSourceText },
+          ],
+        })
+
+        const e0 = Array.isArray(replay?.events?.[0]) ? replay.events[0].length : 'n/a'
+
+        out.textContent = `OK\nschemaVersion=${replay.schemaVersion}\nrulesetVersion=${replay.rulesetVersion}\nreplay.tickCap=${replay.tickCap}\nstate.length=${replay.state.length}\nevents[0].length=${e0}`
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        out.textContent = `ERROR\n${msg}`
+      }
+    </script>
+  </body>
+</html>

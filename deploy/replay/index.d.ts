@@ -1,0 +1,270 @@
+export type SlotId = 'BOT1' | 'BOT2' | 'BOT3' | 'BOT4'
+
+export type ModuleId = 'BULLET' | 'SAW' | 'SHIELD' | 'ARMOR'
+
+export type Loadout = [ModuleId | null, ModuleId | null, ModuleId | null]
+
+export type LoadoutIssueKind = 'UNKNOWN_MODULE' | 'DUPLICATE' | 'MULTI_WEAPON'
+
+export type LoadoutIssue = {
+  kind: LoadoutIssueKind
+  slot: 1 | 2 | 3
+  module?: string
+}
+
+export type ReplayAppearance = {
+  kind: 'COLOR'
+  color: string
+}
+
+export type ReplayHeaderBot = {
+  slotId: SlotId
+  displayName: string
+  appearance: ReplayAppearance
+  sourceText?: string
+
+  /** Ruleset-specific equipped modules; omitted for legacy replays. */
+  loadout?: Loadout
+
+  /** If the provided loadout was invalid, a deterministic normalization may have been applied. */
+  loadoutIssues?: LoadoutIssue[]
+}
+
+export type Pos = {
+  x: number
+  y: number
+}
+
+export type MoveDir =
+  | 'UP'
+  | 'DOWN'
+  | 'LEFT'
+  | 'RIGHT'
+  | 'UP_LEFT'
+  | 'UP_RIGHT'
+  | 'DOWN_LEFT'
+  | 'DOWN_RIGHT'
+
+export type ReplayBotState = {
+  botId: SlotId
+  pos: Pos
+  hp: number
+  ammo: number
+  energy: number
+  alive: boolean
+  pc: number
+}
+
+export type ReplayBulletState = {
+  bulletId: string
+  ownerBotId: SlotId
+  pos: Pos
+  vel: Pos
+}
+
+export type ReplayPowerupState = {
+  powerupId: string
+  type: 'HEALTH' | 'AMMO' | 'ENERGY'
+  loc: { sector: number; zone: number }
+}
+
+export type ReplayTickState = {
+  // Redundant with array index, but convenient for tooling.
+  t: number
+  bots: ReplayBotState[]
+  bullets: ReplayBulletState[]
+  powerups: ReplayPowerupState[]
+}
+
+export type BotExecReason =
+  | 'INVALID_INSTR'
+  | 'NO_MODULE'
+  | 'NO_EFFECT'
+  | 'COOLDOWN'
+  | 'NO_AMMO'
+  | 'NO_ENERGY'
+  | 'INVALID_TARGET_KIND'
+  | 'INVALID_TARGET'
+  | 'INVALID_LOC'
+
+export type ReplayEventBase = {
+  type: string
+}
+
+export type BotExecEvent = {
+  type: 'BOT_EXEC'
+  botId: SlotId
+  pcBefore: number
+  pcAfter: number
+  instrText: string
+  result: 'EXECUTED' | 'NOP' | 'ERROR'
+  reason?: BotExecReason
+}
+
+export type BotMovedEvent = {
+  type: 'BOT_MOVED'
+  botId: SlotId
+  fromPos: Pos
+  toPos: Pos
+  dir?: MoveDir
+}
+
+export type BumpWallEvent = {
+  type: 'BUMP_WALL'
+  botId: SlotId
+  dir: MoveDir
+  damage: number
+}
+
+export type BumpBotEvent = {
+  type: 'BUMP_BOT'
+  botId: SlotId
+  otherBotId: SlotId
+  dir: MoveDir
+}
+
+export type ResourceDeltaEvent = {
+  type: 'RESOURCE_DELTA'
+  botId: SlotId
+  ammoDelta: number
+  energyDelta: number
+  healthDelta: number
+  cause: string
+}
+
+export type PowerupSpawnEvent = {
+  type: 'POWERUP_SPAWN'
+  powerupId: string
+  powerupType: ReplayPowerupState['type']
+  loc: { sector: number; zone: number }
+}
+
+export type PowerupPickupEvent = {
+  type: 'POWERUP_PICKUP'
+  botId: SlotId
+  powerupId: string
+  powerupType: ReplayPowerupState['type']
+  loc: { sector: number; zone: number }
+}
+
+export type PowerupDespawnEvent = {
+  type: 'POWERUP_DESPAWN'
+  powerupId: string
+  reason: 'PICKUP' | 'RULES'
+}
+
+export type BulletSpawnEvent = {
+  type: 'BULLET_SPAWN'
+  bulletId: string
+  ownerBotId: SlotId
+  pos: Pos
+  vel: Pos
+  targetBotId?: SlotId
+  targetPos?: Pos
+}
+
+export type BulletMoveEvent = {
+  type: 'BULLET_MOVE'
+  bulletId: string
+  fromPos: Pos
+  toPos: Pos
+}
+
+export type BulletHitEvent = {
+  type: 'BULLET_HIT'
+  bulletId: string
+  victimBotId: SlotId
+  damage: number
+  hitPos?: Pos
+}
+
+export type BulletDespawnEvent = {
+  type: 'BULLET_DESPAWN'
+  bulletId: string
+  reason: 'TTL' | 'WALL' | 'HIT'
+  pos?: Pos
+}
+
+export type DamageEvent = {
+  type: 'DAMAGE'
+  victimBotId: SlotId
+  amount: number
+  source: string
+  sourceBotId?: SlotId
+  kind: string
+  sourceRef?: { type: string; id: string }
+}
+
+export type BotDiedEvent = {
+  type: 'BOT_DIED'
+  victimBotId: SlotId
+  creditedBotId?: SlotId
+}
+
+export type MatchEndReason = 'LAST_BOT_ALIVE' | 'ALL_DEAD' | 'STALEMATE' | 'TICK_CAP'
+
+export type MatchEndEvent = {
+  type: 'MATCH_END'
+  endReason: MatchEndReason
+}
+
+export type KnownReplayEvent =
+  | BotExecEvent
+  | BotMovedEvent
+  | BumpWallEvent
+  | BumpBotEvent
+  | ResourceDeltaEvent
+  | PowerupSpawnEvent
+  | PowerupPickupEvent
+  | PowerupDespawnEvent
+  | BulletSpawnEvent
+  | BulletMoveEvent
+  | BulletHitEvent
+  | BulletDespawnEvent
+  | DamageEvent
+  | BotDiedEvent
+  | MatchEndEvent
+
+export type UnknownReplayEvent = {
+  type: string
+  [key: string]: unknown
+}
+
+export type ReplayEvent = KnownReplayEvent | UnknownReplayEvent
+
+export type Replay = {
+  schemaVersion: string
+  rulesetVersion: string
+  ticksPerSecond: number
+  matchSeed: number | string
+  tickCap: number
+  bots: ReplayHeaderBot[]
+
+  // Storage strategy A: full end-of-tick state per tick.
+  state: ReplayTickState[]
+
+  // Events that transformed state[t-1] -> state[t].
+  events: ReplayEvent[][]
+}
+
+export type GenerateSampleReplayOptions = {
+  tickCap?: number
+
+  /**
+   * Optional overrides for the replay header bots.
+   *
+   * This is primarily for client stubs/tests; the sample generator is not a full DSL runner.
+   */
+  bots?: Array<{ slotId: SlotId } & Partial<Omit<ReplayHeaderBot, 'slotId'>>>
+}
+
+export declare function generateSampleReplay(
+  seed: number | string,
+  opts?: GenerateSampleReplayOptions
+): Replay
+
+export declare function createRng(seed: number | string): () => number
+
+export declare function rngInt(rng: () => number, minInclusive: number, maxInclusive: number): number
+
+export declare function rngChoice<T>(rng: () => number, items: T[]): T
