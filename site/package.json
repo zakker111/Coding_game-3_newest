@@ -1,0 +1,36 @@
+{
+  "name": "site",
+  "private": true,
+  "version": "0.0.3",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -b",
+    "build": "pnpm typecheck && vite build",
+    "preview": "vite preview",
+
+    "gen:mock-replay": "node scripts/generate-mock-replay.mjs --seed 12345 --out public/replays/mock-replay.json",
+    "determinism": "node scripts/check-determinism.mjs",
+
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "qa": "pnpm build && pnpm test && pnpm determinism"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.2",
+    "@types/node": "^18.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "jsdom": "^24.0.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0",
+    "vitest": "^1.6.0"
+  }
+}

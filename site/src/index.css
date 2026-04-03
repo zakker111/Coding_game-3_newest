@@ -1,0 +1,115 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0f17;
+  --panel: #121826;
+  --text: #e6eaf2;
+  --muted: #9aa4b2;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --border: rgba(255, 255, 255, 0.08);
+
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+    Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.app-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.nav a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nav a.active {
+  color: var(--text);
+}
+
+.page {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 56px 20px;
+}
+
+.title {
+  font-size: 48px;
+  margin: 0;
+  line-height: 1.05;
+}
+
+.subtitle {
+  margin-top: 12px;
+  color: var(--muted);
+  max-width: 56ch;
+  line-height: 1.5;
+}
+
+.actions {
+  margin-top: 28px;
+  display: flex;
+  gap: 12px;
+}
+
+.ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ui-button:hover {
+  background: var(--accent-hover);
+  text-decoration: none;
+}
+
+.ui-button:active {
+  transform: translateY(1px);
+}
