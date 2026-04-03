@@ -18,6 +18,16 @@ const normalizedBasePath = basePath.endsWith('/') ? basePath : `${basePath}/`
 export default defineConfig({
   base: normalizedBasePath,
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        workshop: path.resolve(__dirname, 'workshop/index.html'),
+        docs: path.resolve(__dirname, 'docs/index.html'),
+        botInstructions: path.resolve(__dirname, 'docs/bot-instructions/index.html'),
+      },
+    },
+  },
   server: {
     fs: {
       allow: [repoRoot],
