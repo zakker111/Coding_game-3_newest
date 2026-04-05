@@ -238,13 +238,16 @@ export type Replay = {
   rulesetVersion: string
   ticksPerSecond: number
   matchSeed: number | string
+  // Last valid tick index available in this replay; may be less than the requested
+  // simulation limit if the match ended early.
   tickCap: number
   bots: ReplayHeaderBot[]
 
-  // Storage strategy A: full end-of-tick state per tick.
+  // Storage strategy A: full state by tick index.
+  // state[0] is the initial pre-tick state; for t>=1, state[t] is the end-of-tick state.
   state: ReplayTickState[]
 
-  // Events that transformed state[t-1] -> state[t].
+  // events[0] is []; for t>=1, events[t] transformed state[t-1] -> state[t].
   events: ReplayEvent[][]
 }
 

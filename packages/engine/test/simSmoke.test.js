@@ -98,9 +98,12 @@ test('runMatchToReplay: end-to-end example match replay is deterministic, ends, 
   assert.equal(r1.matchSeed, 123)
   assert.ok(r1.tickCap <= 120)
 
-  // state/events should be indexed by tick, including t=0.
+  // replay.tickCap is the last valid tick index; state/events include the initial snapshot at t=0.
   assert.equal(r1.state.length, r1.tickCap + 1)
   assert.equal(r1.events.length, r1.tickCap + 1)
+  assert.equal(r1.state[0]?.t, 0)
+  assert.deepStrictEqual(r1.events[0], [], 'expected no events at the initial pre-tick snapshot')
+  assert.equal(r1.state[r1.tickCap]?.t, r1.tickCap)
 
   const endEvents = r1.events[r1.tickCap]
   assert.ok(endEvents.some((e) => e && e.type === 'MATCH_END'), 'expected MATCH_END on final tick')

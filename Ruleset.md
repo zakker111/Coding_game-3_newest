@@ -40,8 +40,13 @@ Related docs:
 
 - The simulation advances in **discrete ticks**.
 - Replays store:
-  - `state[t]`: **end-of-tick** state for tick `t`
-  - `events[t]`: ordered events that occurred **during tick `t`**
+  - `state[0]`: the **initial pre-tick state**
+  - `events[0]`: always `[]`
+  - for `t >= 1`, `state[t]`: **end-of-tick** state for tick `t`
+  - for `t >= 1`, `events[t]`: ordered events that occurred **during tick `t`**
+- In emitted replays, `tickCap` is the **last valid tick index present in the replay**, not necessarily the requested input tick limit.
+  - if the match ends early (for example via `LAST_BOT_ALIVE` or `STALEMATE`), replay `tickCap` is reduced to that final tick
+  - therefore `state.length === events.length === tickCap + 1`
 
 ---
 
@@ -333,6 +338,7 @@ Movement + collision:
   - emit `DAMAGE` with `source = "BULLET"`, `kind = "DIRECT"`, `sourceRef = { type: "BULLET", id }`
   - emit `BULLET_DESPAWN reason=HIT`
 - On wall:
+  - emit `BULLET_MOVE` with `toPos` as the wall impact point
   - emit `BULLET_DESPAWN reason=WALL`
 - On no hit:
   - emit `BULLET_MOVE` and decrement TTL
@@ -407,5 +413,4 @@ Pickup behavior (implemented):
 Lifetime:
 - Each powerup records `expiresAtTick = spawnTick + powerupLifetimeTicks`.
 - At end-of-tick maintenance, expired powerups are removed and emit `POWERUP_DESPAWN reason=RULES`.
-
 

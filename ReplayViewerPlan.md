@@ -117,6 +117,8 @@ Current repo contract (engine output):
 - `ticksPerSecond` (so “1× playback” can mean real time for that ruleset version)
 - `matchSeed`
 - `tickCap`
+  - meaning: the **last valid tick index available in this replay**
+  - for current engine output, this may be **less than** the requested input tick limit if the match ended early
 - `bots[]`:
   - `slotId` (`BOT1..BOT4`)
     - **Important:** this is the **match slot id** (deterministic engine identifier), not a user bot identity.
@@ -200,11 +202,14 @@ Client-first recommendation:
 To keep rendering, scrubbing, and "what happened on tick t" consistent across clients:
 
 - Convention (recommended for v1):
-  - `state[t]` represents the **end-of-tick state** for tick `t`.
-  - `events[t]` are the ordered events that occurred **during tick `t`** to transform `state[t-1] → state[t]`.
+  - `state[0]` represents the **initial pre-tick state**.
+  - `events[0]` is `[]`.
+  - for `t >= 1`, `state[t]` represents the **end-of-tick state** for tick `t`.
+  - for `t >= 1`, `events[t]` are the ordered events that occurred **during tick `t`** to transform `state[t-1] → state[t]`.
 
 Notes:
 - Tick `0` is the initial state before any tick processing (so `state[0]` is "start of match").
+- `replay.tickCap` is the last valid playhead tick in the replay, so viewers should expect `state.length === events.length === tickCap + 1`.
 - Under this convention, viewers that render purely from `state[t]` will match "after resolution" visuals (moves applied, bullets advanced, hits applied, pickups applied, deaths resolved).
 - The per-tick event list remains the canonical explanation/debug log for how `state[t]` was reached.
 - Compatibility rule for bot state fields:
