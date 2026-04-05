@@ -109,6 +109,23 @@ function loadoutSig(loadout) {
     .join(',')
 }
 
+function getReplayHeaderBotsBySlot(replay) {
+  const out = {}
+  for (const bot of replay?.bots || []) out[bot.slotId] = bot
+  return out
+}
+
+function getReplayLoadoutIssuesBySlot(replay) {
+  const headerBotsBySlot = getReplayHeaderBotsBySlot(replay)
+  const out = {}
+  for (const slotId of SLOT_IDS) out[slotId] = headerBotsBySlot[slotId]?.loadoutIssues || []
+  return out
+}
+
+function formatReplayLoadoutIssue(issue) {
+  return `${issue.kind} (slot ${issue.slot}${issue.module ? `: ${issue.module}` : ''})`
+}
+
 function mixSeed(seed, bots) {
   let h = seed >>> 0
   for (const b of bots) {
@@ -548,7 +565,7 @@ const scrub = document.getElementById('scrub')
 
 const canvas = document.getElementById('arenaCanvas')
 
-const WORKSHOP_BUILD = '0.3.3'
+const WORKSHOP_BUILD = '0.3.4'
 if (workshopBuildTag) workshopBuildTag.textContent = `v${WORKSHOP_BUILD}`
 
 // State
@@ -594,13 +611,7 @@ function clearRunError() {
   lastRunError = ''
 }
 
-function setActiveTab(container, activeId) {
-  for (const btn of container.querySelectorAll('button[data-id]')) {
-    btn.classList.toggle('active', btn.getAttribute('data-id') === activeId)
-  }
-}
-
-function renderTabs(container, currentId, onSelect) {
+function renderTabs(container, currentId, onSelect, issueCounts = {}) {
   container.innerHTML = ''
   for (const id of SLOT_IDS) {
     const btn = createEl('button', {
@@ -608,8 +619,18 @@ function renderTabs(container, currentId, onSelect) {
       'data-id': id,
       type: 'button',
       onClick: () => onSelect(id),
-      text: id,
+      'aria-label': issueCounts[id] ? `${id} (${issueCounts[id]} loadout warning${issueCounts[id] === 1 ? '' : 's'})` : id,
+      title: issueCounts[id] ? `${issueCounts[id]} loadout warning${issueCounts[id] === 1 ? '' : 's'}` : '',
     })
+    btn.appendChild(createEl('span', { text: id }))
+    if (issueCounts[id]) {
+      btn.appendChild(
+        createEl('span', {
+          text: 'warn',
+          style: 'margin-left: 6px; color: #fecaca; font-size: 11px; font-weight: 700',
+        }),
+      )
+    }
     container.appendChild(btn)
   }
 }
@@ -877,7 +898,19 @@ function tickEventMatchesFilter(replay, e, q) {
 }
 
 function updateInspector() {
-  if (inspectTabs) setActiveTab(inspectTabs, selectedBotId)
+  const replayLoadoutIssuesBySlot = getReplayLoadoutIssuesBySlot(replay)
+  const selectedBotLoadoutIssues = replayLoadoutIssuesBySlot[selectedBotId] || []
+  const selectedBotLoadoutIssueLines = selectedBotLoadoutIssues.map((issue) => formatReplayLoadoutIssue(issue))
+
+  if (inspectTabs) {
+    const issueCounts = {}
+    for (const slotId of SLOT_IDS) issueCounts[slotId] = replayLoadoutIssuesBySlot[slotId]?.length || 0
+    renderTabs(inspectTabs, selectedBotId, (id) => {
+      selectedBotId = id
+      updateInspector()
+      draw()
+    }, issueCounts)
+  }
 
   if (tickEventsAllBtn) tickEventsAllBtn.classList.toggle('active', showAllTickEvents)
   if (tickEventsRawBtn) tickEventsRawBtn.classList.toggle('active', showRawTickEvents)
@@ -926,6 +959,27 @@ function updateInspector() {
       inspectStats.appendChild(kvRow('Alive', bot.alive ? 'yes' : 'no'))
       inspectStats.appendChild(kvRow('PC', String(bot.pc)))
       inspectStats.appendChild(kvRow('Pos', `${bot.pos.x.toFixed(3)}, ${bot.pos.y.toFixed(3)}`))
+
+      if (selectedBotLoadoutIssueLines.length) {
+        const warningBox = createEl('div', {
+          style:
+            'margin-top: 12px; padding: 10px; border-radius: 10px; border: 1px solid rgba(248, 113, 113, 0.3); background: rgba(127, 29, 29, 0.16); color: #fecaca',
+        })
+        warningBox.appendChild(createEl('div', { text: 'Loadout warning', style: 'font-weight: 700; color: var(--text)' }))
+        warningBox.appendChild(
+          createEl('div', { text: 'Engine normalized this bot’s loadout before running the match.', style: 'margin-top: 6px' }),
+        )
+        warningBox.appendChild(
+          createEl('div', {
+            text: `${selectedBotLoadoutIssueLines.length} issue${selectedBotLoadoutIssueLines.length === 1 ? '' : 's'}:`,
+            style: 'margin-top: 6px',
+          }),
+        )
+        for (const line of selectedBotLoadoutIssueLines) {
+          warningBox.appendChild(createEl('div', { text: line, style: 'margin-top: 4px' }))
+        }
+        inspectStats.appendChild(warningBox)
+      }
     }
   }
 
@@ -1460,7 +1514,7 @@ if (inspectTabs) {
     selectedBotId = id
     updateInspector()
     draw()
-  })
+  }, {})
 }
 
 if (tickEventsAllBtn) {

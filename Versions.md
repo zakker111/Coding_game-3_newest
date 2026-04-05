@@ -24,7 +24,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ### Changed
 - Engine/replay contract: `schemaVersion` bumped to `0.2.0` (and docs/plans aligned to `rulesetVersion = 0.2.0`).
-- Deploy Workshop build tag bumped to **v0.3.3** (schemaVersion bump to 0.2.0 + example script updates).
+- Deploy Workshop build tag bumped to **v0.3.4**.
 - Example bot scripts now include locked loadout header directives as the first 3 non-blank lines:
   - `;@slot1 <MODULE|EMPTY>`
   - `;@slot2 <MODULE|EMPTY>`
@@ -36,6 +36,9 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - bot tabs show a warning marker when the replay header includes loadout normalization issues
   - Inspector shows a non-blocking `Loadout warning` summary for the selected bot
   - the detailed `Loadout issues` list remains in the `Loadout` card
+- Legacy deploy Workshop inspector now mirrors the replay loadout warning affordance:
+  - bot tabs show a warning marker when the replay header includes loadout normalization issues
+  - Inspector shows the normalized-loadout warning details for the selected bot
 - Roadmap/docs now reflect the shipped engine state more accurately:
   - Phases 4, 5, and 5b are complete
   - bullet-targeting numeric-id regression coverage is already shipped

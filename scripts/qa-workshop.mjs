@@ -357,7 +357,42 @@ async function runWorkshopQa({ baseUrl, headless }) {
     assert(Array.isArray(raw2.events) && Array.isArray(raw2.eventsWithNames), 'Expected raw JSON to include events and eventsWithNames arrays')
   }
 
-  // (5) Randomize opponents changes selections and successfully runs
+  // (5) Replay loadout warnings surface in the deploy inspector when the engine normalizes an invalid loadout.
+  await page.locator('#myBotsSelect').selectOption({ index: 0 })
+  await page.locator('#botEditor').evaluate((el) => {
+    el.value = `;@slot1 BULLET
+;@slot2 LASER
+;@slot3 ARMOR
+
+;@name qa invalid loadout
+
+LABEL LOOP
+  WAIT 1
+  GOTO LOOP
+`
+    el.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await page.click('#myBotApplyBtn')
+  await page.click('#runBtn')
+
+  await page.waitForFunction(() => {
+    const el = document.getElementById('runBtn')
+    return Boolean(el && !el.disabled)
+  }, null, { timeout: 30_000 })
+  await page.waitForFunction(() => {
+    const tab = document.querySelector('#inspectTabs button[data-id="BOT1"]')
+    const stats = document.getElementById('inspectStats')
+    return Boolean(tab?.textContent?.includes('warn') && stats?.textContent?.includes('Loadout warning'))
+  }, null, { timeout: 30_000 })
+
+  const warnedTabText = (await page.locator('#inspectTabs button[data-id="BOT1"]').innerText()).trim()
+  const warnedInspectText = (await page.locator('#inspectStats').innerText()).trim()
+
+  assert(/warn/i.test(warnedTabText), `Expected BOT1 tab to show warning marker; got: ${warnedTabText}`)
+  assert(/Loadout warning/.test(warnedInspectText), `Expected inspector to show loadout warning; got: ${warnedInspectText}`)
+  assert(/UNKNOWN_MODULE/.test(warnedInspectText), `Expected inspector warning to include UNKNOWN_MODULE; got: ${warnedInspectText}`)
+
+  // (6) Randomize opponents changes selections and successfully runs
   const beforeOpponents = {
     BOT2: await page.inputValue('#opponent2Select'),
     BOT3: await page.inputValue('#opponent3Select'),
