@@ -24,7 +24,7 @@ Determinism guardrail:
 ## 2) Recently completed (this merge set)
 
 - Replay/engine contract bumped to `schemaVersion = 0.2.0` (docs + deploy artifacts + mock/sample replays updated).
-- Deploy Workshop build tag bumped to **v0.3.3**.
+- Deploy Workshop build tag bumped to **v0.3.4**.
 - Example bots updated to include locked `;@slot1/2/3` header directives.
 - `packages/replay` sample generator is now **loadout-driven** (no SAW/SHIELD source scanning).
 - Bullet targeting + evasion v1 is available (`TARGET_CLOSEST_BULLET`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
@@ -38,32 +38,37 @@ Determinism guardrail:
   - local compile metadata in the app
   - `pc` → source-line mapping
   - BOT1 source-focus panel + line-number gutter highlighting
+- Legacy deploy Workshop parity now includes replay loadout warnings in tabs + Inspector.
 - Roadmap/docs were synced to the shipped state:
   - bullet-targeting numeric-id regression coverage already exists
   - bullet-despawn interpolation is already implemented in both Workshop surfaces
 
 ---
 
-## 3) Next slice: remaining local-loop hardening + surface parity
+## 3) Next slice: bullet-target example follow-through + deploy inspector parity
 
 Why this is next:
 - The local deterministic loop is now in good shape:
   - collision/invariant hardening is landed
   - React Workshop replay/debug parity is landed
   - BOT1 source-line / `pc` highlighting is landed
-- There is still valuable non-server work to finish before auth, submissions, and replay storage widen the surface area.
+- The remaining non-server gap is now narrower and concrete:
+  - the built-in example bots still do not teach the explicit bullet-target flow that the engine already supports
+  - the deploy inspector still lags the React Workshop on `targetBulletId` visibility
+  - deploy sync/smoke coverage should lock those behaviors in before server scope widens the surface area
 
 Scope:
-- Close remaining non-server tasks that improve reliability and developer iteration speed:
-  - finish spec/schema drift cleanup and determinism guardrails
-  - finish the remaining bullet-targeting follow-through (examples + any missing UX)
-  - decide whether the legacy `deploy/workshop` surface should mirror the new React loadout-warning affordances
-  - tighten deploy-sync and deploy-smoke coverage
+- Update the built-in example bots so the starter path and one advanced path demonstrate explicit bullet targeting and evasion.
+- Mirror React’s existing bullet-target inspector visibility in `deploy/workshop`.
+- Tighten deploy-sync and deploy-smoke coverage around the example-bot and `targetBulletId` path.
+- Keep the authoritative gameplay rules in `packages/engine`; avoid widening scope into server concerns for this slice.
 - Keep the authoritative gameplay rules in `packages/engine`; avoid widening scope into server concerns for this slice.
 
 Acceptance criteria:
-- The roadmap/checklists no longer imply that already-shipped Workshop features are missing.
-- The remaining non-server follow-up work is explicit, prioritized, and testable.
+- The roadmap/checklists no longer imply that deploy loadout-warning parity is undecided future work.
+- The shipped starter examples now teach the bullet-target flow explicitly.
+- The deploy inspector exposes `targetBulletId` for the selected bot.
+- Deploy sync/smoke coverage protects the example-bot and deploy-inspector bullet-target path.
 - Server work remains deferred until the local loop feels complete and stable.
 
 ---

@@ -13,8 +13,8 @@ Goals:
 - Keep improving the existing local deterministic loop before introducing server scope.
 - Focus on:
   - closing remaining spec/schema drift and determinism guardrails
+  - polishing the remaining bullet-targeting follow-through (examples + deploy-side `targetBulletId` visibility)
   - tightening deploy/workshop parity where the legacy surface still lags the React Workshop
-  - polishing the remaining bullet-targeting follow-through (examples + any missing debug affordances)
   - tightening deploy-sync and deploy-smoke hardening
 
 ---
@@ -71,6 +71,7 @@ Implemented:
 - Replay export affordances in the React Workshop.
 - Follow-on source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app.
 - Replay `loadoutIssues` are surfaced prominently in the React Workshop tabs + Inspector while keeping the detailed list in `Loadout`.
+- Deploy Workshop now mirrors the replay loadout-warning affordance in tabs + Inspector.
 - Bullet despawn interpolation/fade is already shipped in both Workshop surfaces.
 
 ---

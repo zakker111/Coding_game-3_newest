@@ -9,6 +9,12 @@ describe('built-in example bots', () => {
     expect(src).toMatch(/\bIF\b/) 
   })
 
+  it('bot0 starter demonstrates bullet-target evasion', () => {
+    const src = EXAMPLE_BOTS.bot0.sourceText
+    expect(src).toContain('TARGET_CLOSEST_BULLET')
+    expect(src).toContain('MOVE_AWAY_FROM_TARGET')
+  })
+
   it('bot5 is a powerup-aware script with timers', () => {
     const src = EXAMPLE_BOTS.bot5.sourceText
     expect(src).toContain('TARGET_POWERUP')
@@ -22,5 +28,11 @@ describe('built-in example bots', () => {
     expect(src).toContain('SET_TIMER')
     expect(src).toMatch(/\bSAW\b/i)
     expect(src).toContain('MOVE_TO_TARGET')
+  })
+
+  it('bot6 demonstrates bullet-target-aware defense', () => {
+    const src = EXAMPLE_BOTS.bot6.sourceText
+    expect(src).toContain('TARGET_CLOSEST_BULLET')
+    expect(src).toContain('DIST_TO_TARGET_BULLET')
   })
 })

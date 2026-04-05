@@ -7,7 +7,7 @@
 
 **Intended behavior**
 - Aggressive chaser that uses **SAW bursts** after a bump or when very close.
-- Uses **SHIELD bursts** when bullets are nearby (shield sim TBD).
+- Uses **bullet-target-aware SHIELD bursts** when enemy shots get close.
 - If energy gets low, targets an `ENERGY` powerup and **commits** to refueling for a few ticks.
 - Sidesteps when very close to avoid repeated bump-lock.
 
@@ -38,10 +38,11 @@ IF (TIMER_DONE(T1) && SLOT_ACTIVE(SLOT1)) DO SAW OFF
 ; Turn SAW off if we're no longer close.
 IF (DIST_TO_CLOSEST_BOT() > 40 && SLOT_ACTIVE(SLOT1)) DO SAW OFF
 
-; --- SHIELD burst (when bullets are around) ---
-IF ((BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) && TIMER_DONE(T2) && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
-IF ((BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) && TIMER_DONE(T2)) DO SET_TIMER T2 3
-IF (TIMER_DONE(T2) && SLOT_ACTIVE(SLOT2) && !BULLET_IN_SAME_SECTOR() && !BULLET_IN_ADJ_SECTOR()) DO SHIELD OFF
+; --- SHIELD burst (when the closest bullet gets dangerous) ---
+TARGET_CLOSEST_BULLET
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 48 && TIMER_DONE(T2) && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 48 && TIMER_DONE(T2)) DO SET_TIMER T2 3
+IF (TIMER_DONE(T2) && SLOT_ACTIVE(SLOT2) && (!HAS_TARGET_BULLET() || DIST_TO_TARGET_BULLET() > 64)) DO SHIELD OFF
 
 ; If we're about to collide, sidestep briefly to avoid repeated bumps.
 IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF

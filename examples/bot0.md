@@ -9,7 +9,7 @@ This is the **default BOT1 script** the Workshop should load when the user has *
 
 **Intended behavior**
 - If a bot is **very close**, briefly back off toward the center before re-engaging.
-- If enemy bullets are nearby, briefly dodge to a different zone.
+- If enemy bullets are nearby, target the closest bullet and dodge away from it for a tick.
 - If health is low and a HEALTH powerup exists, commit briefly to a healing run.
 - If ammo is low and an AMMO powerup exists (and we’re not currently healing), commit briefly to an ammo run.
 - Otherwise: target the closest bot, chase it (persistent move goal), and shoot when ready.
@@ -17,6 +17,7 @@ This is the **default BOT1 script** the Workshop should load when the user has *
 This starter intentionally uses a few core v1 patterns:
 - `IF ... GOTO ...` (simple branching)
 - `TARGET_CLOSEST` / `TARGET_POWERUP HEALTH`
+- `TARGET_CLOSEST_BULLET` / `MOVE_AWAY_FROM_TARGET`
 - `SET_MOVE_TO_TARGET` (keep moving while doing other work)
 - `FIRE_SLOT1 TARGET` (shoot your current target)
 - `WAIT` (brief commitment to a plan)
@@ -66,12 +67,10 @@ CLEAR_MOVE
 GOTO LOOP
 
 LABEL DODGE_BULLETS
-; Quick evasive step: move to a different zone for 1 tick.
+; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.
 CLEAR_MOVE
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 1
+TARGET_CLOSEST_BULLET
+IF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET
 WAIT 1
 CLEAR_MOVE
 GOTO LOOP

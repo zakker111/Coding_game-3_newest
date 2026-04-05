@@ -24,7 +24,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ### Changed
 - Engine/replay contract: `schemaVersion` bumped to `0.2.0` (and docs/plans aligned to `rulesetVersion = 0.2.0`).
-- Deploy Workshop build tag bumped to **v0.3.4**.
+- Deploy Workshop build tag bumped to **v0.3.5**.
 - Example bot scripts now include locked loadout header directives as the first 3 non-blank lines:
   - `;@slot1 <MODULE|EMPTY>`
   - `;@slot2 <MODULE|EMPTY>`
@@ -39,6 +39,10 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - Legacy deploy Workshop inspector now mirrors the replay loadout warning affordance:
   - bot tabs show a warning marker when the replay header includes loadout normalization issues
   - Inspector shows the normalized-loadout warning details for the selected bot
+- Next local-loop slice is now the bullet-target follow-through:
+  - built-in example bots will teach explicit `TARGET_CLOSEST_BULLET` / `MOVE_AWAY_FROM_TARGET`
+  - deploy Workshop inspector will mirror React’s `targetBulletId` visibility
+  - deploy sync/smoke coverage will protect those paths
 - Roadmap/docs now reflect the shipped engine state more accurately:
   - Phases 4, 5, and 5b are complete
   - bullet-targeting numeric-id regression coverage is already shipped

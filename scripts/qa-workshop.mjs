@@ -283,6 +283,53 @@ async function runWorkshopQa({ baseUrl, headless }) {
     /\bHP\b/.test(inspectText) && /\bAmmo\b/.test(inspectText),
     `Expected inspector to show bot stats; got: ${inspectText}`
   )
+  assert(/Target bullet/.test(inspectText), `Expected inspector to show Target bullet row; got: ${inspectText}`)
+
+  const targetBulletEvidence = await page.evaluate(() => {
+    const scrub = /** @type {HTMLInputElement | null} */ (document.getElementById('scrub'))
+    const inspect = document.getElementById('inspectStats')
+    const tabButtons = Array.from(document.querySelectorAll('#inspectTabs button[data-id]'))
+    if (!scrub || !inspect || !tabButtons.length) return null
+
+    const originalTick = String(scrub.value || '0')
+    const originalTab = document.querySelector('#inspectTabs button[data-id][aria-pressed="true"]')?.getAttribute('data-id') || null
+
+    const setTick = (tick) => {
+      scrub.value = String(tick)
+      scrub.dispatchEvent(new Event('input', { bubbles: true }))
+      scrub.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+
+    let found = null
+
+    for (let tick = 0; tick <= Number(scrub.max || 0); tick++) {
+      setTick(tick)
+      for (const tab of tabButtons) {
+        tab.click()
+        const text = (inspect.textContent || '').replace(/\s+/g, ' ').trim()
+        if (/Target bullet/i.test(text) && !/Target bullet\s*none/i.test(text)) {
+          const match = /Target bullet\s*([A-Z0-9]+)/i.exec(text)
+          const botId = tab.getAttribute('data-id') || 'unknown'
+          const targetBulletId = match?.[1] || 'unknown'
+          found = { tick, botId, targetBulletId }
+          break
+        }
+      }
+      if (found) break
+    }
+
+    setTick(originalTick)
+    if (originalTab) {
+      const tab = document.querySelector(`#inspectTabs button[data-id="${originalTab}"]`)
+      if (tab instanceof HTMLElement) tab.click()
+    }
+    return found
+  })
+
+  assert(
+    Boolean(targetBulletEvidence?.targetBulletId),
+    `Expected at least one inspected bot/tick to expose a non-empty Target bullet value; got: ${JSON.stringify(targetBulletEvidence)}`
+  )
 
   // (4) Tick events filter + raw output (basic smoke)
   await page.waitForSelector('#tickEventsFilterInput')

@@ -12,7 +12,7 @@ Primary specs (authoritative for `rulesetVersion = 0.2.0`, `schemaVersion = 0.2.
 
 Recently completed (this merge set)
 - `schemaVersion = 0.2.0` end-to-end (engine output + deploy artifacts + sample/mock replays).
-- Deploy Workshop build tag bumped to **v0.3.3**.
+- Deploy Workshop build tag bumped to **v0.3.4**.
 - Example bots updated with locked loadout header directives (`;@slot1/2/3`).
 - `packages/replay` sample generator is now **loadout-driven** (no source scanning for SAW/SHIELD).
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
@@ -22,8 +22,8 @@ Next slice (non-server roadmap)
 - Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
 - Prioritize:
   - local-loop hardening and remaining spec/schema alignment
+  - bullet-targeting follow-through (examples + deploy-side `targetBulletId` parity)
   - deploy/workshop parity where the legacy surface still lags the React Workshop
-  - bullet-targeting follow-through (examples + any remaining UX polish)
   - deploy-sync and deploy-smoke hardening so the static surfaces stay boring and reliable
 - Leave Phase 8 (server runner MVP) explicitly deferred until the local workflow feels complete.
 
@@ -44,7 +44,7 @@ Next up
 - [x] Phase 5b: source-line / `pc` highlighting in the Workshop editor.
 - [ ] Local-loop hardening: close remaining spec/schema drift and workshop/deploy guardrails.
 - [ ] Bullet-targeting follow-up: examples and any remaining deploy parity UX.
-- [ ] Deploy/workshop parity: decide whether the legacy deploy Workshop should mirror the new React replay loadout warnings.
+- [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
 ---
@@ -290,7 +290,8 @@ Completed (shipped)
 Remaining follow-up polish
 - [x] Make `loadoutIssues` more prominent in the React Workshop UI.
 - [x] Bullet despawn interpolation/fade is shipped in both Workshop surfaces.
-- [ ] Decide whether the legacy deploy Workshop should mirror the React replay loadout warnings.
+- [x] Legacy deploy Workshop mirrors the React replay loadout warnings.
+- [ ] Add deploy inspector parity for `targetBulletId`.
 
 Acceptance criteria
 - For any bot, a developer can switch between selected-bot events and full-tick events and search within them.

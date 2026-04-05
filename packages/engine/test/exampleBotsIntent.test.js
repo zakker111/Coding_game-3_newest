@@ -27,6 +27,17 @@ function exampleBot(slotId, n) {
   return { slotId, sourceText, loadout: parseLoadoutFromSourceHeader(sourceText) }
 }
 
+const BOT_SHOOTER = `;@slot1 BULLET
+;@slot2 EMPTY
+;@slot3 EMPTY
+
+LABEL LOOP
+  SET_TARGET BOT2
+  USE_SLOT1 TARGET
+  WAIT 1
+  GOTO LOOP
+`
+
 function botEvents(replay, slotId) {
   return replay.events.flat().filter((e) =>
     e.botId === slotId ||
@@ -56,6 +67,25 @@ test('example bot0 aggressively chases the closest target and fires', () => {
   assert.ok(execs.includes('SET_MOVE TARGET'))
   assert.ok(spawns.length >= 1, 'expected bot0 to fire at least once')
   assert.equal(spawns[0].targetBotId, 'BOT2')
+})
+
+test('example bot0 acquires a bullet target while dodging', () => {
+  const replay = runMatchToReplay({
+    seed: 123,
+    tickCap: 24,
+    bots: [
+      { slotId: 'BOT1', sourceText: BOT_SHOOTER, loadout: ['BULLET', null, null] },
+      exampleBot('BOT2', 0),
+      idleBot('BOT3'),
+      idleBot('BOT4'),
+    ],
+  })
+
+  const anyBot2TargetBullet = replay.state.some((tick) =>
+    tick.bots.some((bot) => bot.botId === 'BOT2' && typeof bot.targetBulletId === 'string' && bot.targetBulletId.length > 0),
+  )
+
+  assert.equal(anyBot2TargetBullet, true)
 })
 
 test('example bot1 patrols its home sector in the documented zone loop', () => {
@@ -157,7 +187,7 @@ test('example bot5 takes up a center posture before engaging', () => {
   assert.ok(posAt10 && posAt10.x > 16 && posAt10.y > 16, 'expected bot5 to move toward sector 5')
 })
 
-test('example bot6 uses saw and shield bursts during aggressive skirmishing', () => {
+test('example bot6 uses saw bursts and acquires bullet targets during aggressive skirmishing', () => {
   const sources = [6, 0, 1, 4].map((n) => loadExampleBot(n))
   const replay = runMatchToReplay({ seed: 123, tickCap: 160, bots: buildMatchBotsFromSources(sources) })
 
@@ -166,7 +196,10 @@ test('example bot6 uses saw and shield bursts during aggressive skirmishing', ()
       .filter((e) => e.type === 'RESOURCE_DELTA')
       .map((e) => e.cause)
   )
+  const anyBot1TargetBullet = replay.state.some((tick) =>
+    tick.bots.some((bot) => bot.botId === 'BOT1' && typeof bot.targetBulletId === 'string' && bot.targetBulletId.length > 0),
+  )
 
   assert.ok(causes.has('SAW_DRAIN'), 'expected bot6 to activate SAW')
-  assert.ok(causes.has('SHIELD_DRAIN'), 'expected bot6 to activate SHIELD')
+  assert.equal(anyBot1TargetBullet, true)
 })

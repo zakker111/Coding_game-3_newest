@@ -565,7 +565,7 @@ const scrub = document.getElementById('scrub')
 
 const canvas = document.getElementById('arenaCanvas')
 
-const WORKSHOP_BUILD = '0.3.4'
+const WORKSHOP_BUILD = '0.3.5'
 if (workshopBuildTag) workshopBuildTag.textContent = `v${WORKSHOP_BUILD}`
 
 // State
@@ -959,6 +959,7 @@ function updateInspector() {
       inspectStats.appendChild(kvRow('Alive', bot.alive ? 'yes' : 'no'))
       inspectStats.appendChild(kvRow('PC', String(bot.pc)))
       inspectStats.appendChild(kvRow('Pos', `${bot.pos.x.toFixed(3)}, ${bot.pos.y.toFixed(3)}`))
+      inspectStats.appendChild(kvRow('Target bullet', bot.targetBulletId || 'none'))
 
       if (selectedBotLoadoutIssueLines.length) {
         const warningBox = createEl('div', {
