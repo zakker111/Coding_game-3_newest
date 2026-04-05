@@ -32,7 +32,10 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   These are UI/UX metadata comments; authoritative loadout is still the match config / structured UI state.
 - Workshop "My Bots" selection now uses a single BOT1 dropdown instead of per-bot tab chips, and local custom bots are capped at 3 entries.
 - Workshop wording pass: "My Bots" is now "Bot library", "New bot" is now "Add bot", and the BOT1 selector copy is clearer about choosing the next-run bot.
-- Roadmap/docs now reflect the shipped engine state: Phases 4, 5, and 5b are complete, and the next major slice is the server runner MVP.
+- Roadmap/docs now reflect the shipped engine state more accurately:
+  - Phases 4, 5, and 5b are complete
+  - the active roadmap is non-server local-loop hardening/polish
+  - the server runner MVP is explicitly deferred
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:

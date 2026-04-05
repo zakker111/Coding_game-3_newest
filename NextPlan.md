@@ -40,26 +40,28 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: Phase 8 — server runner MVP
+## 3) Next slice: local-loop hardening + debug polish
 
 Why this is next:
 - The local deterministic loop is now in good shape:
   - collision/invariant hardening is landed
   - React Workshop replay/debug parity is landed
   - BOT1 source-line / `pc` highlighting is landed
-- The next meaningful product step is taking the deterministic runner server-side so matches, submissions, and replays can exist outside the local Workshop.
+- There is still valuable non-server work to finish before auth, submissions, and replay storage widen the surface area.
 
 Scope:
-- Start the server MVP with a deliberately small first slice:
-  - auth
-  - persistent user bots / submissions
-  - deterministic headless match execution
-  - replay storage for server-run matches
-- Keep the authoritative gameplay rules in `packages/engine`; do not fork server-only sim behavior.
+- Close remaining non-server tasks that improve reliability and developer iteration speed:
+  - finish spec/schema drift cleanup and determinism guardrails
+  - add the remaining bullet-targeting regression/debugging polish
+  - make `loadoutIssues` more visible in the Workshop
+  - add bullet-despawn smoothing
+  - tighten deploy-sync and deploy-smoke coverage
+- Keep the authoritative gameplay rules in `packages/engine`; avoid widening scope into server concerns for this slice.
 
 Acceptance criteria:
-- There is an approved server MVP plan that narrows the first implementation slice and its storage/API boundaries.
-- The first implementation slice can run a deterministic server match using stored bot source snapshots.
+- The roadmap/checklists no longer imply that already-shipped Workshop features are missing.
+- The remaining non-server follow-up work is explicit, prioritized, and testable.
+- Server work remains deferred until the local loop feels complete and stable.
 
 ---
 
@@ -83,8 +85,11 @@ Manual checks:
 
 ---
 
-## 5) After the first Phase 8 slice
+## 5) After this local-loop slice
 
-- Extend submissions/versioning beyond the smallest viable bot storage model.
-- Add scheduling / daily runner orchestration.
-- Add server-backed replay browsing and result surfacing in the UI.
+- Re-evaluate whether the server runner MVP is the right next move.
+- If yes, start with the smallest server plan:
+  - auth
+  - persistent submissions/versioning
+  - deterministic headless match execution
+  - replay storage

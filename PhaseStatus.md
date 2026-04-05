@@ -7,15 +7,15 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: Phase 8 — server: daily runner + submissions
+## Next slice: non-server hardening + polish
 
 Goals:
-- Start the smallest viable server-backed product slice:
-  - auth
-  - persistent user bots / submissions
-  - deterministic headless match execution
-  - replay storage
-- Keep server simulation aligned with the existing engine contract instead of introducing a parallel runtime.
+- Keep improving the existing local deterministic loop before introducing server scope.
+- Focus on:
+  - closing remaining spec/schema drift and determinism guardrails
+  - improving bullet-targeting inspectability and regression coverage
+  - shipping the remaining Workshop polish items (`loadoutIssues`, bullet-despawn smoothing)
+  - tightening deploy-sync and deploy-smoke hardening
 
 ---
 
@@ -86,7 +86,7 @@ Status: ✅ done
 
 ## Phase 7 — Deployment unification / reduce duplication
 
-Status: ✅ in place
+Status: ✅ in place, with follow-up hardening available
 
 - `pnpm sync:deploy`, `pnpm check:deploy`, `pnpm check:deploy:imports`.
 - CI drift guardrails for `deploy/bot-instructions.md` and `deploy/workshop/exampleBots.js`.
@@ -95,7 +95,7 @@ Status: ✅ in place
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: ⏳ later
+Status: ⏳ deferred until after the local-loop hardening/polish track
 
 Key items:
 - Headless deterministic match runner (scheduling + storage + replay output)

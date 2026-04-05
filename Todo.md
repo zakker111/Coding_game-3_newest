@@ -18,14 +18,14 @@ Recently completed (this merge set)
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
 - Phase 6 golden determinism fixtures committed + enforced in CI.
 
-Next slice (Phase 8 — server runner MVP)
-- Define and implement the smallest server slice that adds:
-  - auth
-  - persistent user bots / submissions
-  - deterministic headless match execution
-  - replay storage for server-run matches
-- Keep the server path aligned with the existing `packages/engine` ruleset/runtime contract.
-- Start with a narrow implementation plan before widening into scheduling or leaderboards.
+Next slice (non-server roadmap)
+- Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
+- Prioritize:
+  - local-loop hardening and remaining spec/schema alignment
+  - bullet-targeting inspectability and determinism guardrails
+  - Workshop polish that improves debugging without changing the engine contract
+  - deploy-sync and deploy-smoke hardening so the static surfaces stay boring and reliable
+- Leave Phase 8 (server runner MVP) explicitly deferred until the local workflow feels complete.
 
 ### Checklist (done vs. not done)
 
@@ -42,6 +42,9 @@ Next up
 - [x] Phase 4: correctness + invariants hardening.
 - [x] Phase 5: replay/debug parity + Workshop export affordances.
 - [x] Phase 5b: source-line / `pc` highlighting in the Workshop editor.
+- [ ] Local-loop hardening: close remaining spec/schema drift and workshop/deploy guardrails.
+- [ ] Bullet-targeting polish: regression coverage, examples, and inspectability UX.
+- [ ] Deferred UX polish: prominent `loadoutIssues` + bullet-despawn smoothing.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
 ---
@@ -275,16 +278,18 @@ QA checklist
 
 Goal: make debugging and viewing matches pleasant enough for frequent iteration.
 
-Concrete tasks
-- [ ] Tick-events parity with deploy Workshop:
-  - add `All` toggle
-  - add filter/search
-  - make raw JSON include `nameMap`, `eventsWithNames`, and query metadata
-- [ ] Quality-of-life:
-  - add a one-click `Copy replay JSON` / `Download replay JSON` affordance
-- [ ] Follow-on debugging polish:
-  - bullet despawn smoothing
-  - source-line / `pc` highlighting once compile metadata is intentionally wired through the app boundary
+Completed (shipped)
+- [x] Tick-events parity with deploy Workshop:
+  - `All` toggle
+  - filter/search
+  - raw JSON includes `nameMap`, `eventsWithNames`, and query metadata
+- [x] Quality-of-life:
+  - one-click `Copy replay JSON` / `Download replay JSON`
+- [x] Source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app
+
+Remaining follow-up polish
+- [ ] Make `loadoutIssues` more prominent in the Workshop UI.
+- [ ] Add bullet-despawn smoothing.
 
 Acceptance criteria
 - For any bot, a developer can switch between selected-bot events and full-tick events and search within them.
@@ -323,7 +328,11 @@ QA checklist
 
 Goal: prevent deploy-time copies drifting from the repo’s authoritative sources.
 
-Concrete tasks
+Completed baseline
+- [x] `pnpm sync:deploy`, `pnpm check:deploy`, and `pnpm check:deploy:imports` are in place.
+- [x] CI drift guardrails cover the current generated deploy artifacts.
+
+Remaining hardening
 - [ ] Expand deploy sync coverage:
   - ensure any new deploy artifacts are generated from authoritative sources.
   - add/update tests so drift fails in CI.
