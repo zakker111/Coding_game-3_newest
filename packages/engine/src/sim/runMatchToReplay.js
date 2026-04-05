@@ -806,7 +806,7 @@ function normalizeMoveTargetAtSetTime(target, pos) {
   return target
 }
 
-function findClosestEnemyBullet(selfBotId, selfPos, bullets) {
+export function findClosestEnemyBullet(selfBotId, selfPos, bullets) {
   /** @type {{ b: any, d: number } | null} */
   let best = null
 

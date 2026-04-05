@@ -64,7 +64,8 @@ If you change any of these, bump `rulesetVersion` and update all relevant docs/t
 - Bullets:
   - damage `10`, speed `16`, TTL `18`, ammo cost `1`, cooldown `4`
   - muzzle-offset spawn is outside shooter AABB (`BOT_HALF_SIZE + 2 = 10` via L∞ normalization)
-  - collision via Bresenham-stepped points (not analytic time-of-impact)
+  - collision resolves the earliest hit along the bullet segment for the tick
+  - exact ties break deterministically: `WALL` before `BOT`, then bot slot order
 - SAW:
   - damage `6` per tick, energy drain `1` per tick, range `18` units (Euclidean check)
 - SHIELD:

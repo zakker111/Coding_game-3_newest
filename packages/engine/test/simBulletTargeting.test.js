@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { runMatchToReplay } from '../src/sim/runMatchToReplay.js'
+import { findClosestEnemyBullet, runMatchToReplay } from '../src/sim/runMatchToReplay.js'
 
 const BOT_WITH_ARMOR = `;@slot1 EMPTY
 ;@slot2 ARMOR
@@ -49,4 +49,14 @@ test('Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke)',
   // This is intentionally weak: we mainly want to ensure the new opcodes compile+execute.
   const anyBot2Move = replay.events.some((tick) => tick.some((e) => e?.type === 'BOT_MOVED' && e?.botId === 'BOT2'))
   assert.equal(anyBot2Move, true)
+})
+
+test('Phase 3: TARGET_CLOSEST_BULLET tie-break stays numeric for bullet ids >= 10', () => {
+  const target = findClosestEnemyBullet('BOT2', { x: 100, y: 100 }, [
+    { bulletId: 'B10', ownerBotId: 'BOT1', pos: { x: 101, y: 100 } },
+    { bulletId: 'B2', ownerBotId: 'BOT1', pos: { x: 99, y: 100 } },
+    { bulletId: 'B11', ownerBotId: 'BOT3', pos: { x: 100, y: 99 } },
+  ])
+
+  assert.equal(target?.bulletId, 'B2')
 })
