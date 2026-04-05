@@ -30,5 +30,10 @@ GOTO LOOP
   const replay = runMatchToReplay({ seed: 123, tickCap: 120, bots })
 
   const pickups = replay.events.flat().filter((e) => e.type === 'POWERUP_PICKUP' && e.botId === 'BOT1')
+  const resourceDeltas = replay.events.flat().filter((e) => e.type === 'RESOURCE_DELTA' && e.botId === 'BOT1')
   assert.ok(pickups.length >= 1, 'expected BOT1 to pick up at least one powerup')
+  assert.ok(
+    resourceDeltas.every((e) => /^PICKUP_(HEALTH|AMMO|ENERGY)$/.test(e.cause)),
+    'expected any pickup-driven RESOURCE_DELTA to use a typed PICKUP_* cause'
+  )
 })

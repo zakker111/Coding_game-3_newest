@@ -323,6 +323,7 @@ On fire:
 - compute a **muzzle offset** so bullets spawn outside the shooter AABB:
   - uses L∞ normalization to `BOT_HALF_SIZE + 2 = 10` (`normalizeToMaxAxis`)
 - spawn `pos = shooterPos + muzzleOffset` (clamped inside arena bounds)
+- emit `RESOURCE_DELTA { cause: "SHOOT", ammoDelta: -1, energyDelta: 0, healthDelta: 0 }`
 - emit `BULLET_SPAWN`
 
 Movement + collision:
@@ -361,6 +362,7 @@ Ruleset parameters (implemented):
 
 - If `sawActive` and the closest enemy bot within range exists, deal damage once per tick:
   - `DAMAGE { source: "SAW", kind: "DIRECT", sourceBotId: attacker }`
+- While `sawActive`, energy drain is surfaced as `RESOURCE_DELTA { cause: "SAW_DRAIN" }`.
 
 ---
 
@@ -372,6 +374,7 @@ Ruleset parameters (implemented):
 Semantics:
 - If `shieldActive`, drains energy each tick; auto-OFF at `energy == 0`.
 - Shield mitigates bullet damage only (see §2.2).
+- Shield drain is surfaced as `RESOURCE_DELTA { cause: "SHIELD_DRAIN" }`.
 
 ---
 
@@ -408,9 +411,11 @@ Pickup behavior (implemented):
 - During pickup phase, for each bot in `BOT1..BOT4` order:
   - if bot AABB overlaps a powerup anchor point: pick up
   - emit `POWERUP_PICKUP` then `POWERUP_DESPAWN reason=PICKUP`
-  - apply delta (capped at 100) and emit `RESOURCE_DELTA` (if any gain)
+  - apply delta (capped at 100) and emit `RESOURCE_DELTA` (if any gain) with cause:
+    - `PICKUP_HEALTH`
+    - `PICKUP_AMMO`
+    - `PICKUP_ENERGY`
 
 Lifetime:
 - Each powerup records `expiresAtTick = spawnTick + powerupLifetimeTicks`.
 - At end-of-tick maintenance, expired powerups are removed and emit `POWERUP_DESPAWN reason=RULES`.
-

@@ -262,7 +262,7 @@ Trace conventions (current engine behavior; keep consistent with `packages/engin
 Note:
 - The `ERROR` value remains in the schema for forward compatibility, but the current engine emits `NOP` for invalid instructions.
 
-Canonical `reason` values (v1+; extend additively):
+Current engine `reason` values (`rulesetVersion = 0.2.0`):
 - `INVALID_INSTR`
 - `NO_MODULE`
 - `NO_EFFECT` (valid instruction but no gameplay effect, e.g. using/stopping a non-usable/passive module)
@@ -271,7 +271,9 @@ Canonical `reason` values (v1+; extend additively):
 - `NO_ENERGY`
 - `INVALID_TARGET_KIND`
 - `INVALID_TARGET`
-- `INVALID_LOC`
+
+Compatibility note:
+- viewers should ignore unknown future `reason` strings additively, but `INVALID_LOC` is **not** currently emitted by the shipped engine
 
 ### 4.2 Positions (`pos`) and anchor locations (`loc`)
 
@@ -360,7 +362,13 @@ Note:
 ### 4.5 Resources
 
 - `RESOURCE_DELTA`: `botId`, `ammoDelta`, `energyDelta`, `healthDelta`, `cause`
-  - include `cause` values like: `PICKUP_HEALTH|PICKUP_AMMO|PICKUP_ENERGY|DAMAGE|DRAIN|...`
+  - current engine `cause` values:
+    - `SHOOT`
+    - `SAW_DRAIN`
+    - `SHIELD_DRAIN`
+    - `PICKUP_HEALTH`
+    - `PICKUP_AMMO`
+    - `PICKUP_ENERGY`
 
 ### 4.6 Projectiles (bullets; continuous)
 

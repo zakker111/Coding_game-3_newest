@@ -86,7 +86,14 @@ export type BotExecReason =
   | 'NO_ENERGY'
   | 'INVALID_TARGET_KIND'
   | 'INVALID_TARGET'
-  | 'INVALID_LOC'
+
+export type ResourceDeltaCause =
+  | 'SHOOT'
+  | 'SAW_DRAIN'
+  | 'SHIELD_DRAIN'
+  | 'PICKUP_HEALTH'
+  | 'PICKUP_AMMO'
+  | 'PICKUP_ENERGY'
 
 export type ReplayEventBase = {
   type: string
@@ -130,7 +137,7 @@ export type ResourceDeltaEvent = {
   ammoDelta: number
   energyDelta: number
   healthDelta: number
-  cause: string
+  cause: ResourceDeltaCause
 }
 
 export type PowerupSpawnEvent = {
