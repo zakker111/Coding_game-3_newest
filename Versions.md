@@ -32,9 +32,15 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   These are UI/UX metadata comments; authoritative loadout is still the match config / structured UI state.
 - Workshop "My Bots" selection now uses a single BOT1 dropdown instead of per-bot tab chips, and local custom bots are capped at 3 entries.
 - Workshop wording pass: "My Bots" is now "Bot library", "New bot" is now "Add bot", and the BOT1 selector copy is clearer about choosing the next-run bot.
+- React Workshop replay analysis now surfaces replay `loadoutIssues` more prominently:
+  - bot tabs show a warning marker when the replay header includes loadout normalization issues
+  - Inspector shows a non-blocking `Loadout warning` summary for the selected bot
+  - the detailed `Loadout issues` list remains in the `Loadout` card
 - Roadmap/docs now reflect the shipped engine state more accurately:
   - Phases 4, 5, and 5b are complete
-  - the active roadmap is non-server local-loop hardening/polish
+  - bullet-targeting numeric-id regression coverage is already shipped
+  - bullet-despawn interpolation is already shipped in both Workshop surfaces
+  - the active roadmap is non-server local-loop hardening/deploy parity
   - the server runner MVP is explicitly deferred
 
 ### Updated
@@ -66,10 +72,6 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - expression built-in mocks include bullet-target context when asserting bullet-target predicates
   - movement/targeting/wall-credit/SAW scenarios use valid DSL labels and non-blocking paths
 - Deployed Workshop deep links now return HTTP `200` for `/workshop/`, `/docs/`, and `/docs/bot-instructions/` via emitted route entry HTML.
-
-### Deferred
-- Workshop UX polish: make `loadoutIssues` more prominent (still non-blocking).
-- Follow-on debug polish: bullet-despawn smoothing.
 
 ---
 

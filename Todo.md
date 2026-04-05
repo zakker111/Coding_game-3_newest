@@ -22,8 +22,8 @@ Next slice (non-server roadmap)
 - Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
 - Prioritize:
   - local-loop hardening and remaining spec/schema alignment
-  - bullet-targeting inspectability and determinism guardrails
-  - Workshop polish that improves debugging without changing the engine contract
+  - deploy/workshop parity where the legacy surface still lags the React Workshop
+  - bullet-targeting follow-through (examples + any remaining UX polish)
   - deploy-sync and deploy-smoke hardening so the static surfaces stay boring and reliable
 - Leave Phase 8 (server runner MVP) explicitly deferred until the local workflow feels complete.
 
@@ -43,8 +43,8 @@ Next up
 - [x] Phase 5: replay/debug parity + Workshop export affordances.
 - [x] Phase 5b: source-line / `pc` highlighting in the Workshop editor.
 - [ ] Local-loop hardening: close remaining spec/schema drift and workshop/deploy guardrails.
-- [ ] Bullet-targeting polish: regression coverage, examples, and inspectability UX.
-- [ ] Deferred UX polish: prominent `loadoutIssues` + bullet-despawn smoothing.
+- [ ] Bullet-targeting follow-up: examples and any remaining deploy parity UX.
+- [ ] Deploy/workshop parity: decide whether the legacy deploy Workshop should mirror the new React replay loadout warnings.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
 ---
@@ -236,9 +236,9 @@ Completed (shipped)
   - closest-by-Manhattan; ties break by **numeric bullet creation order** (`B1 < B2 < …`).
 
 Remaining hardening / UX polish
-- [ ] Add a determinism regression test that specifically covers bullet ids ≥ 10 (guards against accidental lexicographic compares like `B10 < B2`).
+- [x] Add a determinism regression test that specifically covers bullet ids ≥ 10 (guards against accidental lexicographic compares like `B10 < B2`).
 - [ ] Update/extend example bots to demonstrate bullet-target-driven evasion (not just coarse threat booleans).
-- [ ] Replay/Workshop debug UX: surface `targetBulletId` (or related targeting state) so bullet targeting is inspectable.
+- [x] Replay/Workshop debug UX: surface `targetBulletId` (or related targeting state) so bullet targeting is inspectable.
 
 QA checklist
 - `pnpm -C packages/engine test`
@@ -288,8 +288,9 @@ Completed (shipped)
 - [x] Source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app
 
 Remaining follow-up polish
-- [ ] Make `loadoutIssues` more prominent in the Workshop UI.
-- [ ] Add bullet-despawn smoothing.
+- [x] Make `loadoutIssues` more prominent in the React Workshop UI.
+- [x] Bullet despawn interpolation/fade is shipped in both Workshop surfaces.
+- [ ] Decide whether the legacy deploy Workshop should mirror the React replay loadout warnings.
 
 Acceptance criteria
 - For any bot, a developer can switch between selected-bot events and full-tick events and search within them.

@@ -20,6 +20,7 @@ import { fnv1a32 } from '../worker/seed'
 
 import { initialPlaybackState, playbackReducer } from '../replay/playbackReducer'
 import { getAppearanceColorMap, getBotsForPlayback, SLOT_IDS } from '../replay/interpolate'
+import { formatReplayLoadoutIssue, getReplayHeaderBotsBySlot, getReplayLoadoutIssuesBySlot } from '../replay/loadoutWarnings'
 import { ArenaCanvas, type ArenaRenderState } from '../ui/arena'
 import { runLocalInWorker } from '../worker/runLocalInWorker'
 
@@ -720,6 +721,16 @@ export function WorkshopPage() {
     return replay.state[t]?.bots.find((b) => b.botId === selectedBotId) ?? null
   }, [playback.tick, replay, selectedBotId])
 
+  const replayHeaderBotsBySlot = React.useMemo(() => getReplayHeaderBotsBySlot(replay), [replay])
+
+  const replayLoadoutIssuesBySlot = React.useMemo(() => getReplayLoadoutIssuesBySlot(replay), [replay])
+
+  const selectedHeaderBot = replayHeaderBotsBySlot[selectedBotId] ?? null
+  const selectedBotLoadoutIssues = replayLoadoutIssuesBySlot[selectedBotId]
+  const selectedBotLoadoutIssueLines = React.useMemo(() => {
+    return selectedBotLoadoutIssues.map((issue) => formatReplayLoadoutIssue(issue))
+  }, [selectedBotLoadoutIssues])
+
   const allTickEvents = React.useMemo(() => {
     if (!replay) return []
     const t = clamp(playback.tick, 0, replay.tickCap)
@@ -1214,15 +1225,24 @@ export function WorkshopPage() {
             <div className="panel-title">Replay analysis</div>
 
             <div className="tab-row" style={{ marginTop: 10 }}>
-              {SLOT_IDS.map((id) => (
-                <button
-                  key={id}
-                  className={['tab', id === selectedBotId ? 'active' : ''].join(' ')}
-                  onClick={() => setSelectedBotId(id)}
-                >
-                  {id}
-                </button>
-              ))}
+              {SLOT_IDS.map((id) => {
+                const issueCount = replayLoadoutIssuesBySlot[id].length
+
+                return (
+                  <button
+                    key={id}
+                    className={['tab', id === selectedBotId ? 'active' : ''].join(' ')}
+                    onClick={() => setSelectedBotId(id)}
+                    aria-label={issueCount ? `${id} (${issueCount} loadout warning${issueCount === 1 ? '' : 's'})` : id}
+                    title={issueCount ? `${issueCount} loadout warning${issueCount === 1 ? '' : 's'}` : undefined}
+                  >
+                    <span>{id}</span>
+                    {issueCount ? (
+                      <span style={{ marginLeft: 6, color: '#fecaca', fontSize: 11, fontWeight: 700 }}>warn</span>
+                    ) : null}
+                  </button>
+                )
+              })}
             </div>
 
             <div className="workshop-analysis-grid" style={{ marginTop: 14 }}>
@@ -1242,6 +1262,32 @@ export function WorkshopPage() {
                       <div>PC: {selectedBotState.pc}</div>
                       <div>Target bullet: {selectedBotState.targetBulletId ?? 'none'}</div>
                       <div>Pos: {selectedBotState.pos.x.toFixed(3)}, {selectedBotState.pos.y.toFixed(3)}</div>
+                      {selectedBotLoadoutIssues.length ? (
+                        <div
+                          style={{
+                            marginTop: 12,
+                            padding: 10,
+                            borderRadius: 10,
+                            border: '1px solid rgba(248, 113, 113, 0.3)',
+                            background: 'rgba(127, 29, 29, 0.16)',
+                            color: '#fecaca',
+                          }}
+                        >
+                          <div style={{ fontWeight: 700, color: 'var(--text)' }}>Loadout warning</div>
+                          <div style={{ marginTop: 6 }}>Engine normalized this bot&apos;s loadout before running the match.</div>
+                          <div style={{ marginTop: 6 }}>
+                            {selectedBotLoadoutIssues.length} issue{selectedBotLoadoutIssues.length === 1 ? '' : 's'}:
+                          </div>
+                          {selectedBotLoadoutIssueLines.slice(0, 2).map((line) => (
+                            <div key={line} style={{ marginTop: 4 }}>
+                              {line}
+                            </div>
+                          ))}
+                          {selectedBotLoadoutIssueLines.length > 2 ? (
+                            <div style={{ marginTop: 4 }}>+{selectedBotLoadoutIssueLines.length - 2} more in Loadout below.</div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     'Run a replay to inspect bots.'
@@ -1419,9 +1465,7 @@ export function WorkshopPage() {
               <div className="panel-title">Loadout</div>
               {(() => {
                 const configured = loadoutBySlot[selectedBotId] ?? DEFAULT_WORKSHOP_LOADOUT
-                const headerBot = replay?.bots?.find((b) => b.slotId === selectedBotId)
-                const resolved = headerBot?.loadout ?? configured
-                const issues = headerBot?.loadoutIssues ?? []
+                const resolved = selectedHeaderBot?.loadout ?? configured
 
                 const row = (label: string, l: Loadout) => (
                   <div style={{ marginTop: 6, lineHeight: 1.5 }}>
@@ -1445,12 +1489,12 @@ export function WorkshopPage() {
                     {row('Configured (input)', configured)}
                     {showResolved ? row('Resolved by engine', resolved) : null}
 
-                    {issues.length ? (
+                    {selectedBotLoadoutIssueLines.length ? (
                       <div style={{ marginTop: 10, color: '#fecaca', fontSize: 12, lineHeight: 1.5 }}>
                         <div style={{ fontWeight: 700, color: 'var(--text)' }}>Loadout issues</div>
-                        {issues.map((i, idx) => (
-                          <div key={idx}>
-                            {i.kind} (slot {i.slot}{i.module ? `: ${i.module}` : ''})
+                        {selectedBotLoadoutIssueLines.map((line) => (
+                          <div key={line}>
+                            {line}
                           </div>
                         ))}
                       </div>

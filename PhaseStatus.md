@@ -7,14 +7,14 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: non-server hardening + polish
+## Next slice: non-server hardening + deploy parity
 
 Goals:
 - Keep improving the existing local deterministic loop before introducing server scope.
 - Focus on:
   - closing remaining spec/schema drift and determinism guardrails
-  - improving bullet-targeting inspectability and regression coverage
-  - shipping the remaining Workshop polish items (`loadoutIssues`, bullet-despawn smoothing)
+  - tightening deploy/workshop parity where the legacy surface still lags the React Workshop
+  - polishing the remaining bullet-targeting follow-through (examples + any missing debug affordances)
   - tightening deploy-sync and deploy-smoke hardening
 
 ---
@@ -40,18 +40,16 @@ Highlights:
 
 ---
 
-## Phase 3 — Bullets as first-class targets (implemented baseline)
+## Phase 3 — Bullets as first-class targets
 
-Status: ✅ done (baseline)
+Status: ✅ done
 
 Implemented:
 - `TARGET_CLOSEST_BULLET`
 - `HAS_TARGET_BULLET()` / `DIST_TO_TARGET_BULLET()`
 - `MOVE_AWAY_FROM_TARGET`
 - Deterministic tie-break by numeric bullet creation order (`B1 < B2 < …`).
-
-Nice-to-have hardening:
-- Add a determinism test that covers bullet ids ≥ 10 (guards against accidental lexicographic comparisons).
+- Determinism regression coverage for bullet ids `>= 10` (`B10`, `B2`, `B11`) is in `packages/engine/test/simBulletTargeting.test.js`.
 
 ---
 
@@ -72,6 +70,8 @@ Implemented:
 - Tick-events parity with deploy Workshop (`All`, filter/search, richer raw JSON).
 - Replay export affordances in the React Workshop.
 - Follow-on source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app.
+- Replay `loadoutIssues` are surfaced prominently in the React Workshop tabs + Inspector while keeping the detailed list in `Loadout`.
+- Bullet despawn interpolation/fade is already shipped in both Workshop surfaces.
 
 ---
 

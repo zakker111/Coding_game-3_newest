@@ -33,14 +33,18 @@ Determinism guardrail:
   - tick-events filter/search
   - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
   - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
+- React Workshop replay loadout warnings now surface in the replay-analysis tabs and Inspector while keeping the detailed `Loadout issues` list in the `Loadout` card.
 - Phase 5b source-line debugging shipped for BOT1:
   - local compile metadata in the app
   - `pc` → source-line mapping
   - BOT1 source-focus panel + line-number gutter highlighting
+- Roadmap/docs were synced to the shipped state:
+  - bullet-targeting numeric-id regression coverage already exists
+  - bullet-despawn interpolation is already implemented in both Workshop surfaces
 
 ---
 
-## 3) Next slice: local-loop hardening + debug polish
+## 3) Next slice: remaining local-loop hardening + surface parity
 
 Why this is next:
 - The local deterministic loop is now in good shape:
@@ -52,9 +56,8 @@ Why this is next:
 Scope:
 - Close remaining non-server tasks that improve reliability and developer iteration speed:
   - finish spec/schema drift cleanup and determinism guardrails
-  - add the remaining bullet-targeting regression/debugging polish
-  - make `loadoutIssues` more visible in the Workshop
-  - add bullet-despawn smoothing
+  - finish the remaining bullet-targeting follow-through (examples + any missing UX)
+  - decide whether the legacy `deploy/workshop` surface should mirror the new React loadout-warning affordances
   - tighten deploy-sync and deploy-smoke coverage
 - Keep the authoritative gameplay rules in `packages/engine`; avoid widening scope into server concerns for this slice.
 
