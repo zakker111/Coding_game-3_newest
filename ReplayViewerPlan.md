@@ -207,6 +207,10 @@ Notes:
 - Tick `0` is the initial state before any tick processing (so `state[0]` is "start of match").
 - Under this convention, viewers that render purely from `state[t]` will match "after resolution" visuals (moves applied, bullets advanced, hits applied, pickups applied, deaths resolved).
 - The per-tick event list remains the canonical explanation/debug log for how `state[t]` was reached.
+- Compatibility rule for bot state fields:
+  - viewers must ignore unknown `state[t].bots[]` fields
+  - for `rulesetVersion >= 0.2.0`, replay writers may include optional debug fields such as `targetBulletId`
+  - if `targetBulletId` is omitted, viewers should treat it as `null`
 
 Rendering note (smooth playback; required for v1 Workshop/replay viewer):
 - For tick `t`, treat `state[t-1]` as the **start-of-tick** state and `state[t]` as the **end-of-tick** state.

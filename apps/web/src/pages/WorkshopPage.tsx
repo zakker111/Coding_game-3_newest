@@ -1240,6 +1240,7 @@ export function WorkshopPage() {
                       <div>Energy: {selectedBotState.energy}</div>
                       <div>Alive: {selectedBotState.alive ? 'yes' : 'no'}</div>
                       <div>PC: {selectedBotState.pc}</div>
+                      <div>Target bullet: {selectedBotState.targetBulletId ?? 'none'}</div>
                       <div>Pos: {selectedBotState.pos.x.toFixed(3)}, {selectedBotState.pos.y.toFixed(3)}</div>
                     </>
                   ) : (

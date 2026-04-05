@@ -49,6 +49,11 @@ test('Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke)',
   // This is intentionally weak: we mainly want to ensure the new opcodes compile+execute.
   const anyBot2Move = replay.events.some((tick) => tick.some((e) => e?.type === 'BOT_MOVED' && e?.botId === 'BOT2'))
   assert.equal(anyBot2Move, true)
+
+  const anyBot2TargetBullet = replay.state.some((tick) =>
+    tick.bots.some((bot) => bot.botId === 'BOT2' && typeof bot.targetBulletId === 'string' && bot.targetBulletId.length > 0),
+  )
+  assert.equal(anyBot2TargetBullet, true)
 })
 
 test('Phase 3: TARGET_CLOSEST_BULLET tie-break stays numeric for bullet ids >= 10', () => {

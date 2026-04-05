@@ -42,11 +42,13 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - explicit per-bot 3-slot loadouts (default-empty if omitted + deterministic normalization + `loadoutIssues`)
   - invalid loadouts surface as **visible, non-blocking warnings/errors** via `loadoutIssues` (match still runs)
 - `ARMOR` semantics: passive mitigation (~33%) + speed penalty + SHIELD→ARMOR ordering.
+- Replay/debug contract now allows optional per-bot `targetBulletId` in tick state so bullet-target selection is inspectable in the Workshop.
 - React Workshop replay analysis now includes:
   - `All` tick-events toggle
   - tick-events filter/search
   - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
   - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
+  - selected bot inspector shows the current `targetBulletId` when available
 - React Workshop debug tooling now includes BOT1 source-line inspection:
   - local compile metadata in the app
   - `pc` → source-line mapping

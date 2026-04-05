@@ -53,6 +53,7 @@ export type ReplayBotState = {
   energy: number
   alive: boolean
   pc: number
+  targetBulletId?: string | null
 }
 
 export type ReplayBulletState = {

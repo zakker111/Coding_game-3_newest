@@ -546,6 +546,7 @@ function snapshotState(t, bots, bullets, powerupState) {
       energy: b.energy,
       alive: b.alive,
       pc: b.vm?.pc ?? 1,
+      targetBulletId: typeof b.vm?.target?.bulletId === 'string' ? b.vm.target.bulletId : null,
     })),
     bullets: bullets.map((b) => ({
       bulletId: b.bulletId,
