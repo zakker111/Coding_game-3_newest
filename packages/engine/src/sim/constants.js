@@ -47,6 +47,14 @@ export const GRENADE_DAMAGE_ADJACENT = 10
 export const GRENADE_AMMO_COST = 6
 export const GRENADE_COOLDOWN_TICKS = 8
 
+export const MINE_ARM_TICKS = 2
+export const MINE_FUSE_TICKS = 18
+export const MINE_TTL_TICKS = 18
+export const MINE_DAMAGE_CENTER = 20
+export const MINE_DAMAGE_ADJACENT = 12
+export const MINE_AMMO_COST = 5
+export const MINE_COOLDOWN_TICKS = 10
+
 export const WALL_BUMP_DAMAGE = 2
 
 // Damage dealt to both bots when they collide (bot-to-bot bump / ramming).

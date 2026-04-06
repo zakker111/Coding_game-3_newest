@@ -843,6 +843,21 @@ export function WorkshopPage() {
     }))
   }, [playback.tick, replay])
 
+  const minesForRender = React.useMemo(() => {
+    if (!replay) return []
+    const t = clamp(playback.tick, 0, replay.tickCap)
+    const snap = replay.state[t]
+    const mines = snap?.mines ?? []
+
+    return mines.map((m) => ({
+      mineId: m.mineId,
+      ownerBotId: m.ownerBotId,
+      pos: powerupLocToWorld({ sector: m.sector, zone: 0 }),
+      armRemaining: m.armRemaining,
+      fuseRemaining: m.fuseRemaining,
+    }))
+  }, [playback.tick, replay])
+
   const renderState: ArenaRenderState = React.useMemo(() => {
     return {
       bots: botsForRender
@@ -859,9 +874,10 @@ export function WorkshopPage() {
       })),
       bullets: bulletsForRender,
       grenades: grenadesForRender,
+      mines: minesForRender,
       powerups: powerupsForRender,
     }
-  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, grenadesForRender, powerupsForRender, visibleReplaySlots])
+  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, grenadesForRender, minesForRender, powerupsForRender, visibleReplaySlots])
 
   const selectedBotState = React.useMemo(() => {
     if (!replay) return null

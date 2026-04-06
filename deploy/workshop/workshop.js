@@ -169,7 +169,7 @@ function parseLoadoutFromSource(sourceText) {
       if (slot < 1 || slot > 3) continue
 
       if (raw === 'EMPTY' || raw === 'NONE') loadout[slot - 1] = null
-      else if (raw === 'BULLET' || raw === 'SAW' || raw === 'SHIELD' || raw === 'ARMOR' || raw === 'GRENADE') loadout[slot - 1] = raw
+      else if (raw === 'BULLET' || raw === 'SAW' || raw === 'SHIELD' || raw === 'ARMOR' || raw === 'GRENADE' || raw === 'MINE') loadout[slot - 1] = raw
       else loadout[slot - 1] = null
     }
 

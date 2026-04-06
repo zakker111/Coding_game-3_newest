@@ -459,6 +459,26 @@ function draw(ctx, cssSize, scale, renderState, selectedBotId) {
     ctx.restore()
   }
 
+  for (const m of renderState.mines || []) {
+    const x = m.pos.x * scale
+    const y = m.pos.y * scale
+    const half = Math.max(3, Math.floor(1.7 * scale))
+    const armed = (m.armRemaining || 0) <= 0
+
+    ctx.save()
+    ctx.fillStyle = slotFallbackColor(m.ownerBotId)
+    ctx.strokeStyle = armed ? 'rgba(127, 29, 29, 0.95)' : 'rgba(15, 23, 42, 0.8)'
+    ctx.lineWidth = Math.max(1, Math.floor(0.25 * scale))
+    ctx.fillRect(x - half, y - half, half * 2, half * 2)
+    ctx.strokeRect(x - half, y - half, half * 2, half * 2)
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)'
+    ctx.font = `${Math.max(8, Math.floor(2.1 * scale))}px ui-monospace, monospace`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(armed ? String(Math.max(0, m.fuseRemaining || 0)) : 'A', x, y)
+    ctx.restore()
+  }
+
   // Bots
   const botRadius = 8 * scale
   const barH = Math.max(2, Math.floor(0.6 * scale))
@@ -586,8 +606,15 @@ export function attachArenaRenderer(canvas) {
       kind: p.type,
       pos: locToWorld(p.loc),
     }))
+    const mines = (snapState?.mines || []).map((m) => ({
+      mineId: m.mineId,
+      ownerBotId: m.ownerBotId,
+      pos: locToWorld({ sector: m.sector, zone: 0 }),
+      armRemaining: m.armRemaining,
+      fuseRemaining: m.fuseRemaining,
+    }))
 
-    draw(ctx, cssSize, scale, { bots, bullets, grenades, powerups }, selectedBotId)
+    draw(ctx, cssSize, scale, { bots, bullets, grenades, mines, powerups }, selectedBotId)
   }
 
   return {

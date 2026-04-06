@@ -13,6 +13,8 @@ import {
   BULLET_COOLDOWN_TICKS,
   GRENADE_AMMO_COST,
   GRENADE_COOLDOWN_TICKS,
+  MINE_AMMO_COST,
+  MINE_COOLDOWN_TICKS,
   SLOT_IDS,
   WALL_BUMP_DAMAGE,
   BOT_BUMP_DAMAGE,
@@ -30,6 +32,7 @@ import {
 } from './arenaMath.js'
 import { createBullet, stepBullets } from './bulletSim.js'
 import { createGrenade, stepGrenades } from './grenadeSim.js'
+import { createMine, stepMines } from './mineSim.js'
 import { bresenhamPoints } from './bresenham.js'
 import { createRng } from './prng.js'
 import {
@@ -169,13 +172,16 @@ export function runMatchToReplay(params) {
   /** @type {Array<{grenadeId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', pos:{x:number,y:number}, vel:{x:number,y:number}, fuse:number, ttl:number}>} */
   let grenades = []
   let grenadeCounter = 0
+  /** @type {Array<{mineId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', sector:number, armRemaining:number, fuseRemaining:number, ttlRemaining:number}>} */
+  let mines = []
+  let mineCounter = 0
 
   const powerupState = initPowerupState(rng)
 
   const state = []
   const events = []
 
-  state.push(snapshotState(0, bots, bullets, grenades, powerupState))
+  state.push(snapshotState(0, bots, bullets, grenades, mines, powerupState))
   events.push([])
 
   // Stalemate tracking (Ruleset.md §0.1.1).
@@ -359,6 +365,22 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (mod === 'MINE') {
+            const r = attemptUseMine(bot, slotIndex, eff.target, mines, ++mineCounter, tickEvents)
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              mineCounter--
+            } else {
+              mines = r.mines
+              bot.slotCooldowns[slotIndex] = MINE_COOLDOWN_TICKS
+              mineCounter = r.mineCounter
+            }
+
+            continue
+          }
+
           if (mod !== 'BULLET') {
             botExecResult = 'NOP'
             botExecReason = 'NO_MODULE'
@@ -412,10 +434,13 @@ export function runMatchToReplay(params) {
     // 6) Timed explosive projectiles (grenades)
     grenades = stepGrenades(grenades, bots, tickEvents)
 
-    // 7) Pickups
+    // 7) Deployables (mines)
+    mines = stepMines(mines, bots, tickEvents)
+
+    // 8) Pickups
     stepPowerupPickups(powerupState, bots, tickEvents)
 
-    // 8) End-of-tick maintenance
+    // 9) End-of-tick maintenance
     for (const bot of bots) {
       bot.pendingMove = null
       for (let i = 0; i < bot.slotCooldowns.length; i++) {
@@ -483,7 +508,7 @@ export function runMatchToReplay(params) {
       tickEvents.push({ type: 'MATCH_END', endReason })
     }
 
-    state.push(snapshotState(t, bots, bullets, grenades, powerupState))
+    state.push(snapshotState(t, bots, bullets, grenades, mines, powerupState))
     events.push(tickEvents)
 
     if (endReason) {
@@ -504,7 +529,7 @@ export function runMatchToReplay(params) {
   }
 }
 
-function snapshotState(t, bots, bullets, grenades, powerupState) {
+function snapshotState(t, bots, bullets, grenades, mines, powerupState) {
   return {
     t,
     bots: bots.map((b) => ({
@@ -531,6 +556,17 @@ function snapshotState(t, bots, bullets, grenades, powerupState) {
             pos: clonePos(g.pos),
             vel: clonePos(g.vel),
             fuse: g.fuse,
+          })),
+        }
+      : {}),
+    ...(mines.length
+      ? {
+          mines: mines.map((m) => ({
+            mineId: m.mineId,
+            ownerBotId: m.ownerBotId,
+            sector: m.sector,
+            armRemaining: m.armRemaining,
+            fuseRemaining: m.fuseRemaining,
           })),
         }
       : {}),
@@ -739,6 +775,10 @@ function buildObservation(bot, bots, bullets, powerupState) {
       if (mod === 'GRENADE') {
         if (bot.slotCooldowns[idx] > 0) return false
         return bot.ammo >= GRENADE_AMMO_COST
+      }
+      if (mod === 'MINE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= MINE_AMMO_COST
       }
 
       if (mod !== 'BULLET') return false
@@ -1486,6 +1526,43 @@ function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGren
     ok: true,
     grenades: [...grenades, grenade],
     grenadeCounter: nextGrenadeId,
+  }
+}
+
+function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'MINE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < MINE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+  if (targetToken !== 'NONE') return { ok: false, reason: 'INVALID_TARGET_KIND' }
+
+  const mine = createMine(bot.botId, sectorFromPos(bot.pos))
+  const mineId = `M${nextMineId}`
+  mine.mineId = mineId
+
+  bot.ammo -= MINE_AMMO_COST
+
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -MINE_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'PLACE_MINE',
+  })
+
+  tickEvents.push({
+    type: 'MINE_PLACE',
+    mineId,
+    ownerBotId: bot.botId,
+    sector: mine.sector,
+    armTicks: mine.armRemaining,
+  })
+
+  return {
+    ok: true,
+    mines: [...mines, mine],
+    mineCounter: nextMineId,
   }
 }
 
