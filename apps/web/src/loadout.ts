@@ -8,8 +8,6 @@ function normalizeNewlines(s: string): string {
 
 export const DEFAULT_WORKSHOP_LOADOUT: Loadout = ['BULLET', null, null]
 
-const KNOWN_MODULES: readonly ModuleId[] = ['BULLET', 'SAW', 'SHIELD', 'ARMOR']
-
 function parseModuleId(raw: string): ModuleId | null {
   const upper = raw.trim().toUpperCase()
   if (upper === 'EMPTY' || upper === 'NONE') return null

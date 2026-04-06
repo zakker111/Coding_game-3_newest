@@ -11,6 +11,8 @@ import {
   BOT_HALF_SIZE,
   BULLET_AMMO_COST,
   BULLET_COOLDOWN_TICKS,
+  GRENADE_AMMO_COST,
+  GRENADE_COOLDOWN_TICKS,
   SLOT_IDS,
   WALL_BUMP_DAMAGE,
   BOT_BUMP_DAMAGE,
@@ -27,6 +29,7 @@ import {
   zoneFromPos,
 } from './arenaMath.js'
 import { createBullet, stepBullets } from './bulletSim.js'
+import { createGrenade, stepGrenades } from './grenadeSim.js'
 import { bresenhamPoints } from './bresenham.js'
 import { createRng } from './prng.js'
 import {
@@ -163,13 +166,16 @@ export function runMatchToReplay(params) {
   /** @type {Array<{bulletId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', pos:{x:number,y:number}, vel:{x:number,y:number}, ttl:number}>} */
   let bullets = []
   let bulletCounter = 0
+  /** @type {Array<{grenadeId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', pos:{x:number,y:number}, vel:{x:number,y:number}, fuse:number, ttl:number}>} */
+  let grenades = []
+  let grenadeCounter = 0
 
   const powerupState = initPowerupState(rng)
 
   const state = []
   const events = []
 
-  state.push(snapshotState(0, bots, bullets, powerupState))
+  state.push(snapshotState(0, bots, bullets, grenades, powerupState))
   events.push([])
 
   // Stalemate tracking (Ruleset.md §0.1.1).
@@ -337,6 +343,22 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (mod === 'GRENADE') {
+            const r = attemptUseGrenade(bot, slotIndex, eff.target, bots, grenades, ++grenadeCounter, tickEvents)
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              grenadeCounter--
+            } else {
+              grenades = r.grenades
+              bot.slotCooldowns[slotIndex] = GRENADE_COOLDOWN_TICKS
+              grenadeCounter = r.grenadeCounter
+            }
+
+            continue
+          }
+
           if (mod !== 'BULLET') {
             botExecResult = 'NOP'
             botExecReason = 'NO_MODULE'
@@ -387,7 +409,10 @@ export function runMatchToReplay(params) {
     // 5) Projectile updates (bullets)
     bullets = stepBullets(bullets, bots, tickEvents)
 
-    // 6) Pickups
+    // 6) Timed explosive projectiles (grenades)
+    grenades = stepGrenades(grenades, bots, tickEvents)
+
+    // 7) Pickups
     stepPowerupPickups(powerupState, bots, tickEvents)
 
     // 8) End-of-tick maintenance
@@ -458,7 +483,7 @@ export function runMatchToReplay(params) {
       tickEvents.push({ type: 'MATCH_END', endReason })
     }
 
-    state.push(snapshotState(t, bots, bullets, powerupState))
+    state.push(snapshotState(t, bots, bullets, grenades, powerupState))
     events.push(tickEvents)
 
     if (endReason) {
@@ -479,7 +504,7 @@ export function runMatchToReplay(params) {
   }
 }
 
-function snapshotState(t, bots, bullets, powerupState) {
+function snapshotState(t, bots, bullets, grenades, powerupState) {
   return {
     t,
     bots: bots.map((b) => ({
@@ -498,6 +523,17 @@ function snapshotState(t, bots, bullets, powerupState) {
       pos: clonePos(b.pos),
       vel: clonePos(b.vel),
     })),
+    ...(grenades.length
+      ? {
+          grenades: grenades.map((g) => ({
+            grenadeId: g.grenadeId,
+            ownerBotId: g.ownerBotId,
+            pos: clonePos(g.pos),
+            vel: clonePos(g.vel),
+            fuse: g.fuse,
+          })),
+        }
+      : {}),
     powerups: powerupState.powerups.map((p) => ({
       powerupId: p.powerupId,
       type: p.type,
@@ -700,6 +736,10 @@ function buildObservation(bot, bots, bullets, powerupState) {
       if (mod === 'ARMOR') return true
       if (mod === 'SHIELD') return bot.energy > 0
       if (mod === 'SAW') return bot.energy > 0
+      if (mod === 'GRENADE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= GRENADE_AMMO_COST
+      }
 
       if (mod !== 'BULLET') return false
       if (bot.slotCooldowns[idx] > 0) return false
@@ -1393,6 +1433,59 @@ function attemptUseBullet(bot, slotIndex, targetToken, bots, bullets, nextBullet
     ok: true,
     bullets: [...bullets, bullet],
     bulletCounter: nextBulletId,
+  }
+}
+
+function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGrenadeId, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'GRENADE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < GRENADE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+
+  const isBotKind =
+    targetToken === 'TARGET' ||
+    targetToken === 'CLOSEST_BOT' ||
+    targetToken === 'LOWEST_HEALTH_BOT' ||
+    targetToken === 'BOT1' ||
+    targetToken === 'BOT2' ||
+    targetToken === 'BOT3' ||
+    targetToken === 'BOT4'
+
+  if (!isBotKind) return { ok: false, reason: 'INVALID_TARGET_KIND' }
+
+  const targetBot = resolveBotTargetToken(bot, targetToken, bots)
+  if (!targetBot || !targetBot.alive) return { ok: false, reason: 'INVALID_TARGET' }
+
+  const grenade = createGrenade(bot, targetBot)
+  const grenadeId = `G${nextGrenadeId}`
+  grenade.grenadeId = grenadeId
+
+  bot.ammo -= GRENADE_AMMO_COST
+
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -GRENADE_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'THROW_GRENADE',
+  })
+
+  tickEvents.push({
+    type: 'GRENADE_SPAWN',
+    grenadeId,
+    ownerBotId: bot.botId,
+    pos: clonePos(grenade.pos),
+    vel: clonePos(grenade.vel),
+    fuse: grenade.fuse,
+    targetBotId: targetBot.botId,
+    targetPos: clonePos(targetBot.pos),
+  })
+
+  return {
+    ok: true,
+    grenades: [...grenades, grenade],
+    grenadeCounter: nextGrenadeId,
   }
 }
 
