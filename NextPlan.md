@@ -42,50 +42,42 @@ Determinism guardrail:
 - Roadmap/docs were synced to the shipped state:
   - bullet-targeting numeric-id regression coverage already exists
   - bullet-despawn interpolation is already implemented in both Workshop surfaces
+- Phase 7 release-grade parity/sign-off shipped:
+  - node-level deploy-engine replay parity coverage
+  - canonical local release gate (`pnpm qa:release`)
+  - deploy/app Workshop parity smoke included in the gate
+  - actionable browser-runtime diagnostics in `qa:workshop`
 
 ---
 
-## 3) Next slice: final local-loop audit before Phase 8
+## 3) Next slice: Phase 8 server runner MVP
 
 Why this is next:
-- The local deterministic loop is now in good shape:
-  - collision/invariant hardening is landed
-  - React Workshop replay/debug parity is landed
-  - BOT1 source-line / `pc` highlighting is landed
-- The previously planned bullet-target example follow-through is now shipped:
-  - the built-in example bots teach explicit bullet targeting and evasion
-  - the deploy inspector exposes `Target bullet`
-  - deploy smoke coverage exercises that path
-- The server-side loadout contract is now aligned with the shipped engine/docs:
-  - server planning docs now use explicit per-bot loadouts
-  - omitted loadouts default to `[null, null, null]`
-  - normalization and `loadoutIssues` are part of the planned server contract
-- The remaining question is whether there is any material local-loop drift left before Phase 8 begins.
+- The local deterministic loop is already guarded by:
+  - collision/invariant hardening
+  - golden replay checks
+  - node-level deploy-engine parity coverage
+  - deploy drift/import checks
+  - app build + deploy/app Workshop parity smoke in the release gate
+- The server-side loadout contract is already aligned with the shipped engine/docs.
+- The remaining local-loop risk is operational, not architectural: run the browser-capable release gate where appropriate and fix any surfaced regressions in context.
 
 Scope:
-- Run a final local-loop audit for any remaining spec/schema drift that would make server work riskier.
-- Keep the active docs/checklists honest about what is implemented vs. still pending.
-- Keep the authoritative gameplay rules in `packages/engine`; avoid changing mechanics unless the audit proves a real mismatch.
+- Start the smallest deterministic server runner that consumes the existing engine contract.
+- Keep replay/schema/ruleset semantics unchanged while the server path is wired up.
+- Reuse the local parity/sign-off workflow as the contract for server acceptance.
 
 Acceptance criteria:
-- The roadmap/checklists no longer describe the bullet-target example/deploy-inspector work as pending.
-- The server planning docs consistently use the explicit-loadout contract.
-- Any remaining local-loop drift is documented concretely, with verification evidence.
-- Phase 8 begins only after the remaining audit items are judged small enough to defer.
+- The server can execute a deterministic headless match from submitted bot sources + explicit loadouts.
+- Stored/retrieved replay output matches the local engine contract.
+- Local release verification stays green via `pnpm qa:release` (or `pnpm gate:phase1`).
 
 ---
 
 ## 4) Pre-merge checklist (run locally)
 
 ```bash
-pnpm -C packages/engine test
-pnpm -C packages/replay test
-pnpm -C apps/web test
-pnpm test:all
-pnpm build:all
-pnpm qa
-pnpm check:deploy
-pnpm check:deploy:imports
+pnpm qa:release
 pnpm -C packages/engine test:golden
 ```
 
@@ -95,11 +87,8 @@ Manual checks:
 
 ---
 
-## 5) After this local-loop slice
+## 5) After the server runner MVP starts
 
-- Re-evaluate whether the server runner MVP is the right next move.
-- If yes, start with the smallest server plan:
-  - auth
-  - persistent submissions/versioning
-  - deterministic headless match execution
-  - replay storage
+- Add persistent submissions/versioning.
+- Add replay storage and retrieval.
+- Add auth/validation once the deterministic runner path is stable.

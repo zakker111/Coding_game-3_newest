@@ -64,6 +64,27 @@ function asText(err) {
   return String(err)
 }
 
+async function launchBrowser(headless) {
+  try {
+    return await chromium.launch({ headless })
+  } catch (err) {
+    const msg = asText(err)
+
+    if (/libnspr4\.so|missing dependencies|install-deps|host system is missing dependencies/i.test(msg)) {
+      throw new Error(
+        [
+          'Playwright browser runtime is unavailable in this environment.',
+          'Install the required browser system libraries, or run `pnpm qa:workshop` in a browser-capable release environment.',
+          '',
+          msg,
+        ].join('\n'),
+      )
+    }
+
+    throw err
+  }
+}
+
 function parseBaseUrl(baseUrl) {
   const u = new URL(baseUrl)
   return {
@@ -186,7 +207,7 @@ async function waitForQaReplay(page, timeout = 30_000) {
 }
 
 async function runWorkshopParityQa({ deployBaseUrl, appBaseUrl, headless }) {
-  const browser = await chromium.launch({ headless })
+  const browser = await launchBrowser(headless)
   const context = await browser.newContext()
   const deployPage = await context.newPage()
   const appPage = await context.newPage()
@@ -260,7 +281,7 @@ async function runWorkshopQa({ baseUrl, headless }) {
     if (!cond) failures.push(msg)
   }
 
-  const browser = await chromium.launch({ headless })
+  const browser = await launchBrowser(headless)
   const context = await browser.newContext()
   const page = await context.newPage()
 

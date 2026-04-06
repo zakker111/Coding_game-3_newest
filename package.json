@@ -20,6 +20,7 @@
     "test:all": "pnpm -r test",
     "qa:phase1": "pnpm golden:check && pnpm test:all && pnpm build:all",
     "qa": "pnpm qa:phase1",
+    "qa:release": "node scripts/phase1-gate.mjs --skip-install",
     "gate:phase1": "node scripts/phase1-gate.mjs",
     "test:golden": "pnpm -C packages/engine test:golden",
     "golden:update": "pnpm -C packages/engine golden:update",

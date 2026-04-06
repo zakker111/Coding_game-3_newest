@@ -7,14 +7,12 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: final local-loop audit before Phase 8
+## Next slice: Phase 8 server runner MVP
 
 Goals:
-- Keep improving the existing local deterministic loop before introducing server scope.
-- Focus on:
-  - closing any remaining spec/schema drift and determinism guardrails
-  - keeping deploy/workshop guardrails boring and reliable
-  - keeping the planning docs/checklists aligned to the shipped implementation
+- Start the smallest server-side slice now that the local deterministic loop and deploy parity guardrails are in place.
+- Keep engine semantics locked while the server consumes the already-tested local replay contract.
+- Treat further local-loop work as additive hardening, not as a reason to delay Phase 8 again.
 
 ---
 
@@ -86,10 +84,12 @@ Status: ✅ done
 
 ## Phase 7 — Deployment unification / reduce duplication
 
-Status: ✅ in place, with follow-up hardening available
+Status: ✅ done
 
 - `pnpm sync:deploy`, `pnpm check:deploy`, `pnpm check:deploy:imports`.
-- CI drift guardrails for `deploy/bot-instructions.md` and `deploy/workshop/exampleBots.js`.
+- Node-level deploy-engine parity coverage in `packages/engine/test/deployEngineParity.test.js`.
+- Local release sign-off gate now includes app build plus deploy/app Workshop parity smoke (`pnpm qa:release` / `pnpm gate:phase1`).
+- `qa:workshop` now fails clearly when the browser runtime is unavailable instead of surfacing an opaque Playwright launch stack.
 
 ---
 

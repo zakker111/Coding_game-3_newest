@@ -20,11 +20,12 @@ Recently completed (this merge set)
 - Replay contract and deploy Workshop static-contract tests now lock the current 0.2.0 schema/QA surface more explicitly.
 
 Next slice (non-server roadmap)
-- Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
+- Start the smallest server runner slice now that the local-loop parity/sign-off work is in place.
 - Prioritize:
-  - final local-loop audit and any remaining spec/schema alignment
-  - deploy/workshop guardrails so the static surfaces stay boring and reliable
-- Leave Phase 8 (server runner MVP) explicitly deferred until the local workflow feels complete.
+  - deterministic headless match execution
+  - submission/version storage
+  - replay storage
+- Keep local-loop hardening additive; do not block Phase 8 on more speculative polish.
 
 ### Status board
 
@@ -33,18 +34,21 @@ Implemented now
 - [x] Bullet targeting, example-bot follow-through, and deploy inspector `Target bullet` parity are shipped.
 - [x] Replay/debug ergonomics are shipped in both Workshop surfaces.
 - [x] Golden determinism guardrails and deploy drift checks are in place.
+- [x] Phase 7 release-grade parity/sign-off is in place:
+  - node-level deploy-engine parity coverage
+  - canonical local release gate (`pnpm qa:release`)
+  - deploy/app Workshop parity smoke in the gate
+  - actionable browser-runtime diagnostics for `qa:workshop`
 
 Still open
-- [ ] Final local-loop audit for any remaining spec/schema drift or reliability gaps.
-- [ ] Deploy/workshop hardening beyond the current sync/import/smoke guardrails.
 - [ ] Phase 8 server runner MVP.
 
 ### Near-term execution checklist
 
 Do next
 - [x] Audit `Ruleset.md` and `ReplayViewerPlan.md` against the produced engine/replay output.
-- [ ] Decide which remaining local-loop drift is real, and which can be explicitly deferred.
-- [ ] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
+- [x] Decide which remaining local-loop drift is real, and which can be explicitly deferred.
+- [x] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
 
 Ready after audit
 - [ ] Start the smallest Phase 8 server slice:
@@ -69,7 +73,7 @@ Next up
 - [x] Phase 4: correctness + invariants hardening.
 - [x] Phase 5: replay/debug parity + Workshop export affordances.
 - [x] Phase 5b: source-line / `pc` highlighting in the Workshop editor.
-- [ ] Local-loop hardening: close any remaining spec/schema drift and workshop/deploy guardrails.
+- [x] Local-loop hardening: close the remaining deploy/workshop parity and release-sign-off guardrails.
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
@@ -158,7 +162,7 @@ Recently completed:
 Optional smoke checks (recommended for anything touching Workshop or deploy artifacts):
 - `pnpm check:deploy`
 - `pnpm check:deploy:imports`
-- `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787`
+- `pnpm qa:release`
 
 Workshop QA contract (keep stable or update the QA script alongside UI changes):
 - `/workshop` must resolve/redirect to `/workshop/` (relative module imports depend on trailing slash).
@@ -172,29 +176,21 @@ Workshop QA contract (keep stable or update the QA script alongside UI changes):
 Goal: close out alignment work, reduce drift, and make the existing loop “boringly reliable” before adding new mechanics.
 
 Concrete tasks
-- [ ] Close any remaining spec/schema drift:
-  - `Ruleset.md` tick ordering + collision semantics match engine behavior.
-  - `ReplayViewerPlan.md` fields/events match produced replays.
-- [ ] Determinism audit checklist for new features:
-  - no `Math.random()`
-  - stable iteration order for maps/sets
-  - tie-breakers specified (id order, creation order)
-- [ ] Workshop stability:
-  - worker startup + reload is robust
-  - replay playback is stable (no NaNs; no crashes on scrub)
-- [ ] Deploy drift guardrails:
-  - expand `pnpm check:deploy` to cover any additional copied docs/assets introduced since 0.0.2.
+- [x] Close the remaining Phase 7 deploy parity gaps:
+  - node-level deploy-engine replay parity test
+  - build + deploy/app Workshop smoke in the release gate
+  - actionable Playwright runtime diagnostics
+- [x] Keep `pnpm sync:deploy` / `pnpm check:deploy` deterministic and documented.
+- [ ] Keep future local-loop hardening additive while Phase 8 starts.
 
 Acceptance criteria
-- `pnpm qa` is green on a clean checkout.
+- `pnpm qa:release` is green in a browser-capable environment.
 - A replay generated twice with the same seed produces byte-identical replay JSON (or matches golden hash, once Phase 6 is complete).
 - `pnpm check:deploy` passes and `pnpm sync:deploy` is a no-op after it runs.
 
 QA checklist
-- `pnpm -C packages/engine test`
-- `pnpm qa`
-- `pnpm check:deploy`
-- `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787`
+- `pnpm qa:release`
+- `pnpm -C packages/engine test:golden`
 
 ---
 
@@ -360,25 +356,19 @@ Goal: prevent deploy-time copies drifting from the repo’s authoritative source
 Completed baseline
 - [x] `pnpm sync:deploy`, `pnpm check:deploy`, and `pnpm check:deploy:imports` are in place.
 - [x] CI drift guardrails cover the current generated deploy artifacts.
-
-Remaining hardening
-- [ ] Expand deploy sync coverage:
-  - ensure any new deploy artifacts are generated from authoritative sources.
-  - add/update tests so drift fails in CI.
-- [ ] Tighten `pnpm sync:deploy` workflow:
-  - document when it must be run (and by whom) before releases.
-  - ensure it is deterministic (stable formatting and ordering).
-- [ ] Workshop deploy smoke checks:
-  - validate that `deploy/` Workshop behaves consistently with `apps/web` for a baseline replay.
+- [x] Node-level deploy-engine replay parity is covered by test.
+- [x] The canonical local release gate now includes build + deploy/app Workshop parity smoke.
+- [x] `qa:workshop` reports actionable browser-runtime dependency failures.
 
 Acceptance criteria
 - `pnpm check:deploy` fails on any drift and produces actionable output.
 - Running `pnpm sync:deploy` followed by `pnpm check:deploy` is always green.
+- `pnpm qa:release` is the single documented local sign-off path.
 
 QA checklist
 - `pnpm check:deploy`
 - `pnpm check:deploy:imports`
-- `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787`
+- `pnpm qa:release`
 
 ---
 

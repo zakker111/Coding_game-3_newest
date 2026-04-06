@@ -33,39 +33,38 @@ pnpm -C packages/engine test
 
 Phase 1 QA is intended to be fully reproducible in CI and locally.
 
-Fast path:
+Fast local release-sign-off path:
 
 ```bash
-pnpm qa:phase1
+pnpm qa:release
 ```
 
-Full sequence (same steps as CI should run):
+This runs the canonical repo-local gate:
 
 ```bash
-pnpm install --no-frozen-lockfile
 pnpm check:deploy
 pnpm check:deploy:imports
 pnpm -C packages/engine test
 pnpm -C packages/replay test
 pnpm -C apps/web test
-pnpm qa:phase1
+pnpm build
+pnpm qa:workshop -- --serve --url http://127.0.0.1:8787 --app-url http://127.0.0.1:4173
 ```
 
-Or run the one-shot gate runner (writes `phase1-gate.log`):
+Install-inclusive gate runner (writes `phase1-gate.log`):
 
 ```bash
 pnpm gate:phase1
 ```
 
-Additional recommended checks (deploy/workshop):
+Legacy fast path (still useful for non-browser package checks):
 
 ```bash
-pnpm sync:deploy           # maintainers run this after changing authoritative deploy-fed sources
-pnpm check:deploy          # ensure deploy-time copies match repo sources
-pnpm check:deploy:imports  # ensure deploy JS relative imports resolve to files
-pnpm qa:workshop -- --serve --url http://127.0.0.1:8787
-pnpm qa:workshop -- --serve --url http://127.0.0.1:8787 --app-url http://127.0.0.1:4173
+pnpm qa:phase1
 ```
+
+`pnpm qa:workshop` requires a Playwright-capable browser runtime. If Chromium cannot start because host libraries are missing, the script now fails with an actionable message instead of a raw launch stack.
+If the default local ports are already occupied, override them with `NOWT_QA_WORKSHOP_URL` and `NOWT_QA_WORKSHOP_APP_URL` when running `pnpm qa:release` / `pnpm gate:phase1`.
 
 Note: `site/` is a legacy prototype and is intentionally excluded from the pnpm workspace + CI.
 
@@ -79,11 +78,13 @@ Before cutting a release or publishing static artifacts:
    - `packages/replay/src/*`
    - `packages/engine/src/**/*.js`
 2. Run `pnpm sync:deploy`.
-3. Run `pnpm check:deploy && pnpm check:deploy:imports`.
-4. Build with `pnpm build`.
-5. For Workshop-affecting changes, run the deploy smoke:
-   - deploy-only: `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787`
-   - deploy vs app parity baseline: `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787 --app-url http://127.0.0.1:4173`
+3. Run `pnpm qa:release` (or `pnpm gate:phase1` if you want the install-inclusive wrapper and log file).
+
+For Workshop-affecting changes, the release gate expects a browser-capable environment because it includes:
+- deploy drift/import checks
+- package tests
+- app build
+- deploy vs app Workshop parity smoke (`pnpm qa:workshop -- --serve --url http://127.0.0.1:8787 --app-url http://127.0.0.1:4173`)
 
 Who runs this:
 - the engineer preparing the release or merging a change that touches deploy-fed authoritative sources

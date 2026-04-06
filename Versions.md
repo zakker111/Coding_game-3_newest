@@ -21,6 +21,8 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ### Added
 - Selftest improvements (coverage + diagnostics) for Workshop/engine integration.
+- Node-level deploy-engine parity coverage in `packages/engine/test/deployEngineParity.test.js`.
+- Canonical local release sign-off command: `pnpm qa:release`.
 
 ### Changed
 - Engine/replay contract: `schemaVersion` bumped to `0.2.0` (and docs/plans aligned to `rulesetVersion = 0.2.0`).
@@ -48,8 +50,13 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - bullet-targeting numeric-id regression coverage is already shipped
   - bullet-despawn interpolation is already shipped in both Workshop surfaces
   - server planning docs now use the same explicit-loadout contract as the local engine
-  - the next decision point is whether the remaining local-loop audit work is small enough to defer
-  - the server runner MVP remains explicitly deferred until that audit is complete
+  - Phase 7 deploy parity/sign-off is now treated as shipped
+  - the next recommended slice is the Phase 8 server runner MVP
+- Local release sign-off now includes:
+  - deploy drift/import checks
+  - package tests
+  - app build
+  - deploy/app Workshop parity smoke
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:
@@ -80,6 +87,7 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - expression built-in mocks include bullet-target context when asserting bullet-target predicates
   - movement/targeting/wall-credit/SAW scenarios use valid DSL labels and non-blocking paths
 - Deployed Workshop deep links now return HTTP `200` for `/workshop/`, `/docs/`, and `/docs/bot-instructions/` via emitted route entry HTML.
+- `qa:workshop` now reports missing Playwright browser runtime dependencies with actionable guidance instead of a raw launch failure stack.
 
 ---
 

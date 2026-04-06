@@ -10,6 +10,8 @@ const repoRoot = path.resolve(__dirname, '..')
 function parseArgs(argv) {
   const out = {
     logFile: path.join(repoRoot, 'phase1-gate.log'),
+    appUrl: process.env.NOWT_QA_WORKSHOP_APP_URL || 'http://127.0.0.1:4173',
+    deployUrl: process.env.NOWT_QA_WORKSHOP_URL || 'http://127.0.0.1:8787',
     skipInstall: false,
   }
 
@@ -17,6 +19,16 @@ function parseArgs(argv) {
     const a = argv[i]
 
     if (a === '--skip-install') out.skipInstall = true
+
+    if ((a === '--url' && argv[i + 1]) || a.startsWith('--url=')) {
+      const v = a === '--url' ? argv[++i] : a.slice('--url='.length)
+      if (v) out.deployUrl = v
+    }
+
+    if ((a === '--app-url' && argv[i + 1]) || a.startsWith('--app-url=')) {
+      const v = a === '--app-url' ? argv[++i] : a.slice('--app-url='.length)
+      if (v) out.appUrl = v
+    }
 
     if ((a === '--log' && argv[i + 1]) || a.startsWith('--log=')) {
       const v = a === '--log' ? argv[++i] : a.slice('--log='.length)
@@ -73,7 +85,7 @@ function run(cmd, args, { logStream }) {
 }
 
 async function main() {
-  const { logFile, skipInstall } = parseArgs(process.argv.slice(2))
+  const { appUrl, deployUrl, logFile, skipInstall } = parseArgs(process.argv.slice(2))
   const pnpm = commandForPnpm()
 
   const logStream = fs.createWriteStream(logFile, { flags: 'w' })
@@ -90,8 +102,12 @@ async function main() {
     await run(pnpm, ['-C', 'packages/engine', 'test'], { logStream })
     await run(pnpm, ['-C', 'packages/replay', 'test'], { logStream })
     await run(pnpm, ['-C', 'apps/web', 'test'], { logStream })
-
-    await run(pnpm, ['qa:phase1'], { logStream })
+    await run(pnpm, ['build'], { logStream })
+    await run(
+      pnpm,
+      ['qa:workshop', '--', '--serve', '--url', deployUrl, '--app-url', appUrl],
+      { logStream },
+    )
 
     const ok = `\n===== ${fmtTs()} SUCCESS: Phase 1 gate complete =====\n`
     process.stdout.write(ok)
