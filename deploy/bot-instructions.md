@@ -124,6 +124,8 @@ Aliases are for readability and are deterministic.
 - `TARGET_WEAKEST` → `TARGET_LOWEST_HEALTH`
 - `TARGET_CLOSEST_POWERUP <TYPE>` → `TARGET_POWERUP <TYPE>`
 - `MOVE_TO_CLOSEST_POWERUP <TYPE>` → `MOVE_TO_POWERUP <TYPE>`
+- `MOVE_TO_NEAREST_BOT` → `MOVE_TO_CLOSEST_BOT`
+- `MOVE_TO_WEAKEST_BOT` → `MOVE_TO_LOWEST_HEALTH_BOT`
 - `MOVE_TO_WALL UP|DOWN|LEFT|RIGHT` → `MOVE_TO_ARENA_EDGE UP|DOWN|LEFT|RIGHT`
 - `FIRE_SLOT1 <TARGET>` → `USE_SLOT1 <TARGET>`
 - `FIRE_SLOT2 <TARGET>` → `USE_SLOT2 <TARGET>`
@@ -236,8 +238,8 @@ General rules:
 | `MOVE_TO_BOT <BOT>` | Move toward that bot’s current position; if dead, no-op. |
 | `MOVE_TO_POWERUP <TYPE>` | Move toward closest currently-existing powerup of that type (tie-break rules below). |
 | `MOVE_TO_CLOSEST_POWERUP <TYPE>` | Alias of `MOVE_TO_POWERUP <TYPE>`. |
-| `MOVE_TO_CLOSEST_BOT` | Move toward closest alive bot (ties: lowest bot id). |
-| `MOVE_TO_LOWEST_HEALTH_BOT` | Move toward lowest-health alive bot (ties: lowest bot id). |
+| `MOVE_TO_CLOSEST_BOT` | Move toward closest alive bot (ties: lowest bot id). Alias: `MOVE_TO_NEAREST_BOT`. |
+| `MOVE_TO_LOWEST_HEALTH_BOT` | Move toward lowest-health alive bot (ties: lowest bot id). Alias: `MOVE_TO_WEAKEST_BOT`. |
 | `MOVE_TO_ARENA_EDGE UP|DOWN|LEFT|RIGHT` | Move toward outer boundary in that direction; if already touching, no-op. |
 | `MOVE_TO_WALL UP|DOWN|LEFT|RIGHT` | Alias of `MOVE_TO_ARENA_EDGE ...`. |
 | `MOVE_TO_TARGET` | If valid `targetBotId`: like `MOVE_TO_BOT <targetBotId>`; else if valid `targetBulletId`: move away/toward uses bullet position; else if valid `targetPowerupType`: like `MOVE_TO_POWERUP <type>`; else no-op. |
