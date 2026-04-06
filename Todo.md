@@ -17,6 +17,7 @@ Recently completed (this merge set)
 - `packages/replay` sample generator is now **loadout-driven** (no source scanning for SAW/SHIELD).
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
 - Phase 6 golden determinism fixtures committed + enforced in CI.
+- Replay contract and deploy Workshop static-contract tests now lock the current 0.2.0 schema/QA surface more explicitly.
 
 Next slice (non-server roadmap)
 - Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
@@ -41,7 +42,7 @@ Still open
 ### Near-term execution checklist
 
 Do next
-- [ ] Audit `Ruleset.md` and `ReplayViewerPlan.md` against the produced engine/replay output.
+- [x] Audit `Ruleset.md` and `ReplayViewerPlan.md` against the produced engine/replay output.
 - [ ] Decide which remaining local-loop drift is real, and which can be explicitly deferred.
 - [ ] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
 
