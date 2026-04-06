@@ -55,6 +55,15 @@ export const MINE_DAMAGE_ADJACENT = 12
 export const MINE_AMMO_COST = 5
 export const MINE_COOLDOWN_TICKS = 10
 
+export const REPAIR_DRONE_MAX_ACTIVE = 2
+export const REPAIR_DRONE_HIT_POINTS = 1
+export const REPAIR_DRONE_HEAL_AMOUNT = 4
+export const REPAIR_DRONE_HEAL_PULSE_TICKS = 4
+export const REPAIR_DRONE_ENERGY_DRAIN_PER_TICK = 1
+export const REPAIR_DRONE_AMMO_COST = 8
+export const REPAIR_DRONE_COOLDOWN_TICKS = 6
+export const REPAIR_DRONE_HALF_SIZE = 4
+
 export const WALL_BUMP_DAMAGE = 2
 
 // Damage dealt to both bots when they collide (bot-to-bot bump / ramming).
