@@ -38,6 +38,20 @@ Still open
 - [ ] Deploy/workshop hardening beyond the current sync/import/smoke guardrails.
 - [ ] Phase 8 server runner MVP.
 
+### Near-term execution checklist
+
+Do next
+- [ ] Audit `Ruleset.md` and `ReplayViewerPlan.md` against the produced engine/replay output.
+- [ ] Decide which remaining local-loop drift is real, and which can be explicitly deferred.
+- [ ] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
+
+Ready after audit
+- [ ] Start the smallest Phase 8 server slice:
+  - deterministic headless runner
+  - submission storage/versioning
+  - replay storage
+  - auth/validation surface
+
 ### Checklist (done vs. not done)
 
 Done (shipped)
