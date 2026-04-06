@@ -139,7 +139,7 @@ test('example bot2 starts on BOT1 and rotates targets with explicit cycling', ()
   assert.deepEqual(spawnTargets.slice(0, 3), ['BOT1', 'BOT3', 'BOT4'])
 })
 
-test('example bot3 holds its corner when no threat or powerup detour is needed', () => {
+test('example bot3 holds its corner and lays mines in the bunker lane', () => {
   const replay = runMatchToReplay({
     seed: 1,
     tickCap: 20,
@@ -152,10 +152,10 @@ test('example bot3 holds its corner when no threat or powerup detour is needed',
   })
 
   const positions = replay.state.map((s) => s.bots.find((b) => b.botId === 'BOT1')?.pos)
-  const bulletSpawns = botEvents(replay, 'BOT1').filter((e) => e.type === 'BULLET_SPAWN')
+  const minePlaces = botEvents(replay, 'BOT1').filter((e) => e.type === 'MINE_PLACE')
 
   assert.ok(positions.every((pos) => pos?.x === 16 && pos?.y === 16), 'expected bot3 to stay on its home corner')
-  assert.equal(bulletSpawns.length, 0, 'expected bot3 not to fire while enemies stay far away')
+  assert.ok(minePlaces.length >= 1, 'expected bot3 to place at least one mine while holding position')
 })
 
 test('example bot4 uses saw and shield bursts while rushing bullet bots', () => {
@@ -172,10 +172,10 @@ test('example bot4 uses saw and shield bursts while rushing bullet bots', () => 
   assert.ok(causes.has('SHIELD_DRAIN'), 'expected bot4 to activate SHIELD')
 })
 
-test('example bot5 takes up a center posture before engaging', () => {
+test('example bot5 takes up a center posture and uses grenade/drone support', () => {
   const replay = runMatchToReplay({
     seed: 1,
-    tickCap: 20,
+    tickCap: 40,
     bots: [
       exampleBot('BOT1', 5),
       idleBot('BOT2'),
@@ -186,9 +186,16 @@ test('example bot5 takes up a center posture before engaging', () => {
 
   const execs = botEvents(replay, 'BOT1').filter((e) => e.type === 'BOT_EXEC').map((e) => e.instrText)
   const posAt10 = replay.state[10].bots.find((b) => b.botId === 'BOT1')?.pos
+  const causes = new Set(
+    botEvents(replay, 'BOT1')
+      .filter((e) => e.type === 'RESOURCE_DELTA')
+      .map((e) => e.cause)
+  )
 
   assert.ok(execs.includes('SET_MOVE SECTOR 5'))
   assert.ok(posAt10 && posAt10.x > 16 && posAt10.y > 16, 'expected bot5 to move toward sector 5')
+  assert.ok(causes.has('THROW_GRENADE'), 'expected bot5 to throw at least one grenade')
+  assert.ok(causes.has('SPAWN_DRONE'), 'expected bot5 to launch a repair drone')
 })
 
 test('example bot6 uses saw bursts and acquires bullet targets during aggressive skirmishing', () => {

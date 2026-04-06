@@ -43,7 +43,7 @@ export const EXAMPLE_BOTS: Record<ExampleBotId, ExampleBot> = {
   },
   bot3: {
     id: 'bot3',
-    displayName: 'Immediate-Move Bunker',
+    displayName: 'Immediate-Move Mine Bunker',
     sourceText: extractFirstTextFence(bot3Md),
   },
   bot4: {
@@ -53,7 +53,7 @@ export const EXAMPLE_BOTS: Record<ExampleBotId, ExampleBot> = {
   },
   bot5: {
     id: 'bot5',
-    displayName: 'Shielded Control Hunter',
+    displayName: 'Armored Grenade Controller',
     sourceText: extractFirstTextFence(bot5Md),
   },
   bot6: {

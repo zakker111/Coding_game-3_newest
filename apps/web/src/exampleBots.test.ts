@@ -38,15 +38,24 @@ describe('built-in example bots', () => {
     expect(src).toContain('TARGET_POWERUP ENERGY')
   })
 
-  it('bot5 is a powerup-aware script with target-state cleanup and slot3 defense', () => {
+  it('bot3 teaches immediate-move bunker control with mines and bullet dodging', () => {
+    const src = EXAMPLE_BOTS.bot3.sourceText
+    expect(src).toContain('USE_SLOT1 NONE')
+    expect(src).toContain('MOVE_TO_SECTOR 1 ZONE 1')
+    expect(src).toContain('TARGET_CLOSEST_BULLET')
+    expect(src).toContain('CLEAR_TARGET_BULLET')
+  })
+
+  it('bot5 is a powerup-aware script with target-state cleanup and repair-drone sustain', () => {
     const src = EXAMPLE_BOTS.bot5.sourceText
     expect(src).toContain('CLEAR_TARGET')
     expect(src).toContain('CLEAR_TARGET_POWERUP')
     expect(src).toContain('TARGET_POWERUP')
     expect(src).toContain('TARGET_POWERUP ENERGY')
     expect(src).toContain('USE_SLOT3')
-    expect(src).toContain('SET_TIMER')
+    expect(src).toContain('DRONE_COUNT()')
     expect(src).toContain('MOVE_TO_TARGET')
+    expect(src).toMatch(/\bFIRE_SLOT1\b|\bUSE_SLOT1\b/)
   })
 
   it('bot6 includes SAW logic and is powerup-aware with timers', () => {
