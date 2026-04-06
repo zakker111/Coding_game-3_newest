@@ -546,6 +546,7 @@ function buildObservation(bot, bots, bullets, powerupState) {
   const zone = zoneFromPos(bot.pos)
   const sector = sectorFromPos(bot.pos)
   const closestBotDist = distToClosestBot(bot, bots)
+  const aliveEnemies = bots.reduce((count, other) => count + (other.alive && other.botId !== bot.botId ? 1 : 0), 0)
 
   const bulletThreat = computeBulletThreat(bot.botId, sector, bullets)
 
@@ -620,9 +621,20 @@ function buildObservation(bot, bots, bullets, powerupState) {
 
     // Powerups
     distToClosestPowerup: (type) => {
-      const loc = findClosestPowerupLoc(powerupState, bot.pos, type)
+      const loc = findClosestPowerupLoc(powerupState, bot.pos, type === 'ANY' ? null : type)
       if (!loc) return 999
       return manhattan(bot.pos, locToWorld(loc))
+    },
+    countAliveEnemies: () => aliveEnemies,
+    enemiesInRange: (range) => {
+      const limit = Math.max(0, Math.floor(range))
+      let count = 0
+      for (const other of bots) {
+        if (!other.alive) continue
+        if (other.botId === bot.botId) continue
+        if (manhattan(bot.pos, other.pos) <= limit) count++
+      }
+      return count
     },
     hasTargetPowerup: () => Boolean(targetPowerupType && powerupExists(powerupState, targetPowerupType)),
     powerupInSector: (type, s, zOrNull) => {
@@ -969,11 +981,8 @@ function resolveMovement(bots, bullets, powerupState, tickEvents) {
     }
 
     // Goal completion.
-    if (requestFromGoal && bot.vm?.moveGoal && bot.vm.moveGoal.kind === 'SECTOR') {
-      const goalPos = resolvePointGoalPos(bot.vm.moveGoal)
-      if (goalPos && bot.pos.x === goalPos.x && bot.pos.y === goalPos.y) {
-        bot.vm.moveGoal = null
-      }
+    if (requestFromGoal && bot.vm?.moveGoal && isMoveGoalSatisfied(bot, bot.vm.moveGoal, bots, bullets, powerupState)) {
+      bot.vm.moveGoal = null
     }
   }
 }
@@ -1086,30 +1095,18 @@ function resolveMoveTarget(bot, target, bots, bullets, powerupState, clearGoalOn
   if (!target || typeof target !== 'object') return null
 
   if (target.kind === 'TARGET' || target.kind === 'TARGET_AWAY') {
-    const botTargetId = bot.vm?.target?.botSelector
-    const botTarget =
-      botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
-        ? botsById(bots, botTargetId)
-        : null
-
-    /** @type {{x:number,y:number} | null} */
-    let goalPos = null
-
-    if (botTarget && botTarget.alive) goalPos = botTarget.pos
-
-    const bulletTargetId = bot.vm?.target?.bulletId
-    const bulletTarget =
-      !goalPos && typeof bulletTargetId === 'string' ? bullets.find((b) => b && b.bulletId === bulletTargetId) : null
-
-    if (!goalPos && bulletTarget) goalPos = bulletTarget.pos
-
-    const type = bot.vm?.target?.powerupType
-    if (!goalPos && type) {
-      const loc = findClosestPowerupLoc(powerupState, bot.pos, type)
-      if (loc) goalPos = locToWorld(loc)
-    }
+    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState)
 
     if (goalPos) {
+      const distance = manhattan(bot.pos, goalPos)
+      if (Number.isInteger(target.untilRange)) {
+        const satisfied = target.kind === 'TARGET' ? distance <= target.untilRange : distance >= target.untilRange
+        if (satisfied) {
+          if (clearGoalOnInvalid) bot.vm.moveGoal = null
+          return null
+        }
+      }
+
       const dx = target.kind === 'TARGET' ? goalPos.x - bot.pos.x : bot.pos.x - goalPos.x
       const dy = target.kind === 'TARGET' ? goalPos.y - bot.pos.y : bot.pos.y - goalPos.y
       const scaled = scaleDeltaToMaxLen(dx, dy, speed)
@@ -1180,6 +1177,48 @@ function resolvePointGoalPos(target) {
   const sector = Math.max(1, Math.min(9, Math.floor(target.sector)))
   const zone = target.zone ? Math.max(1, Math.min(4, Math.floor(target.zone))) : 0
   return locToWorld({ sector, zone })
+}
+
+function isMoveGoalSatisfied(bot, target, bots, bullets, powerupState) {
+  if (!target || typeof target !== 'object') return false
+
+  if (target.kind === 'SECTOR') {
+    const goalPos = resolvePointGoalPos(target)
+    return Boolean(goalPos && bot.pos.x === goalPos.x && bot.pos.y === goalPos.y)
+  }
+
+  if ((target.kind === 'TARGET' || target.kind === 'TARGET_AWAY') && Number.isInteger(target.untilRange)) {
+    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState)
+    if (!goalPos) return true
+    const distance = manhattan(bot.pos, goalPos)
+    return target.kind === 'TARGET' ? distance <= target.untilRange : distance >= target.untilRange
+  }
+
+  return false
+}
+
+function resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState) {
+  const botTargetId = bot.vm?.target?.botSelector
+  const botTarget =
+    botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
+      ? botsById(bots, botTargetId)
+      : null
+
+  if (botTarget && botTarget.alive) return botTarget.pos
+
+  const bulletTargetId = bot.vm?.target?.bulletId
+  if (typeof bulletTargetId === 'string') {
+    const bulletTarget = bullets.find((b) => b && b.bulletId === bulletTargetId)
+    if (bulletTarget) return bulletTarget.pos
+  }
+
+  const type = bot.vm?.target?.powerupType
+  if (type) {
+    const loc = findClosestPowerupLoc(powerupState, bot.pos, type)
+    if (loc) return locToWorld(loc)
+  }
+
+  return null
 }
 
 function deltaForMoveDir(dir, speed) {
@@ -1314,6 +1353,13 @@ function formatInstr(instr) {
   if (kind === 'SET_MOVE') return `SET_MOVE ${formatMoveTarget(instr.target)}`
   if (kind === 'MOVE') return `MOVE ${formatMoveTarget(instr.target)}`
   if (kind === 'CLEAR_MOVE') return 'CLEAR_MOVE'
+  if (kind === 'SET_REG') return `SET ${instr.register} ${instr.value}`
+  if (kind === 'ADD_REG') {
+    if (instr.delta === 1) return `INC ${instr.register}`
+    if (instr.delta === -1) return `DEC ${instr.register}`
+    if (instr.delta >= 0) return `ADD ${instr.register} ${instr.delta}`
+    return `SUB ${instr.register} ${Math.abs(instr.delta)}`
+  }
 
   if (kind === 'SET_TARGET_BOT') return `SET_TARGET ${instr.selector}`
   if (kind === 'SET_TARGET_BULLET') return `SET_TARGET_BULLET ${instr.selector}`
@@ -1339,8 +1385,10 @@ function formatInstr(instr) {
 function formatMoveTarget(target) {
   if (!target || typeof target !== 'object') return ''
 
-  if (target.kind === 'TARGET') return 'TARGET'
-  if (target.kind === 'TARGET_AWAY') return 'TARGET_AWAY'
+  if (target.kind === 'TARGET') return Number.isInteger(target.untilRange) ? `TARGET UNTIL_RANGE ${target.untilRange}` : 'TARGET'
+  if (target.kind === 'TARGET_AWAY') {
+    return Number.isInteger(target.untilRange) ? `TARGET_AWAY UNTIL_RANGE ${target.untilRange}` : 'TARGET_AWAY'
+  }
   if (target.kind === 'BOT') return `BOT ${target.token}`
   if (target.kind === 'POWERUP') return `POWERUP ${target.type}`
   if (target.kind === 'SECTOR') return target.zone ? `SECTOR ${target.sector} ZONE ${target.zone}` : `SECTOR ${target.sector}`

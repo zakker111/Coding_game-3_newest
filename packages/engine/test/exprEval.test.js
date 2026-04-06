@@ -90,7 +90,12 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
       return sector === 1 && zone === 2 ? 11 : 999
     },
     distToClosestPowerup(type) {
+      if (type == null) return 8
       return type === 'HEALTH' ? 13 : 999
+    },
+    countAliveEnemies: 3,
+    enemiesInRange(n) {
+      return n >= 12 ? 2 : 1
     },
     powerupInSector(type, sector, zoneOrNull) {
       if (type !== 'HEALTH') return false
@@ -125,6 +130,9 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
   assert.deepStrictEqual(evalExpr('DIST_TO_SECTOR_ZONE(1, 2) == 11', ctx), { ok: true, value: true })
 
   assert.deepStrictEqual(evalExpr('DIST_TO_CLOSEST_POWERUP(HEALTH) == 13', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('DIST_TO_CLOSEST_POWERUP(ANY) == 8', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('COUNT_ALIVE_ENEMIES() == 3', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('ENEMIES_IN_RANGE(12) == 2', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('POWERUP_IN_SECTOR(HEALTH, 1)', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('POWERUP_IN_SECTOR_CENTER(HEALTH, 1)', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('POWERUP_IN_ZONE(HEALTH, 1, 2)', ctx), { ok: true, value: true })
@@ -145,6 +153,17 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
     ok: true,
     value: true,
   })
+})
+
+test('evalExpr: invalid DIST_TO_CLOSEST_POWERUP token returns {ok:false}', () => {
+  const r = evalExpr('DIST_TO_CLOSEST_POWERUP(SHIELD)', {
+    distToClosestPowerup() {
+      return 0
+    },
+  })
+
+  assert.equal(r.ok, false)
+  assert.equal(r.error.code, 'BAD_TOKEN')
 })
 
 test('evalExpr: unknown identifier returns {ok:false} (does not throw)', () => {

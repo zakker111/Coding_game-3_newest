@@ -274,9 +274,33 @@ function evalNode(node, ctx) {
       if (node.arguments.length !== 1) return err('ARITY', 'DIST_TO_CLOSEST_POWERUP expects 1 argument')
       const type = evalTokenArg(node.arguments[0])
       if (!type.ok) return type
+      if (
+        type.value !== 'ANY' &&
+        type.value !== 'HEALTH' &&
+        type.value !== 'AMMO' &&
+        type.value !== 'ENERGY'
+      ) {
+        return err('BAD_TOKEN', `Invalid powerup type token: ${type.value}`)
+      }
       const d = resolveDistToClosestPowerup(ctx, type.value)
       if (!isInt(d)) return err('MISSING', 'DIST_TO_CLOSEST_POWERUP not available in ctx')
       return ok(d)
+    }
+
+    if (fn === 'ENEMIES_IN_RANGE') {
+      if (node.arguments.length !== 1) return err('ARITY', 'ENEMIES_IN_RANGE expects 1 argument')
+      const n = evalInt(node.arguments[0], ctx)
+      if (!n.ok) return n
+      const v = resolveEnemiesInRange(ctx, n.value)
+      if (!isInt(v)) return err('MISSING', 'ENEMIES_IN_RANGE not available in ctx')
+      return ok(v)
+    }
+
+    if (fn === 'COUNT_ALIVE_ENEMIES') {
+      if (node.arguments.length !== 0) return err('ARITY', 'COUNT_ALIVE_ENEMIES expects 0 arguments')
+      const v = resolveCountAliveEnemies(ctx)
+      if (!isInt(v)) return err('MISSING', 'COUNT_ALIVE_ENEMIES not available in ctx')
+      return ok(v)
     }
 
     if (fn === 'HAS_TARGET_POWERUP') {
@@ -781,9 +805,39 @@ function resolveDistToSectorZone(ctx, sector, zone) {
  * @param {string} type
  */
 function resolveDistToClosestPowerup(ctx, type) {
-  const t = /** @type {'HEALTH'|'AMMO'|'ENERGY'} */ (type)
+  const t = type === 'ANY' ? null : /** @type {'HEALTH'|'AMMO'|'ENERGY'} */ (type)
   const v = /** @type {any} */ (ctx)?.distToClosestPowerup
   if (typeof v === 'function') return v(t)
+  return null
+}
+
+/**
+ * @param {EvalCtx} ctx
+ */
+function resolveCountAliveEnemies(ctx) {
+  const v = /** @type {any} */ (ctx)?.countAliveEnemies
+  if (typeof v === 'function') return v()
+  if (isInt(v)) return v
+
+  const alive = ctx?.botsAlive
+  if (alive && typeof alive === 'object') {
+    let count = 0
+    for (const botId of ['BOT1', 'BOT2', 'BOT3', 'BOT4']) {
+      if (alive[botId]) count++
+    }
+    return count
+  }
+
+  return null
+}
+
+/**
+ * @param {EvalCtx} ctx
+ * @param {number} n
+ */
+function resolveEnemiesInRange(ctx, n) {
+  const v = /** @type {any} */ (ctx)?.enemiesInRange
+  if (typeof v === 'function') return v(n)
   return null
 }
 
