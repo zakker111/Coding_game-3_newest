@@ -94,12 +94,13 @@ function findSlotIndex(loadout, moduleId) {
 }
 
 /**
- * @param {{ seed: number|string, tickCap: number, bots: Array<{slotId: 'BOT1'|'BOT2'|'BOT3'|'BOT4', sourceText: string, loadout?: any}> }} params
+ * @param {{ seed: number|string, tickCap: number, bots: Array<{slotId: 'BOT1'|'BOT2'|'BOT3'|'BOT4', sourceText: string, loadout?: any}>, inactiveSlots?: Array<'BOT1'|'BOT2'|'BOT3'|'BOT4'> }} params
  */
 export function runMatchToReplay(params) {
   const tickCapLimit = params.tickCap
   let tickCap = tickCapLimit
   const rng = createRng(params.seed)
+  const inactiveSlots = new Set(Array.isArray(params.inactiveSlots) ? params.inactiveSlots.filter(isSlotId) : [])
 
   const headerBots = normalizeHeaderBots(params.bots)
 
@@ -120,14 +121,15 @@ export function runMatchToReplay(params) {
     const sawSlotIndex = findSlotIndex(loadout, 'SAW')
     const shieldSlotIndex = findSlotIndex(loadout, 'SHIELD')
     const armorEquipped = findSlotIndex(loadout, 'ARMOR') !== -1
+    const inactive = inactiveSlots.has(botId)
 
     return {
       botId,
       pos: clonePos(SPAWN_POS_BY_ID[botId]),
-      hp: 100,
-      ammo: 100,
-      energy: 100,
-      alive: true,
+      hp: inactive ? 0 : 100,
+      ammo: inactive ? 0 : 100,
+      energy: inactive ? 0 : 100,
+      alive: !inactive,
       lastDamageByBotId: null,
       vm: initBotVm(compiled.program),
       slotCooldowns: [0, 0, 0],
@@ -512,6 +514,10 @@ function defaultHeaderBot(slotId) {
     sourceText: '',
     loadout: DEFAULT_LOADOUT,
   }
+}
+
+function isSlotId(v) {
+  return v === 'BOT1' || v === 'BOT2' || v === 'BOT3' || v === 'BOT4'
 }
 
 function normalizeHeaderBots(botsInput) {

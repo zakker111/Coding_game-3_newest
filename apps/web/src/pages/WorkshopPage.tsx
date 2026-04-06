@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { compileBotSource } from '@coding-game/engine'
-import { MODULE_IDS, isKnownModuleId, normalizeLoadout } from '@coding-game/ruleset'
+import { EMPTY_LOADOUT, MODULE_IDS, isKnownModuleId, normalizeLoadout } from '@coding-game/ruleset'
 import type { Loadout, ModuleId } from '@coding-game/ruleset'
 import type { KnownReplayEvent, Replay, ReplayEvent, SlotId } from '@coding-game/replay'
 
@@ -43,6 +43,7 @@ function formatLoadoutOptionValue(mod: ModuleId | null): LoadoutOptionValue {
 
 const OPPONENT_NONCE_KEY = 'nowt:workshop:opponentNonce:v1'
 const OPPONENT_ASSIGNMENTS_KEY = 'nowt:workshop:opponents:v1'
+const NONE_OPPONENT_ID = '__NONE__'
 
 type OpponentAssignments = {
   BOT2: string
@@ -62,6 +63,10 @@ const DEFAULT_OPPONENT_ASSIGNMENTS: StoredOpponentAssignmentsV1 = {
 }
 
 const OPPONENT_SLOTS = ['BOT2', 'BOT3', 'BOT4'] as const
+
+function isNoneOpponentId(id: string): boolean {
+  return id === NONE_OPPONENT_ID
+}
 
 function readOpponentNonce(): number {
   try {
@@ -116,15 +121,16 @@ function readOpponentAssignments(): OpponentAssignments {
 }
 
 function normalizeOpponentAssignments(prev: OpponentAssignments, poolIds: string[]): OpponentAssignments {
-  if (poolIds.length < 3) {
-    throw new Error(`Not enough opponent choices (${poolIds.length})`)
-  }
-
   const used = new Set<string>()
   const next: OpponentAssignments = { ...prev }
 
   for (const slot of OPPONENT_SLOTS) {
     const current = prev[slot]
+
+    if (isNoneOpponentId(current)) {
+      next[slot] = NONE_OPPONENT_ID
+      continue
+    }
 
     if (poolIds.includes(current) && !used.has(current)) {
       next[slot] = current
@@ -133,7 +139,10 @@ function normalizeOpponentAssignments(prev: OpponentAssignments, poolIds: string
     }
 
     const replacement = poolIds.find((id) => !used.has(id))
-    if (!replacement) break
+    if (!replacement) {
+      next[slot] = NONE_OPPONENT_ID
+      continue
+    }
 
     next[slot] = replacement
     used.add(replacement)
@@ -482,21 +491,35 @@ export function WorkshopPage() {
     setOpponents((prev) => normalizeOpponentAssignments(prev, opponentPoolIds))
   }, [opponentPoolIds])
 
+  const inactiveOpponentSlots = React.useMemo(() => {
+    return OPPONENT_SLOTS.filter((slotId) => isNoneOpponentId(opponents[slotId]))
+  }, [opponents.BOT2, opponents.BOT3, opponents.BOT4])
+
+  const visibleReplaySlots = React.useMemo(
+    () => ['BOT1', ...OPPONENT_SLOTS.filter((slotId) => !isNoneOpponentId(opponents[slotId]))] as SlotId[],
+    [opponents.BOT2, opponents.BOT3, opponents.BOT4],
+  )
+
+  React.useEffect(() => {
+    if (visibleReplaySlots.includes(selectedBotId)) return
+    setSelectedBotId(visibleReplaySlots[0] ?? 'BOT1')
+  }, [selectedBotId, visibleReplaySlots])
+
   const sourcesBySlot: Record<SlotId, string> = React.useMemo(() => {
     return {
       BOT1: selectedMyBot.sourceText,
-      BOT2: opponentPoolById.get(opponents.BOT2)?.sourceText ?? '',
-      BOT3: opponentPoolById.get(opponents.BOT3)?.sourceText ?? '',
-      BOT4: opponentPoolById.get(opponents.BOT4)?.sourceText ?? '',
+      BOT2: isNoneOpponentId(opponents.BOT2) ? '' : (opponentPoolById.get(opponents.BOT2)?.sourceText ?? ''),
+      BOT3: isNoneOpponentId(opponents.BOT3) ? '' : (opponentPoolById.get(opponents.BOT3)?.sourceText ?? ''),
+      BOT4: isNoneOpponentId(opponents.BOT4) ? '' : (opponentPoolById.get(opponents.BOT4)?.sourceText ?? ''),
     }
   }, [opponents.BOT2, opponents.BOT3, opponents.BOT4, opponentPoolById, selectedMyBot.sourceText])
 
   const loadoutBySlot: Record<SlotId, Loadout> = React.useMemo(() => {
     return {
       BOT1: selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
-      BOT2: opponentPoolById.get(opponents.BOT2)?.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
-      BOT3: opponentPoolById.get(opponents.BOT3)?.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
-      BOT4: opponentPoolById.get(opponents.BOT4)?.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
+      BOT2: isNoneOpponentId(opponents.BOT2) ? EMPTY_LOADOUT : (opponentPoolById.get(opponents.BOT2)?.loadout ?? DEFAULT_WORKSHOP_LOADOUT),
+      BOT3: isNoneOpponentId(opponents.BOT3) ? EMPTY_LOADOUT : (opponentPoolById.get(opponents.BOT3)?.loadout ?? DEFAULT_WORKSHOP_LOADOUT),
+      BOT4: isNoneOpponentId(opponents.BOT4) ? EMPTY_LOADOUT : (opponentPoolById.get(opponents.BOT4)?.loadout ?? DEFAULT_WORKSHOP_LOADOUT),
     }
   }, [opponents.BOT2, opponents.BOT3, opponents.BOT4, opponentPoolById, selectedMyBot.loadout])
 
@@ -505,15 +528,16 @@ export function WorkshopPage() {
 
     return {
       BOT1: selectedMyBot.name,
-      BOT2: normalizeOpponentLabel(opponentPoolById.get(opponents.BOT2)?.displayName ?? 'BOT2'),
-      BOT3: normalizeOpponentLabel(opponentPoolById.get(opponents.BOT3)?.displayName ?? 'BOT3'),
-      BOT4: normalizeOpponentLabel(opponentPoolById.get(opponents.BOT4)?.displayName ?? 'BOT4'),
+      BOT2: isNoneOpponentId(opponents.BOT2) ? 'Inactive' : normalizeOpponentLabel(opponentPoolById.get(opponents.BOT2)?.displayName ?? 'BOT2'),
+      BOT3: isNoneOpponentId(opponents.BOT3) ? 'Inactive' : normalizeOpponentLabel(opponentPoolById.get(opponents.BOT3)?.displayName ?? 'BOT3'),
+      BOT4: isNoneOpponentId(opponents.BOT4) ? 'Inactive' : normalizeOpponentLabel(opponentPoolById.get(opponents.BOT4)?.displayName ?? 'BOT4'),
     }
   }, [opponents.BOT2, opponents.BOT3, opponents.BOT4, opponentPoolById, selectedMyBot.name])
 
   const opponentCards = React.useMemo(() => {
     return OPPONENT_SLOTS.map((slotId) => ({
       slotId,
+      inactive: isNoneOpponentId(opponents[slotId]),
       opponent: opponentPoolById.get(opponents[slotId]),
       loadout: loadoutBySlot[slotId],
     }))
@@ -523,12 +547,12 @@ export function WorkshopPage() {
     const sig = (loadout: Loadout) => loadout.map((s) => (s == null ? 'EMPTY' : s)).join(',')
 
     return {
-      BOT1: fnv1a32(`${sourcesBySlot.BOT1}\n${sig(loadoutBySlot.BOT1)}\n`),
-      BOT2: fnv1a32(`${sourcesBySlot.BOT2}\n${sig(loadoutBySlot.BOT2)}\n`),
-      BOT3: fnv1a32(`${sourcesBySlot.BOT3}\n${sig(loadoutBySlot.BOT3)}\n`),
-      BOT4: fnv1a32(`${sourcesBySlot.BOT4}\n${sig(loadoutBySlot.BOT4)}\n`),
+      BOT1: fnv1a32(`inactive:0\n${sourcesBySlot.BOT1}\n${sig(loadoutBySlot.BOT1)}\n`),
+      BOT2: fnv1a32(`inactive:${isNoneOpponentId(opponents.BOT2) ? 1 : 0}\n${sourcesBySlot.BOT2}\n${sig(loadoutBySlot.BOT2)}\n`),
+      BOT3: fnv1a32(`inactive:${isNoneOpponentId(opponents.BOT3) ? 1 : 0}\n${sourcesBySlot.BOT3}\n${sig(loadoutBySlot.BOT3)}\n`),
+      BOT4: fnv1a32(`inactive:${isNoneOpponentId(opponents.BOT4) ? 1 : 0}\n${sourcesBySlot.BOT4}\n${sig(loadoutBySlot.BOT4)}\n`),
     }
-  }, [loadoutBySlot, sourcesBySlot])
+  }, [loadoutBySlot, opponents.BOT2, opponents.BOT3, opponents.BOT4, sourcesBySlot])
 
   const previewUpToDate = React.useMemo(() => {
     if (!playback.replay || !appliedRun) return false
@@ -716,7 +740,9 @@ export function WorkshopPage() {
 
   const renderState: ArenaRenderState = React.useMemo(() => {
     return {
-      bots: botsForRender.map((b) => ({
+      bots: botsForRender
+        .filter((b) => visibleReplaySlots.includes(b.botId))
+        .map((b) => ({
         slotId: b.botId,
         pos: b.pos,
         hp: b.hp,
@@ -729,7 +755,7 @@ export function WorkshopPage() {
       bullets: bulletsForRender,
       powerups: powerupsForRender,
     }
-  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, powerupsForRender])
+  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, powerupsForRender, visibleReplaySlots])
 
   const selectedBotState = React.useMemo(() => {
     if (!replay) return null
@@ -964,12 +990,14 @@ export function WorkshopPage() {
     setRunError(null)
 
     try {
+      const inactiveSlots = inactiveOpponentSlots as SlotId[]
+      const inactiveSlotSet = new Set<SlotId>(inactiveSlots)
       const bots = SLOT_IDS.map((slotId) => {
-        const sourceText = sourcesBySlot[slotId]
-        const loadout = loadoutBySlot[slotId]
+        const sourceText = inactiveSlotSet.has(slotId) ? '' : sourcesBySlot[slotId]
+        const loadout = inactiveSlotSet.has(slotId) ? EMPTY_LOADOUT : loadoutBySlot[slotId]
         return { slotId, sourceText, loadout }
       })
-      const nextReplay: Replay = await runLocalInWorker({ seed, tickCap, bots })
+      const nextReplay: Replay = await runLocalInWorker({ seed, tickCap, bots, inactiveSlots })
 
       setAppliedRun({
         seed,
@@ -991,7 +1019,10 @@ export function WorkshopPage() {
     const otherSlots = OPPONENT_SLOTS.filter((s) => s !== slot)
     const usedByOtherSlots = new Set(otherSlots.map((s) => opponents[s]))
 
-    return opponentPool.filter((o) => o.id === opponents[slot] || !usedByOtherSlots.has(o.id))
+    return [
+      { id: NONE_OPPONENT_ID, displayName: 'None (inactive)', sourceText: '', loadout: EMPTY_LOADOUT },
+      ...opponentPool.filter((o) => o.id === opponents[slot] || !usedByOtherSlots.has(o.id)),
+    ]
   }
 
   const speedButtons = [0.5, 1, 2, 6] as const
@@ -1113,7 +1144,7 @@ export function WorkshopPage() {
           <div>
             <div className="panel-title">Match setup</div>
             <div className="muted" style={{ marginTop: 6 }}>
-              Choose the bot for BOT1, review the equipped loadouts, and choose the opponent field for the next run.
+              Choose the bot for BOT1, review the equipped loadouts, and choose the opponent field for the next run. Opponent slots can be set to None for Workshop-only local inspection; randomize always fills them with real opponents.
             </div>
           </div>
 
@@ -1137,7 +1168,7 @@ export function WorkshopPage() {
             </div>
           </section>
 
-          {opponentCards.map(({ slotId, opponent, loadout }) => (
+          {opponentCards.map(({ slotId, inactive, opponent, loadout }) => (
             <section key={slotId} className="workshop-bot-card">
               <div className="workshop-bot-card-label">{slotId} · Opponent</div>
               <label className="mini-field">
@@ -1150,15 +1181,19 @@ export function WorkshopPage() {
                   ))}
                 </select>
               </label>
-              <div className="workshop-bot-card-subtitle">{opponent?.displayName ?? displayNameBySlot[slotId]}</div>
-              <div className="workshop-loadout-summary" style={{ marginTop: 14 }}>
-                {loadout.map((mod, index) => (
-                  <div key={`${slotId}-loadout-${index}`} className="workshop-loadout-chip">
-                    <span className="mini-label">Slot {index + 1}</span>
-                    <strong>{formatLoadoutOptionValue(mod ?? null)}</strong>
-                  </div>
-                ))}
+              <div className="workshop-bot-card-subtitle">
+                {inactive ? 'Inactive for the next local Workshop run.' : (opponent?.displayName ?? displayNameBySlot[slotId])}
               </div>
+              {inactive ? null : (
+                <div className="workshop-loadout-summary" style={{ marginTop: 14 }}>
+                  {loadout.map((mod, index) => (
+                    <div key={`${slotId}-loadout-${index}`} className="workshop-loadout-chip">
+                      <span className="mini-label">Slot {index + 1}</span>
+                      <strong>{formatLoadoutOptionValue(mod ?? null)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           ))}
         </div>
@@ -1233,7 +1268,7 @@ export function WorkshopPage() {
             <div className="panel-title">Replay analysis</div>
 
             <div className="tab-row" style={{ marginTop: 10 }}>
-              {SLOT_IDS.map((id) => {
+              {visibleReplaySlots.map((id) => {
                 const issueCount = replayLoadoutIssuesBySlot[id].length
 
                 return (

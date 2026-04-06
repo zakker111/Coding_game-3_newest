@@ -17,10 +17,21 @@ describe('worker message guards', () => {
           { slotId: 'BOT3', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
           { slotId: 'BOT4', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
         ],
+        inactiveSlots: ['BOT3', 'BOT4'],
       }),
     ).toBe(true)
 
     expect(isRunLocalMessage({ type: 'RUN_LOCAL' })).toBe(false)
+    expect(
+      isRunLocalMessage({
+        type: 'RUN_LOCAL',
+        requestId: 1,
+        seed: 123,
+        tickCap: 50,
+        bots: [],
+        inactiveSlots: ['BOT5'],
+      }),
+    ).toBe(false)
   })
 
   it('accepts valid RUN_RESULT', () => {

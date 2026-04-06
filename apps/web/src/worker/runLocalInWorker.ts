@@ -6,6 +6,7 @@ export type RunLocalParams = {
   seed: number
   tickCap: number
   bots: Array<{ slotId: SlotId; sourceText: string; loadout: Loadout }>
+  inactiveSlots?: SlotId[]
 }
 
 let nextRequestId = 1
@@ -26,6 +27,7 @@ export async function runLocalInWorker(params: RunLocalParams): Promise<Replay> 
     seed: params.seed,
     tickCap: params.tickCap,
     bots: params.bots,
+    inactiveSlots: params.inactiveSlots,
   }
 
   return await new Promise<Replay>((resolve, reject) => {

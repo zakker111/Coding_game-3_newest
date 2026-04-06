@@ -15,6 +15,7 @@ export type RunLocalMessage = {
   seed: number
   tickCap: number
   bots: BotSpec[]
+  inactiveSlots?: SlotId[]
 }
 
 export type RunResultMessage = {
@@ -29,6 +30,10 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function isSlotId(v: unknown): v is SlotId {
   return v === 'BOT1' || v === 'BOT2' || v === 'BOT3' || v === 'BOT4'
+}
+
+function isInactiveSlots(v: unknown): v is SlotId[] {
+  return Array.isArray(v) && v.every(isSlotId)
 }
 
 function isBotSpec(v: unknown): v is BotSpec {
@@ -55,6 +60,7 @@ export function isRunLocalMessage(v: unknown): v is RunLocalMessage {
   if (typeof v.seed !== 'number') return false
   if (typeof v.tickCap !== 'number') return false
   if (!Array.isArray(v.bots) || !v.bots.every(isBotSpec)) return false
+  if (v.inactiveSlots != null && !isInactiveSlots(v.inactiveSlots)) return false
   return true
 }
 

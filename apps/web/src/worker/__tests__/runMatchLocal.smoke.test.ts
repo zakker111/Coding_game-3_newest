@@ -41,4 +41,22 @@ describe('runMatchLocal (smoke)', () => {
     const anyBulletSpawn = replay.events.flat().some((e) => e.type === 'BULLET_SPAWN')
     expect(anyBulletSpawn).toBe(false)
   })
+
+  it('starts inactive slots dead for Workshop-only none opponents', () => {
+    const emptyLoadout: [null, null, null] = [null, null, null]
+
+    const bots = [
+      { slotId: 'BOT1' as const, sourceText: EXAMPLE_BOTS.bot0.sourceText, loadout: deriveLoadoutForSlot('BOT1', EXAMPLE_BOTS.bot0.sourceText) },
+      { slotId: 'BOT2' as const, sourceText: EXAMPLE_BOTS.bot2.sourceText, loadout: emptyLoadout },
+      { slotId: 'BOT3' as const, sourceText: '', loadout: emptyLoadout },
+      { slotId: 'BOT4' as const, sourceText: '', loadout: emptyLoadout },
+    ]
+
+    const replay = runMatchLocal(12345, 50, bots, ['BOT3', 'BOT4'])
+
+    const initial = replay.state[0]
+    expect(initial.bots.find((bot) => bot.botId === 'BOT1')?.alive).toBe(true)
+    expect(initial.bots.find((bot) => bot.botId === 'BOT3')?.alive).toBe(false)
+    expect(initial.bots.find((bot) => bot.botId === 'BOT4')?.alive).toBe(false)
+  })
 })

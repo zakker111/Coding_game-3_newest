@@ -33,6 +33,10 @@ Determinism guardrail:
   - tick-events filter/search
   - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
   - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
+- React Workshop match setup now supports Workshop-only inactive opponent slots:
+  - BOT2..BOT4 can be set to `None (inactive)` for local inspection runs
+  - randomize still fills opponent slots with real bots only
+  - this is a client-only Workshop convenience, not part of the server match contract
 - React Workshop replay loadout warnings now surface in the replay-analysis tabs and Inspector while keeping the detailed `Loadout issues` list in the `Loadout` card.
 - Phase 5b source-line debugging shipped for BOT1:
   - local compile metadata in the app
@@ -60,6 +64,7 @@ Why this is next:
   - deploy drift/import checks
   - app build + deploy/app Workshop parity smoke in the release gate
 - The server-side loadout contract is already aligned with the shipped engine/docs.
+- Workshop-only inactive opponent slots are explicitly local UX and do not change the server runner contract.
 - The remaining local-loop risk is operational, not architectural: run the browser-capable release gate where appropriate and fix any surfaced regressions in context.
 
 Scope:

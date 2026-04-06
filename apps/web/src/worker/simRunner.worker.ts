@@ -10,6 +10,7 @@ self.addEventListener('message', (event: MessageEvent<unknown>) => {
     seed,
     tickCap,
     bots.map((b) => ({ slotId: b.slotId, sourceText: b.sourceText, loadout: b.loadout })),
+    event.data.inactiveSlots ?? [],
   )
 
   self.postMessage({
