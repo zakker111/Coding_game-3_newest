@@ -15,6 +15,9 @@ import {
   GRENADE_COOLDOWN_TICKS,
   MINE_AMMO_COST,
   MINE_COOLDOWN_TICKS,
+  REPAIR_DRONE_AMMO_COST,
+  REPAIR_DRONE_COOLDOWN_TICKS,
+  REPAIR_DRONE_MAX_ACTIVE,
   SLOT_IDS,
   WALL_BUMP_DAMAGE,
   BOT_BUMP_DAMAGE,
@@ -31,6 +34,13 @@ import {
   zoneFromPos,
 } from './arenaMath.js'
 import { createBullet, stepBullets } from './bulletSim.js'
+import {
+  countRepairDrones,
+  createRepairDrone,
+  despawnRepairDrones,
+  nextRepairDroneOrbitIndex,
+  stepRepairDrones,
+} from './droneSim.js'
 import { createGrenade, stepGrenades } from './grenadeSim.js'
 import { createMine, stepMines } from './mineSim.js'
 import { bresenhamPoints } from './bresenham.js'
@@ -175,13 +185,16 @@ export function runMatchToReplay(params) {
   /** @type {Array<{mineId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', sector:number, armRemaining:number, fuseRemaining:number, ttlRemaining:number}>} */
   let mines = []
   let mineCounter = 0
+  /** @type {Array<{droneId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', slotIndex:0|1|2, orbitIndex:number, hp:number, pos:{x:number,y:number}}>} */
+  let drones = []
+  let droneCounter = 0
 
   const powerupState = initPowerupState(rng)
 
   const state = []
   const events = []
 
-  state.push(snapshotState(0, bots, bullets, grenades, mines, powerupState))
+  state.push(snapshotState(0, bots, bullets, grenades, mines, drones, powerupState))
   events.push([])
 
   // Stalemate tracking (Ruleset.md §0.1.1).
@@ -207,7 +220,7 @@ export function runMatchToReplay(params) {
     for (const bot of bots) {
       if (!bot.alive) continue
 
-      const observation = buildObservation(bot, bots, bullets, powerupState)
+      const observation = buildObservation(bot, bots, bullets, powerupState, drones)
 
       const vmBefore = bot.vm
       const instrBefore = vmBefore?.program?.instructions?.[vmBefore.pc - 1] ?? { kind: 'INVALID' }
@@ -304,6 +317,16 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (mod === 'REPAIR_DRONE') {
+            const r = despawnRepairDrones(drones, bot.botId, slotIndex, 'STOP', tickEvents)
+            drones = r.drones
+            if (r.removed === 0) {
+              botExecResult = 'NOP'
+              botExecReason = 'NO_EFFECT'
+            }
+            continue
+          }
+
           botExecResult = 'NOP'
           botExecReason = 'NO_MODULE'
           continue
@@ -381,6 +404,22 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (mod === 'REPAIR_DRONE') {
+            const r = attemptUseRepairDrone(bot, slotIndex, eff.target, drones, ++droneCounter, tickEvents)
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              droneCounter--
+            } else {
+              drones = r.drones
+              bot.slotCooldowns[slotIndex] = REPAIR_DRONE_COOLDOWN_TICKS
+              droneCounter = r.droneCounter
+            }
+
+            continue
+          }
+
           if (mod !== 'BULLET') {
             botExecResult = 'NOP'
             botExecReason = 'NO_MODULE'
@@ -428,19 +467,26 @@ export function runMatchToReplay(params) {
     // 4) SAW melee damage
     stepSawDamage(bots, tickEvents)
 
-    // 5) Projectile updates (bullets)
-    bullets = stepBullets(bullets, bots, tickEvents)
+    // 5) Helper drones
+    drones = stepRepairDrones(t, drones, bots, tickEvents)
 
-    // 6) Timed explosive projectiles (grenades)
+    // 6) Projectile updates (bullets)
+    {
+      const stepped = stepBullets(bullets, bots, drones, tickEvents)
+      bullets = stepped.bullets
+      drones = stepped.drones
+    }
+
+    // 7) Timed explosive projectiles (grenades)
     grenades = stepGrenades(grenades, bots, tickEvents)
 
-    // 7) Deployables (mines)
+    // 8) Deployables (mines)
     mines = stepMines(mines, bots, tickEvents)
 
-    // 8) Pickups
+    // 9) Pickups
     stepPowerupPickups(powerupState, bots, tickEvents)
 
-    // 9) End-of-tick maintenance
+    // 10) End-of-tick maintenance
     for (const bot of bots) {
       bot.pendingMove = null
       for (let i = 0; i < bot.slotCooldowns.length; i++) {
@@ -508,7 +554,7 @@ export function runMatchToReplay(params) {
       tickEvents.push({ type: 'MATCH_END', endReason })
     }
 
-    state.push(snapshotState(t, bots, bullets, grenades, mines, powerupState))
+    state.push(snapshotState(t, bots, bullets, grenades, mines, drones, powerupState))
     events.push(tickEvents)
 
     if (endReason) {
@@ -529,7 +575,7 @@ export function runMatchToReplay(params) {
   }
 }
 
-function snapshotState(t, bots, bullets, grenades, mines, powerupState) {
+function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) {
   return {
     t,
     bots: bots.map((b) => ({
@@ -567,6 +613,18 @@ function snapshotState(t, bots, bullets, grenades, mines, powerupState) {
             sector: m.sector,
             armRemaining: m.armRemaining,
             fuseRemaining: m.fuseRemaining,
+          })),
+        }
+      : {}),
+    ...(drones.length
+      ? {
+          drones: drones.map((d) => ({
+            droneId: d.droneId,
+            ownerBotId: d.ownerBotId,
+            slotIndex: d.slotIndex,
+            orbitIndex: d.orbitIndex,
+            hp: d.hp,
+            pos: clonePos(d.pos),
           })),
         }
       : {}),
@@ -614,7 +672,7 @@ function normalizeHeaderBots(botsInput) {
   })
 }
 
-function buildObservation(bot, bots, bullets, powerupState) {
+function buildObservation(bot, bots, bullets, powerupState, drones) {
   const zone = zoneFromPos(bot.pos)
   const sector = sectorFromPos(bot.pos)
   const closestBotDist = distToClosestBot(bot, bots)
@@ -780,6 +838,11 @@ function buildObservation(bot, bots, bullets, powerupState) {
         if (bot.slotCooldowns[idx] > 0) return false
         return bot.ammo >= MINE_AMMO_COST
       }
+      if (mod === 'REPAIR_DRONE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        if (bot.ammo < REPAIR_DRONE_AMMO_COST) return false
+        return countRepairDrones(drones, bot.botId) < REPAIR_DRONE_MAX_ACTIVE
+      }
 
       if (mod !== 'BULLET') return false
       if (bot.slotCooldowns[idx] > 0) return false
@@ -791,8 +854,10 @@ function buildObservation(bot, bots, bullets, powerupState) {
       const mod = bot.loadout[idx]
       if (mod === 'SHIELD' && idx === bot.shieldSlotIndex) return bot.shieldActive
       if (mod === 'SAW' && idx === bot.sawSlotIndex) return bot.sawActive
+      if (mod === 'REPAIR_DRONE') return countRepairDrones(drones, bot.botId, idx) > 0
       return false
     },
+    droneCount: () => countRepairDrones(drones, bot.botId),
 
     // Bumps (visible from last tick)
     bumpedBot: bot.bumpedBotLastTick,
@@ -1563,6 +1628,49 @@ function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEven
     ok: true,
     mines: [...mines, mine],
     mineCounter: nextMineId,
+  }
+}
+
+function attemptUseRepairDrone(bot, slotIndex, targetToken, drones, nextDroneId, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'REPAIR_DRONE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < REPAIR_DRONE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+  if (targetToken !== 'SELF') return { ok: false, reason: 'INVALID_TARGET_KIND' }
+  if (countRepairDrones(drones, bot.botId) >= REPAIR_DRONE_MAX_ACTIVE) return { ok: false, reason: 'NO_EFFECT' }
+
+  const orbitIndex = nextRepairDroneOrbitIndex(drones, bot.botId)
+  if (orbitIndex < 0) return { ok: false, reason: 'NO_EFFECT' }
+
+  const drone = createRepairDrone(bot.botId, slotIndex, orbitIndex)
+  const droneId = `D${nextDroneId}`
+  drone.droneId = droneId
+  drone.pos = clonePos(bot.pos)
+
+  bot.ammo -= REPAIR_DRONE_AMMO_COST
+
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -REPAIR_DRONE_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'SPAWN_DRONE',
+  })
+
+  tickEvents.push({
+    type: 'DRONE_SPAWN',
+    droneId,
+    ownerBotId: bot.botId,
+    slotIndex,
+    orbitIndex,
+    pos: clonePos(drone.pos),
+  })
+
+  return {
+    ok: true,
+    drones: [...drones, drone],
+    droneCounter: nextDroneId,
   }
 }
 

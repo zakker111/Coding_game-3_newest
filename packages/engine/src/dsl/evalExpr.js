@@ -33,6 +33,7 @@ import { parseExpression } from './expr.js'
  * @property {(zone: 1|2|3|4) => boolean} [inZone]
  *
  * @property {number | (() => number)} [distToClosestBot] Integer distance for DIST_TO_CLOSEST_BOT().
+ * @property {number | (() => number)} [droneCount] Integer count for DRONE_COUNT().
  *
  * @property {Record<string, number> | ((timer: 1|2|3) => number)} [timers]
  * Convenience: if provided as Record keyed by T1/T2/T3, used by TIMER_*.
@@ -300,6 +301,13 @@ function evalNode(node, ctx) {
       if (node.arguments.length !== 0) return err('ARITY', 'COUNT_ALIVE_ENEMIES expects 0 arguments')
       const v = resolveCountAliveEnemies(ctx)
       if (!isInt(v)) return err('MISSING', 'COUNT_ALIVE_ENEMIES not available in ctx')
+      return ok(v)
+    }
+
+    if (fn === 'DRONE_COUNT') {
+      if (node.arguments.length !== 0) return err('ARITY', 'DRONE_COUNT expects 0 arguments')
+      const v = resolveDroneCount(ctx)
+      if (!isInt(v)) return err('MISSING', 'DRONE_COUNT not available in ctx')
       return ok(v)
     }
 
@@ -837,6 +845,16 @@ function resolveCountAliveEnemies(ctx) {
     return count
   }
 
+  return null
+}
+
+/**
+ * @param {EvalCtx} ctx
+ */
+function resolveDroneCount(ctx) {
+  const v = /** @type {any} */ (ctx)?.droneCount
+  if (typeof v === 'function') return v()
+  if (isInt(v)) return v
   return null
 }
 

@@ -47,6 +47,14 @@ export type ArenaRenderMine = {
   fuseRemaining?: number
 }
 
+export type ArenaRenderDrone = {
+  droneId: string
+  ownerBotId?: SlotId
+  pos: { x: number; y: number }
+  hp?: number
+  alpha?: number
+}
+
 export type ArenaRenderPowerup = {
   powerupId: string
   kind: 'HEALTH' | 'AMMO' | 'ENERGY'
@@ -58,6 +66,7 @@ export type ArenaRenderState = {
   bullets?: ArenaRenderBullet[]
   grenades?: ArenaRenderGrenade[]
   mines?: ArenaRenderMine[]
+  drones?: ArenaRenderDrone[]
   powerups?: ArenaRenderPowerup[]
 }
 
@@ -407,6 +416,38 @@ export function ArenaCanvas({
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(label, x, y)
+        ctx.restore()
+      }
+    }
+
+    if (renderState.drones?.length) {
+      for (const d of renderState.drones) {
+        const x = worldToSnappedCssPx(d.pos.x, s, dpr)
+        const y = worldToSnappedCssPx(d.pos.y, s, dpr)
+        const r = Math.max(3, Math.floor(1.5 * s))
+        const ownerColor = d.ownerBotId ? slotFallbackColor(d.ownerBotId) : null
+        const alpha = typeof d.alpha === 'number' ? clamp(d.alpha, 0, 1) : 1
+
+        ctx.save()
+        ctx.globalAlpha = alpha
+
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.92)'
+        ctx.fill()
+        ctx.strokeStyle = ownerColor ?? 'rgba(59, 130, 246, 0.9)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.3 * s))
+        ctx.stroke()
+
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.22 * s))
+        ctx.beginPath()
+        ctx.moveTo(x - r * 0.45, y)
+        ctx.lineTo(x + r * 0.45, y)
+        ctx.moveTo(x, y - r * 0.45)
+        ctx.lineTo(x, y + r * 0.45)
+        ctx.stroke()
+
         ctx.restore()
       }
     }

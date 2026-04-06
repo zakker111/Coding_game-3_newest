@@ -479,6 +479,34 @@ function draw(ctx, cssSize, scale, renderState, selectedBotId) {
     ctx.restore()
   }
 
+  for (const d of renderState.drones || []) {
+    const x = d.pos.x * scale
+    const y = d.pos.y * scale
+    const r = Math.max(3, Math.floor(1.5 * scale))
+
+    ctx.save()
+    if (typeof d.alpha === 'number') ctx.globalAlpha = clamp(d.alpha, 0, 1)
+
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(241, 245, 249, 0.92)'
+    ctx.fill()
+    ctx.strokeStyle = slotFallbackColor(d.ownerBotId)
+    ctx.lineWidth = Math.max(1, Math.floor(0.3 * scale))
+    ctx.stroke()
+
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)'
+    ctx.lineWidth = Math.max(1, Math.floor(0.22 * scale))
+    ctx.beginPath()
+    ctx.moveTo(x - r * 0.45, y)
+    ctx.lineTo(x + r * 0.45, y)
+    ctx.moveTo(x, y - r * 0.45)
+    ctx.lineTo(x, y + r * 0.45)
+    ctx.stroke()
+
+    ctx.restore()
+  }
+
   // Bots
   const botRadius = 8 * scale
   const barH = Math.max(2, Math.floor(0.6 * scale))
@@ -613,8 +641,14 @@ export function attachArenaRenderer(canvas) {
       armRemaining: m.armRemaining,
       fuseRemaining: m.fuseRemaining,
     }))
+    const drones = (snapState?.drones || []).map((d) => ({
+      droneId: d.droneId,
+      ownerBotId: d.ownerBotId,
+      hp: d.hp,
+      pos: d.pos,
+    }))
 
-    draw(ctx, cssSize, scale, { bots, bullets, grenades, mines, powerups }, selectedBotId)
+    draw(ctx, cssSize, scale, { bots, bullets, grenades, mines, drones, powerups }, selectedBotId)
   }
 
   return {

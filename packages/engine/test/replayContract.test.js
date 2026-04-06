@@ -54,6 +54,14 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
       snap.grenades == null || Array.isArray(snap.grenades),
       `expected grenades to be omitted or an array in state[t=${snap.t}]`,
     )
+    assert.ok(
+      snap.mines == null || Array.isArray(snap.mines),
+      `expected mines to be omitted or an array in state[t=${snap.t}]`,
+    )
+    assert.ok(
+      snap.drones == null || Array.isArray(snap.drones),
+      `expected drones to be omitted or an array in state[t=${snap.t}]`,
+    )
     for (const bot of snap.bots) {
       assert.ok(SLOT_IDS.includes(bot.botId), `unexpected botId in state[t=${snap.t}]: ${bot.botId}`)
       assert.equal(

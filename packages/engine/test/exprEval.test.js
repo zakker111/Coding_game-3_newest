@@ -74,6 +74,15 @@ test('evalExpr: DIST_TO_CLOSEST_BOT returns an int', () => {
   assert.deepStrictEqual(r, { ok: true, value: true })
 })
 
+test('evalExpr: DRONE_COUNT returns an int', () => {
+  const ctx = {
+    droneCount: 2,
+  }
+
+  const r = evalExpr('DRONE_COUNT() == 2', ctx)
+  assert.deepStrictEqual(r, { ok: true, value: true })
+})
+
 test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
   const ctx = {
     sector: 1,

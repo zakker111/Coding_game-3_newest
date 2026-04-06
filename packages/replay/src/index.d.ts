@@ -70,6 +70,15 @@ export type ReplayMineState = {
   fuseRemaining: number
 }
 
+export type ReplayDroneState = {
+  droneId: string
+  ownerBotId: SlotId
+  slotIndex: 0 | 1 | 2
+  orbitIndex: number
+  hp: number
+  pos: Pos
+}
+
 export type ReplayPowerupState = {
   powerupId: string
   type: 'HEALTH' | 'AMMO' | 'ENERGY'
@@ -83,6 +92,7 @@ export type ReplayTickState = {
   bullets: ReplayBulletState[]
   grenades?: ReplayGrenadeState[]
   mines?: ReplayMineState[]
+  drones?: ReplayDroneState[]
   powerups: ReplayPowerupState[]
 }
 
@@ -100,6 +110,9 @@ export type ResourceDeltaCause =
   | 'SHOOT'
   | 'THROW_GRENADE'
   | 'PLACE_MINE'
+  | 'SPAWN_DRONE'
+  | 'DRONE_DRAIN'
+  | 'DRONE_HEAL'
   | 'SAW_DRAIN'
   | 'SHIELD_DRAIN'
   | 'PICKUP_HEALTH'
@@ -270,6 +283,38 @@ export type MineDespawnEvent = {
   reason: 'TTL' | 'EXPLODED'
 }
 
+export type DroneSpawnEvent = {
+  type: 'DRONE_SPAWN'
+  droneId: string
+  ownerBotId: SlotId
+  slotIndex: 0 | 1 | 2
+  orbitIndex: number
+  pos: Pos
+}
+
+export type DroneHealEvent = {
+  type: 'DRONE_HEAL'
+  droneId: string
+  ownerBotId: SlotId
+  amount: number
+}
+
+export type DroneHitEvent = {
+  type: 'DRONE_HIT'
+  droneId: string
+  ownerBotId: SlotId
+  bulletId: string
+  sourceBotId: SlotId
+}
+
+export type DroneDespawnEvent = {
+  type: 'DRONE_DESPAWN'
+  droneId: string
+  ownerBotId: SlotId
+  reason: 'STOP' | 'HIT' | 'NO_ENERGY' | 'OWNER_DEAD'
+  pos: Pos
+}
+
 export type DamageEvent = {
   type: 'DAMAGE'
   victimBotId: SlotId
@@ -315,6 +360,10 @@ export type KnownReplayEvent =
   | MineTriggerEvent
   | MineDetonateEvent
   | MineDespawnEvent
+  | DroneSpawnEvent
+  | DroneHealEvent
+  | DroneHitEvent
+  | DroneDespawnEvent
   | DamageEvent
   | BotDiedEvent
   | MatchEndEvent

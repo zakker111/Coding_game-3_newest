@@ -858,6 +858,106 @@ export function WorkshopPage() {
     }))
   }, [playback.tick, replay])
 
+  const dronesForRender = React.useMemo(() => {
+    if (!replay) return []
+
+    const t = clamp(playback.tick, 0, replay.tickCap)
+    const a = playback.playing ? alpha : 1
+
+    const next = replay.state[t]
+    const prev = t > 0 ? replay.state[t - 1] : next
+
+    if (!next || !prev) return []
+
+    const prevDrones = prev.drones ?? []
+    const nextDrones = next.drones ?? []
+
+    const prevById = new Map(prevDrones.map((d) => [d.droneId, d]))
+    const nextById = new Map(nextDrones.map((d) => [d.droneId, d]))
+
+    const droneIds = new Set<string>()
+    for (const d of prevDrones) droneIds.add(d.droneId)
+    for (const d of nextDrones) droneIds.add(d.droneId)
+
+    const spawnsByDroneId = new Map(
+      (replay.events[t] ?? [])
+        .filter((e): e is Extract<KnownReplayEvent, { type: 'DRONE_SPAWN' }> => isKnownReplayEventType(e, 'DRONE_SPAWN'))
+        .map((e) => [e.droneId, e]),
+    )
+
+    const despawnsByDroneId = new Map(
+      (replay.events[t] ?? [])
+        .filter((e): e is Extract<KnownReplayEvent, { type: 'DRONE_DESPAWN' }> => isKnownReplayEventType(e, 'DRONE_DESPAWN'))
+        .map((e) => [e.droneId, e]),
+    )
+
+    const out = [] as Array<{
+      droneId: string
+      ownerBotId: SlotId
+      pos: { x: number; y: number }
+      hp?: number
+      alpha?: number
+    }>
+
+    for (const droneId of droneIds) {
+      const d0 = prevById.get(droneId)
+      const d1 = nextById.get(droneId)
+      if (!d0 && !d1) continue
+
+      if (d0 && !d1) {
+        if (a >= 1) continue
+
+        const despawn = despawnsByDroneId.get(droneId)
+        const to = despawn?.pos ?? d0.pos
+
+        out.push({
+          droneId,
+          ownerBotId: d0.ownerBotId,
+          hp: d0.hp,
+          pos: {
+            x: d0.pos.x + (to.x - d0.pos.x) * a,
+            y: d0.pos.y + (to.y - d0.pos.y) * a,
+          },
+          alpha: 1 - a,
+        })
+        continue
+      }
+
+      if (!d0 && d1) {
+        const spawn = spawnsByDroneId.get(droneId)
+        const from = spawn?.pos ?? d1.pos
+
+        out.push({
+          droneId,
+          ownerBotId: d1.ownerBotId,
+          hp: d1.hp,
+          pos: {
+            x: from.x + (d1.pos.x - from.x) * a,
+            y: from.y + (d1.pos.y - from.y) * a,
+          },
+        })
+        continue
+      }
+
+      const from = d0?.pos ?? d1!.pos
+      const to = d1?.pos ?? d0!.pos
+      const ownerBotId = d1?.ownerBotId ?? d0!.ownerBotId
+      const hp = d1?.hp ?? d0?.hp
+
+      out.push({
+        droneId,
+        ownerBotId,
+        hp,
+        pos: {
+          x: from.x + (to.x - from.x) * a,
+          y: from.y + (to.y - from.y) * a,
+        },
+      })
+    }
+
+    return out
+  }, [alpha, playback.playing, playback.tick, replay])
+
   const renderState: ArenaRenderState = React.useMemo(() => {
     return {
       bots: botsForRender
@@ -875,9 +975,10 @@ export function WorkshopPage() {
       bullets: bulletsForRender,
       grenades: grenadesForRender,
       mines: minesForRender,
+      drones: dronesForRender,
       powerups: powerupsForRender,
     }
-  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, grenadesForRender, minesForRender, powerupsForRender, visibleReplaySlots])
+  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, dronesForRender, grenadesForRender, minesForRender, powerupsForRender, visibleReplaySlots])
 
   const selectedBotState = React.useMemo(() => {
     if (!replay) return null
