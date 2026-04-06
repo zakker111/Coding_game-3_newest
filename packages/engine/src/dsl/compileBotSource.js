@@ -94,6 +94,7 @@ function normalizeInstruction(instr) {
   if (instr.kind === 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE') {
     return { kind: 'SET_MOVE', target: { kind: 'TARGET_AWAY', untilRange: instr.range } }
   }
+  if (instr.kind === 'ORBIT_TARGET') return { kind: 'SET_MOVE', target: { kind: 'TARGET_ORBIT' } }
 
   // Already-canonical instructions pass through:
   // - MOVE_DIR, CLEAR_MOVE

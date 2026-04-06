@@ -97,6 +97,9 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
     enemiesInRange(n) {
       return n >= 12 ? 2 : 1
     },
+    lowestHealthEnemyInRange(n) {
+      return n >= 12 ? 42 : 0
+    },
     powerupInSector(type, sector, zoneOrNull) {
       if (type !== 'HEALTH') return false
       if (sector !== 1) return false
@@ -133,6 +136,7 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
   assert.deepStrictEqual(evalExpr('DIST_TO_CLOSEST_POWERUP(ANY) == 8', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('COUNT_ALIVE_ENEMIES() == 3', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('ENEMIES_IN_RANGE(12) == 2', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('LOWEST_HEALTH_ENEMY_IN_RANGE(12) == 42', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('POWERUP_IN_SECTOR(HEALTH, 1)', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('POWERUP_IN_SECTOR_CENTER(HEALTH, 1)', ctx), { ok: true, value: true })
   assert.deepStrictEqual(evalExpr('POWERUP_IN_ZONE(HEALTH, 1, 2)', ctx), { ok: true, value: true })

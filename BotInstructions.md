@@ -295,6 +295,7 @@ When a goal is set, the bot attempts to move toward it every tick (unless an imm
 | `SET_MOVE_TO_BOT <BOT_TARGET>` | Follow a bot. If `<BOT_TARGET>` is `CLOSEST_BOT/NEAREST_BOT/LOWEST_HEALTH_BOT/WEAKEST_BOT`, it re-resolves each tick. If `TARGET`, follows `targetBotId`. If `BOT1..BOT4`, follows that bot until it dies. |
 | `SET_MOVE_TO_POWERUP <TYPE>` | Re-resolves each tick to closest powerup of that type; clears when picked up; clears if none exist. |
 | `SET_MOVE_TO_TARGET` | Follow `MOVE_TO_TARGET` resolution every tick. |
+| `ORBIT_TARGET` | Set a persistent orbit goal around the current bot target. Current first version: clockwise orbit with a fixed default radius band; if no valid bot target exists, the goal clears and no movement occurs. |
 | `RETREAT_TO_SECTOR <SECTOR>` | Alias of `SET_MOVE_TO_SECTOR <SECTOR>`. |
 | `RETREAT_TO_SECTOR <SECTOR> ZONE <ZONE>` | Alias of `SET_MOVE_TO_SECTOR <SECTOR> ZONE <ZONE>`. |
 | `CLEAR_MOVE` | Clear current movement goal. |
@@ -308,6 +309,7 @@ Resolution order each tick (recommended):
 Goal completion:
 - Point goals (sector/zone centers): clear when reached (recommended: snap and clear if remaining distance `<= speedUnitsPerTick`).
 - `SET_MOVE_TO_BOT` / `SET_MOVE_TO_TARGET`: clear when the resolved bot is dead/missing.
+- `ORBIT_TARGET`: clear when there is no valid living bot target to orbit.
 - `MOVE_TO_TARGET_UNTIL_IN_RANGE <N>`: clear when the resolved target is within Manhattan distance `<= N`.
 - `MOVE_AWAY_FROM_TARGET_UNTIL_RANGE <N>`: clear when the resolved target is at Manhattan distance `>= N`.
 
@@ -453,6 +455,7 @@ Distances (world units; Manhattan):
 - `DIST_TO_CLOSEST_BOT()` → int (none alive → `999`)
 - `COUNT_ALIVE_ENEMIES()` → int
 - `ENEMIES_IN_RANGE(<N>)` → int
+- `LOWEST_HEALTH_ENEMY_IN_RANGE(<N>)` → int (lowest health among alive enemies within Manhattan range `N`; `0` if none are in range)
 - `DIST_TO_SECTOR(<SECTOR>)` → int
 - `DIST_TO_SECTOR_ZONE(<SECTOR>, <ZONE>)` → int
 
@@ -584,5 +587,15 @@ IF (HEALTH < 30) DO SET R1 1
 IF (HEALTH >= 30) DO SET R1 0
 IF (R1 == 1 && POWERUP_EXISTS(HEALTH)) DO RETREAT_TO_SECTOR 9
 IF (R1 == 0) DO MOVE_TO_CLOSEST_BOT
+GOTO LOOP
+```
+
+### Example 8 — Orbit a chosen bot while waiting for an opening
+
+```text
+LABEL LOOP
+SET_TARGET BOT3
+ORBIT_TARGET
+IF (SLOT_READY(SLOT1) && LOWEST_HEALTH_ENEMY_IN_RANGE(96) <= 25) DO FIRE_SLOT1 TARGET
 GOTO LOOP
 ```

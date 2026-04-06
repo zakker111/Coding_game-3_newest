@@ -303,6 +303,15 @@ function evalNode(node, ctx) {
       return ok(v)
     }
 
+    if (fn === 'LOWEST_HEALTH_ENEMY_IN_RANGE') {
+      if (node.arguments.length !== 1) return err('ARITY', 'LOWEST_HEALTH_ENEMY_IN_RANGE expects 1 argument')
+      const n = evalInt(node.arguments[0], ctx)
+      if (!n.ok) return n
+      const v = resolveLowestHealthEnemyInRange(ctx, n.value)
+      if (!isInt(v)) return err('MISSING', 'LOWEST_HEALTH_ENEMY_IN_RANGE not available in ctx')
+      return ok(v)
+    }
+
     if (fn === 'HAS_TARGET_POWERUP') {
       if (node.arguments.length !== 0) return err('ARITY', 'HAS_TARGET_POWERUP expects 0 arguments')
       const v = resolveBoolish(ctx?.hasTargetPowerup)
@@ -837,6 +846,16 @@ function resolveCountAliveEnemies(ctx) {
  */
 function resolveEnemiesInRange(ctx, n) {
   const v = /** @type {any} */ (ctx)?.enemiesInRange
+  if (typeof v === 'function') return v(n)
+  return null
+}
+
+/**
+ * @param {EvalCtx} ctx
+ * @param {number} n
+ */
+function resolveLowestHealthEnemyInRange(ctx, n) {
+  const v = /** @type {any} */ (ctx)?.lowestHealthEnemyInRange
   if (typeof v === 'function') return v(n)
   return null
 }

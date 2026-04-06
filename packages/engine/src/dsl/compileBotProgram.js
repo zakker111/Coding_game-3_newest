@@ -57,6 +57,7 @@ import { parseExpression } from './expr.js'
  *   | { kind: 'MOVE_TO_ARENA_EDGE', dir: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' }
  *   | { kind: 'MOVE_TO_TARGET_UNTIL_IN_RANGE', range: number }
  *   | { kind: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE', range: number }
+ *   | { kind: 'ORBIT_TARGET' }
  *   | { kind: 'CLEAR_MOVE' }
  *   | { kind: 'SET_REG', register: RegisterId, value: number }
  *   | { kind: 'ADD_REG', register: RegisterId, delta: number }
@@ -649,6 +650,14 @@ function parseSimpleInstruction(line, lineNo, errors) {
       return { kind: 'INVALID' }
     }
     return { kind: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE', range }
+  }
+
+  if (op === 'ORBIT_TARGET') {
+    if (parts.length !== 1) {
+      errors.push({ line: lineNo, message: 'ORBIT_TARGET expects no arguments' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ORBIT_TARGET' }
   }
 
   if (op === 'CLEAR_MOVE') {

@@ -63,6 +63,7 @@ const LEGACY_KINDS = new Set([
   'MOVE_TO_ARENA_EDGE',
   'MOVE_TO_TARGET_UNTIL_IN_RANGE',
   'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE',
+  'ORBIT_TARGET',
 ])
 
 function flattenInstructions(instructions) {
@@ -95,6 +96,7 @@ test('compileBotSource emits a very small canonical core IR', () => {
     'MOVE_TO_CLOSEST_BOT',
     'MOVE_TO_TARGET_UNTIL_IN_RANGE 64',
     'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE 128',
+    'ORBIT_TARGET',
     'MOVE_TO_WALL LEFT',
     'RETREAT_TO_SECTOR 9',
     'HOLD_POSITION',
@@ -135,6 +137,7 @@ test('compileBotSource emits a very small canonical core IR', () => {
   assert.ok(
     flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'TARGET_AWAY' && i.target?.untilRange === 128)
   )
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'TARGET_ORBIT'))
   assert.ok(flatInstrs.some((i) => i.kind === 'MOVE_DIR' && i.dir === 'UP_LEFT'))
   assert.ok(flatInstrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'BOT' && i.target?.token === 'CLOSEST_BOT'))
   assert.ok(flatInstrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'ARENA_EDGE' && i.target?.dir === 'LEFT'))
