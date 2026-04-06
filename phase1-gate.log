@@ -1,123 +1,123 @@
 # Phase 1 Gate Log
-# started: 2026-04-06T16:38:05.059Z
+# started: 2026-04-06T17:41:54.734Z
 # cwd: /workspace
 
-===== 2026-04-06T16:38:05.059Z RUN: pnpm check:deploy =====
+===== 2026-04-06T17:41:54.735Z RUN: pnpm check:deploy =====
 
 > nowt@0.0.4 check:deploy /workspace
 > node scripts/sync-deploy.mjs --check
 
 
-===== 2026-04-06T16:38:05.604Z RUN: pnpm check:deploy:imports =====
+===== 2026-04-06T17:41:55.293Z RUN: pnpm check:deploy:imports =====
 
 > nowt@0.0.4 check:deploy:imports /workspace
 > node scripts/check-deploy-imports.mjs
 
 OK: 23 deploy JS modules have resolvable relative imports.
 
-===== 2026-04-06T16:38:06.131Z RUN: pnpm -C packages/engine test =====
+===== 2026-04-06T17:41:55.817Z RUN: pnpm -C packages/engine test =====
 
 > @coding-game/engine@0.0.4 test /workspace/packages/engine
 > tsc -p tsconfig.json --noEmit && node --test
 
-✔ test/_util/sha256.js (54.545889ms)
-✔ test/_util/stableStringify.js (44.259158ms)
-✔ botVm: pc increments and wraps (len=2) (1.42438ms)
-✔ botVm: JUMP sets pc to targetPc (0.21199ms)
-✔ botVm: WAIT 2 blocks the next 2 ticks and advances pc when the wait completes (0.32356ms)
-✔ botVm: SET_TIMER decrements at start-of-step (0.24569ms)
-✔ botVm: timers decrement and TIMER_DONE(T1) is observable next tick (IF_DO + PING()) (1.78078ms)
-✔ botVm: IF_DO executes nested instruction when condition true (TIMER_ACTIVE) (0.905449ms)
-✔ botVm: IF_JUMP short-circuit (HEALTH < 10 || UNKNOWN()) does not call UNKNOWN() (0.353051ms)
-✔ botVm: IF_JUMP true jumps to targetPc (0.19334ms)
-✔ botVm: INVALID instruction resets pc to 1 (NOP + pc reset) (0.218871ms)
-✔ botVm: unknown instruction kind is treated as INVALID and resets pc to 1 (0.28304ms)
-✔ botVm: IF_DO does not execute nested control-flow (nested WAIT is ignored) (0.2079ms)
-✔ botVm: timers continue decrementing during WAIT stalls (0.193609ms)
-✔ botVm: bot/powerup targets are independent registers (0.22174ms)
-✔ botVm: integration smoke - compile bot0 and step 10 ticks without crashing (2.73282ms)
-✔ normalizeToLen: axis-aligned vectors normalize to exact speed (1.43741ms)
-✔ normalizeToLen: diagonal vector does not overspeed (0.237909ms)
-✔ normalizeToLen: 3-4-5 triangle scales correctly (0.232869ms)
-✖ compileBotSource compiles example bots (bot0..bot6) (19.64877ms)
-✔ compileBotSource normalizes aliases: FIRE_SLOT1 NEAREST_BOT -> USE_SLOT1 CLOSEST_BOT (0.59459ms)
-✔ compileBotSource emits a very small canonical core IR (3.8648ms)
-(node:18337) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/deploy/engine/src/index.js is not specified and it doesn't parse as CommonJS.
+✔ test/_util/sha256.js (57.391628ms)
+✔ test/_util/stableStringify.js (49.528249ms)
+✔ botVm: pc increments and wraps (len=2) (1.34037ms)
+✔ botVm: JUMP sets pc to targetPc (0.17258ms)
+✔ botVm: WAIT 2 blocks the next 2 ticks and advances pc when the wait completes (0.26836ms)
+✔ botVm: SET_TIMER decrements at start-of-step (0.20659ms)
+✔ botVm: timers decrement and TIMER_DONE(T1) is observable next tick (IF_DO + PING()) (2.19073ms)
+✔ botVm: IF_DO executes nested instruction when condition true (TIMER_ACTIVE) (1.34922ms)
+✔ botVm: IF_JUMP short-circuit (HEALTH < 10 || UNKNOWN()) does not call UNKNOWN() (0.52351ms)
+✔ botVm: IF_JUMP true jumps to targetPc (0.30112ms)
+✔ botVm: INVALID instruction resets pc to 1 (NOP + pc reset) (0.28438ms)
+✔ botVm: unknown instruction kind is treated as INVALID and resets pc to 1 (0.4722ms)
+✔ botVm: IF_DO does not execute nested control-flow (nested WAIT is ignored) (0.39745ms)
+✔ botVm: timers continue decrementing during WAIT stalls (0.18506ms)
+✔ botVm: bot/powerup targets are independent registers (0.19817ms)
+✔ botVm: integration smoke - compile bot0 and step 10 ticks without crashing (3.16686ms)
+✔ normalizeToLen: axis-aligned vectors normalize to exact speed (1.59674ms)
+✔ normalizeToLen: diagonal vector does not overspeed (0.22184ms)
+✔ normalizeToLen: 3-4-5 triangle scales correctly (0.20362ms)
+✖ compileBotSource compiles example bots (bot0..bot6) (18.91075ms)
+✔ compileBotSource normalizes aliases: FIRE_SLOT1 NEAREST_BOT -> USE_SLOT1 CLOSEST_BOT (0.396069ms)
+✔ compileBotSource emits a very small canonical core IR (3.4946ms)
+(node:22916) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/deploy/engine/src/index.js is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /workspace/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
-✔ deploy engine parity: idle baseline replay core matches authoritative engine (14.10796ms)
-✔ deploy engine parity: loadout normalization replay core matches authoritative engine (1.307289ms)
-✔ deploy engine parity: bullet-target replay core matches authoritative engine (8.384059ms)
-✔ deploy-time copies are in sync with authoritative sources (51.184569ms)
-✔ deploy sync target list covers mirrored replay, ruleset, and engine artifacts (3.07246ms)
-✔ parseDisplayNameFromScript: skips locked header directives (1.08424ms)
-✔ parseDisplayNameFromScript: only scans leading comment header (0.40078ms)
-✔ deploy workshop static files expose the QA contract surface (3.00194ms)
-✔ example bot0 aggressively chases the closest target and fires (18.451359ms)
-✔ example bot0 acquires a bullet target while dodging (3.95838ms)
-✔ example bot1 patrols its home sector in the documented zone loop (3.70682ms)
-✔ example bot2 starts on BOT1 and rotates targets with explicit cycling (3.84162ms)
-✔ example bot3 holds its corner when no threat or powerup detour is needed (2.20639ms)
-✖ example bot4 uses saw and shield bursts while rushing bullet bots (14.44656ms)
-✔ example bot5 takes up a center posture before engaging (1.90501ms)
-✔ example bot6 uses saw bursts and acquires bullet targets during aggressive skirmishing (12.18433ms)
-✔ evalExpr: smoke test (HEALTH < 45 && POWERUP_EXISTS(HEALTH)) (4.21293ms)
-✔ evalExpr: short-circuit (0 == 1 && UNKNOWN()) does not call UNKNOWN() (0.29823ms)
-✔ evalExpr: BOT_ALIVE + unary ! (0.31011ms)
-✔ evalExpr: TIMER semantics (TIMER_DONE && !TIMER_ACTIVE) (0.29539ms)
-✔ evalExpr: SLOT_READY(SLOT1) uses token args (0.31883ms)
-✔ evalExpr: DIST_TO_CLOSEST_BOT returns an int (0.2666ms)
-✔ evalExpr: extended built-ins (sector/zone/dist/powerups/bumps) (2.06047ms)
-✔ evalExpr: unknown identifier returns {ok:false} (does not throw) (0.45851ms)
-✔ parseExpression: operator precedence (&& binds tighter than ||) (1.61596ms)
-✔ parseExpression: parentheses override precedence (0.31672ms)
-✔ parseExpression: unary ! binds to the following expression (1.26981ms)
-✔ parseExpression: function calls with multiple args (1.08944ms)
-✔ parseExpression: errors on malformed input (0.59539ms)
-✔ test/golden/checkGoldens.mjs (52.851399ms)
-✔ test/golden/goldenHarnessUtil.js (48.247639ms)
-✖ golden: examples_smoke_seed123 (29.110569ms)
-✖ golden: examples_patrol_seed456 (16.510789ms)
-✖ golden: modules_powerups_seed999 (1.64362ms)
-✖ golden: modules_saw_rush_seed777 (3.12006ms)
-✔ runMatchToReplay: normalizes loadout (unknown modules => null) deterministically (5.679229ms)
-✔ runMatchToReplay: normalizes loadout (duplicates removed; keep earliest) (0.53412ms)
-✔ runMatchToReplay: normalizes loadout (multi-weapon removed; keep earliest) (0.27541ms)
-✔ runMatchToReplay: loadout normalization issues are stable and ordered deterministically (0.27699ms)
-✔ replay contract: header/state shape matches the documented 0.2.0 schema (6.88445ms)
-✔ runMatchToReplay: deterministic for same seed + bots (15.54474ms)
-✔ runMatchToReplay: ARMOR reduces bullet damage (events + state) (13.409859ms)
-✖ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (6.05161ms)
-✔ runMatchToReplay: ARMOR reduces SAW damage (5.03302ms)
-✔ runMatchToReplay: ARMOR applies to wall bump damage source (even if mitigation is a no-op at current constants) (0.95062ms)
-✔ runMatchToReplay: ARMOR applies to bot bump damage source (even if mitigation is a no-op at current constants) (1.30682ms)
-✔ runMatchToReplay: ARMOR applies a deterministic movement speed penalty (2.92777ms)
-✔ runMatchToReplay: bot bumps are paired, deal damage, and alive bots never overlap (9.37138ms)
-✔ stepBullets: nearest bot collision wins when multiple bots overlap the segment (2.10232ms)
-✔ stepBullets: corner contact counts as a bot hit (0.38144ms)
-✔ stepBullets: exact tie between bot collisions resolves by slot order (0.29173ms)
-✔ stepBullets: exact wall and bot tie resolves to wall first (0.27989ms)
-✔ Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke) (9.39469ms)
-✔ Phase 3: TARGET_CLOSEST_BULLET tie-break stays numeric for bullet ids >= 10 (0.20193ms)
-✔ runMatchToReplay: bullets despawn and ammo only decreases via SHOOT (19.772829ms)
-✔ runMatchToReplay: BOT_EXEC reason vocabulary stays stable for common no-op cases (8.58321ms)
-✔ runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout defaults to empty (41.60025ms)
-✔ runMatchToReplay: inactive slots start dead and do not participate (4.13465ms)
-✔ runMatchToReplay: wall-bump death is credited to last damaging bot (26.49792ms)
-✔ runMatchToReplay: 4 idle bots ends early by STALEMATE (deterministic) (22.38475ms)
-✔ runMatchToReplay: bot can seek and pick up spawned powerups (16.28162ms)
-✔ runMatchToReplay: damaged bot can seek and benefit from a HEALTH powerup (14.21925ms)
-✔ runMatchToReplay: bullet bot can consume ammo and refill from an AMMO powerup (10.32974ms)
-✔ runMatchToReplay: energy-using bot can drain energy and refill from an ENERGY powerup (9.118349ms)
-✔ runMatchToReplay: powerups maxActive=6 and RULES TTL despawns when no pickups (12.150789ms)
-✔ runMatchToReplay: SAW drains energy and deals damage (hp decreases deterministically) (11.46895ms)
-✔ runMatchToReplay: SAW match is deterministic for same seed + bots (6.33711ms)
-✔ runMatchToReplay: non-saw bot still produces BULLET_SPAWN (1.47984ms)
-✔ runMatchToReplay: SHIELD reduces bullet damage and drains energy (15.750939ms)
-✖ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (7.35976ms)
-✔ runMatchToReplay: TARGET_CLOSEST is resolved at set time (does not change as bots move) (7.20129ms)
-✔ runMatchToReplay: wall bumps deal damage (7.1585ms)
+✔ deploy engine parity: idle baseline replay core matches authoritative engine (14.63725ms)
+✔ deploy engine parity: loadout normalization replay core matches authoritative engine (1.39018ms)
+✔ deploy engine parity: bullet-target replay core matches authoritative engine (8.15134ms)
+✔ deploy-time copies are in sync with authoritative sources (60.129368ms)
+✔ deploy sync target list covers mirrored replay, ruleset, and engine artifacts (3.10088ms)
+✔ parseDisplayNameFromScript: skips locked header directives (1.124129ms)
+✔ parseDisplayNameFromScript: only scans leading comment header (0.21682ms)
+✔ deploy workshop static files expose the QA contract surface (2.51537ms)
+✔ example bot0 aggressively chases the closest target and fires (14.614419ms)
+✔ example bot0 acquires a bullet target while dodging (4.36048ms)
+✔ example bot1 patrols its home sector in the documented zone loop (3.6064ms)
+✔ example bot2 starts on BOT1 and rotates targets with explicit cycling (3.82467ms)
+✔ example bot3 holds its corner when no threat or powerup detour is needed (2.61663ms)
+✖ example bot4 uses saw and shield bursts while rushing bullet bots (14.938159ms)
+✔ example bot5 takes up a center posture before engaging (2.07217ms)
+✔ example bot6 uses saw bursts and acquires bullet targets during aggressive skirmishing (11.32618ms)
+✔ evalExpr: smoke test (HEALTH < 45 && POWERUP_EXISTS(HEALTH)) (8.37572ms)
+✔ evalExpr: short-circuit (0 == 1 && UNKNOWN()) does not call UNKNOWN() (0.3199ms)
+✔ evalExpr: BOT_ALIVE + unary ! (0.32076ms)
+✔ evalExpr: TIMER semantics (TIMER_DONE && !TIMER_ACTIVE) (0.3266ms)
+✔ evalExpr: SLOT_READY(SLOT1) uses token args (0.4132ms)
+✔ evalExpr: DIST_TO_CLOSEST_BOT returns an int (0.341289ms)
+✔ evalExpr: extended built-ins (sector/zone/dist/powerups/bumps) (1.763609ms)
+✔ evalExpr: unknown identifier returns {ok:false} (does not throw) (0.503131ms)
+✔ parseExpression: operator precedence (&& binds tighter than ||) (2.22022ms)
+✔ parseExpression: parentheses override precedence (0.42726ms)
+✔ parseExpression: unary ! binds to the following expression (1.59638ms)
+✔ parseExpression: function calls with multiple args (1.27669ms)
+✔ parseExpression: errors on malformed input (0.79267ms)
+✔ test/golden/checkGoldens.mjs (50.458339ms)
+✔ test/golden/goldenHarnessUtil.js (50.612989ms)
+✖ golden: examples_smoke_seed123 (36.864829ms)
+✖ golden: examples_patrol_seed456 (14.11853ms)
+✖ golden: modules_powerups_seed999 (1.83751ms)
+✖ golden: modules_saw_rush_seed777 (1.98286ms)
+✔ runMatchToReplay: normalizes loadout (unknown modules => null) deterministically (5.344091ms)
+✔ runMatchToReplay: normalizes loadout (duplicates removed; keep earliest) (0.457069ms)
+✔ runMatchToReplay: normalizes loadout (multi-weapon removed; keep earliest) (0.26932ms)
+✔ runMatchToReplay: loadout normalization issues are stable and ordered deterministically (0.2518ms)
+✔ replay contract: header/state shape matches the documented 0.2.0 schema (6.75891ms)
+✔ runMatchToReplay: deterministic for same seed + bots (14.397ms)
+✔ runMatchToReplay: ARMOR reduces bullet damage (events + state) (17.66713ms)
+✖ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (5.13074ms)
+✔ runMatchToReplay: ARMOR reduces SAW damage (7.329489ms)
+✔ runMatchToReplay: ARMOR applies to wall bump damage source (even if mitigation is a no-op at current constants) (1.095809ms)
+✔ runMatchToReplay: ARMOR applies to bot bump damage source (even if mitigation is a no-op at current constants) (1.67726ms)
+✔ runMatchToReplay: ARMOR applies a deterministic movement speed penalty (2.25297ms)
+✔ runMatchToReplay: bot bumps are paired, deal damage, and alive bots never overlap (10.03594ms)
+✔ stepBullets: nearest bot collision wins when multiple bots overlap the segment (2.210591ms)
+✔ stepBullets: corner contact counts as a bot hit (0.342191ms)
+✔ stepBullets: exact tie between bot collisions resolves by slot order (0.34776ms)
+✔ stepBullets: exact wall and bot tie resolves to wall first (0.2645ms)
+✔ Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke) (9.733999ms)
+✔ Phase 3: TARGET_CLOSEST_BULLET tie-break stays numeric for bullet ids >= 10 (0.23708ms)
+✔ runMatchToReplay: bullets despawn and ammo only decreases via SHOOT (17.61114ms)
+✔ runMatchToReplay: BOT_EXEC reason vocabulary stays stable for common no-op cases (12.78467ms)
+✔ runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout defaults to empty (45.552109ms)
+✔ runMatchToReplay: inactive slots start dead and do not participate (4.47961ms)
+✔ runMatchToReplay: wall-bump death is credited to last damaging bot (27.1973ms)
+✔ runMatchToReplay: 4 idle bots ends early by STALEMATE (deterministic) (23.92262ms)
+✔ runMatchToReplay: bot can seek and pick up spawned powerups (17.38253ms)
+✔ runMatchToReplay: damaged bot can seek and benefit from a HEALTH powerup (19.170529ms)
+✔ runMatchToReplay: bullet bot can consume ammo and refill from an AMMO powerup (11.31521ms)
+✔ runMatchToReplay: energy-using bot can drain energy and refill from an ENERGY powerup (6.31446ms)
+✔ runMatchToReplay: powerups maxActive=6 and RULES TTL despawns when no pickups (13.001329ms)
+✔ runMatchToReplay: SAW drains energy and deals damage (hp decreases deterministically) (12.569989ms)
+✔ runMatchToReplay: SAW match is deterministic for same seed + bots (7.12984ms)
+✔ runMatchToReplay: non-saw bot still produces BULLET_SPAWN (1.54924ms)
+✔ runMatchToReplay: SHIELD reduces bullet damage and drains energy (11.94901ms)
+✖ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (8.59578ms)
+✔ runMatchToReplay: TARGET_CLOSEST is resolved at set time (does not change as bots move) (7.75929ms)
+✔ runMatchToReplay: wall bumps deal damage (9.146839ms)
 ℹ tests 94
 ℹ suites 0
 ℹ pass 86
@@ -125,12 +125,12 @@ To eliminate this warning, add "type": "module" to /workspace/package.json.
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 3467.326744
+ℹ duration_ms 3559.372731
 
 ✖ failing tests:
 
 test at test/compileExamples.test.js:194:1
-✖ compileBotSource compiles example bots (bot0..bot6) (19.64877ms)
+✖ compileBotSource compiles example bots (bot0..bot6) (18.91075ms)
   AssertionError [ERR_ASSERTION]: expected no compile errors for bot5
   + actual - expected
   
@@ -157,7 +157,7 @@ test at test/compileExamples.test.js:194:1
   }
 
 test at test/exampleBotsIntent.test.js:161:1
-✖ example bot4 uses saw and shield bursts while rushing bullet bots (14.44656ms)
+✖ example bot4 uses saw and shield bursts while rushing bullet bots (14.938159ms)
   AssertionError [ERR_ASSERTION]: expected bot4 to activate SHIELD
       at TestContext.<anonymous> (file:///workspace/packages/engine/test/exampleBotsIntent.test.js:172:10)
       at Test.runInAsyncScope (node:async_hooks:228:14)
@@ -175,7 +175,7 @@ test at test/exampleBotsIntent.test.js:161:1
   }
 
 test at test/golden/goldenReplays.test.js:85:3
-✖ golden: examples_smoke_seed123 (29.110569ms)
+✖ golden: examples_smoke_seed123 (36.864829ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
   
@@ -196,7 +196,7 @@ test at test/golden/goldenReplays.test.js:85:3
   }
 
 test at test/golden/goldenReplays.test.js:85:3
-✖ golden: examples_patrol_seed456 (16.510789ms)
+✖ golden: examples_patrol_seed456 (14.11853ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
   
@@ -219,7 +219,7 @@ test at test/golden/goldenReplays.test.js:85:3
   }
 
 test at test/golden/goldenReplays.test.js:85:3
-✖ golden: modules_powerups_seed999 (1.64362ms)
+✖ golden: modules_powerups_seed999 (1.83751ms)
   AssertionError [ERR_ASSERTION]: expected bot5 to compile
   + actual - expected
   
@@ -248,7 +248,7 @@ test at test/golden/goldenReplays.test.js:85:3
   }
 
 test at test/golden/goldenReplays.test.js:85:3
-✖ golden: modules_saw_rush_seed777 (3.12006ms)
+✖ golden: modules_saw_rush_seed777 (1.98286ms)
   AssertionError [ERR_ASSERTION]: expected bot5 to compile
   + actual - expected
   
@@ -277,7 +277,7 @@ test at test/golden/goldenReplays.test.js:85:3
   }
 
 test at test/simArmor.test.js:47:1
-✖ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (6.05161ms)
+✖ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (5.13074ms)
   AssertionError [ERR_ASSERTION]: expected BULLET_HIT damage to be reduced from 10 to 4 with SHIELD+ARMOR
       at TestContext.<anonymous> (file:///workspace/packages/engine/test/simArmor.test.js:76:10)
       at Test.runInAsyncScope (node:async_hooks:228:14)
@@ -295,7 +295,7 @@ test at test/simArmor.test.js:47:1
   }
 
 test at test/simSmoke.test.js:72:1
-✖ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (7.35976ms)
+✖ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (8.59578ms)
   AssertionError [ERR_ASSERTION]: expected bot5 to compile
   + actual - expected
   
