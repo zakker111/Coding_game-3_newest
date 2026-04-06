@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { runMatchToReplay } from '@coding-game/engine'
-import { ARENA_MAX, ARENA_MIN, BULLET_SPEED_UNITS_PER_TICK } from '../src/sim/constants.js'
+import { ARENA_MAX, ARENA_MIN, BULLET_AMMO_COST, BULLET_SPEED_UNITS_PER_TICK } from '../src/sim/constants.js'
 
 function assertFiniteArenaPos(pos, msg) {
   assert.ok(Number.isFinite(pos?.x), `${msg}: expected finite x`)
@@ -76,7 +76,7 @@ test('runMatchToReplay: bullets despawn and ammo only decreases via SHOOT', () =
 
       if (e.type === 'RESOURCE_DELTA' && e.ammoDelta < 0) {
         assert.equal(e.cause, 'SHOOT', 'expected ammo decreases to be caused by SHOOT')
-        assert.equal(e.ammoDelta, -1, 'expected shoot ammo delta to be -1')
+        assert.equal(e.ammoDelta, -BULLET_AMMO_COST, `expected shoot ammo delta to be -${BULLET_AMMO_COST}`)
       }
     }
   }

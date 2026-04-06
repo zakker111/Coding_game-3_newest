@@ -35,6 +35,7 @@ describe('built-in example bots', () => {
     expect(src).toContain('USE_SLOT2')
     expect(src).toContain('STOP_SLOT1')
     expect(src).toContain('STOP_SLOT2')
+    expect(src).toContain('TARGET_POWERUP ENERGY')
   })
 
   it('bot5 is a powerup-aware script with target-state cleanup and slot3 defense', () => {
@@ -42,6 +43,7 @@ describe('built-in example bots', () => {
     expect(src).toContain('CLEAR_TARGET')
     expect(src).toContain('CLEAR_TARGET_POWERUP')
     expect(src).toContain('TARGET_POWERUP')
+    expect(src).toContain('TARGET_POWERUP ENERGY')
     expect(src).toContain('USE_SLOT3')
     expect(src).toContain('SET_TIMER')
     expect(src).toContain('MOVE_TO_TARGET')
@@ -49,10 +51,17 @@ describe('built-in example bots', () => {
 
   it('bot6 includes SAW logic and is powerup-aware with timers', () => {
     const src = EXAMPLE_BOTS.bot6.sourceText
-    expect(src).toContain('TARGET_POWERUP')
+    expect(src).toContain('TARGET_POWERUP ENERGY')
     expect(src).toContain('SET_TIMER')
     expect(src).toMatch(/\bSAW\b/i)
     expect(src).toContain('MOVE_TO_TARGET')
+  })
+
+  it('the built-in bot roster teaches health, ammo, and energy powerup seeking', () => {
+    const allSource = Object.values(EXAMPLE_BOTS).map((bot) => bot.sourceText).join('\n')
+    expect(allSource).toMatch(/TARGET_POWERUP HEALTH|MOVE_TO_POWERUP HEALTH/)
+    expect(allSource).toMatch(/TARGET_POWERUP AMMO|MOVE_TO_POWERUP AMMO/)
+    expect(allSource).toMatch(/TARGET_POWERUP ENERGY|MOVE_TO_POWERUP ENERGY/)
   })
 
   it('bot6 demonstrates bullet-target-aware defense', () => {

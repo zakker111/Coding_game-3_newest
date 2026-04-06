@@ -12,7 +12,7 @@
   - `CLEAR_TARGET`
   - `CLEAR_TARGET_POWERUP`
 - Uses `SLOT3 = SHIELD` through the generic slot interface for short defensive bursts.
-- When low on health/ammo, targets that powerup type and **commits** for a few ticks using `MOVE_TO_TARGET`.
+- When low on health/ammo/energy, targets that powerup type and **commits** for a few ticks using `MOVE_TO_TARGET`.
 - Otherwise returns to center control and fires at the closest target.
 
 ## Script
@@ -23,7 +23,7 @@
 ;@slot3 SHIELD
 ; bot5 — Shielded Control Hunter
 ; Loadout: SLOT1=BULLET, SLOT2=ARMOR, SLOT3=SHIELD
-; Summary: hold the center with ARMOR; clear/rebuild target state for powerup runs; use SLOT3 SHIELD reactively; return to center for combat.
+; Summary: hold the center with ARMOR; clear/rebuild target state for HEALTH/AMMO/ENERGY runs; use SLOT3 SHIELD reactively; return to center for combat.
 
 ; Default posture: drift toward the center.
 SET_MOVE_TO_SECTOR 5
@@ -49,7 +49,12 @@ IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO SET_TIMER T1 3
 IF (!TIMER_ACTIVE(T1) && AMMO < 80 && POWERUP_EXISTS(AMMO) && TIMER_DONE(T2)) DO CLEAR_TARGET
 IF (!TIMER_ACTIVE(T1) && AMMO < 80 && POWERUP_EXISTS(AMMO) && TIMER_DONE(T2)) DO TARGET_POWERUP AMMO
 IF (!TIMER_ACTIVE(T1) && AMMO < 80 && POWERUP_EXISTS(AMMO) && TIMER_DONE(T2)) DO SET_TIMER T2 3
-IF (TIMER_ACTIVE(T1) || TIMER_ACTIVE(T2)) GOTO POWERUP_RUN
+
+; Low energy (after shield use) → go to ENERGY.
+IF (!TIMER_ACTIVE(T1) && !TIMER_ACTIVE(T2) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T4)) DO CLEAR_TARGET
+IF (!TIMER_ACTIVE(T1) && !TIMER_ACTIVE(T2) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T4)) DO TARGET_POWERUP ENERGY
+IF (!TIMER_ACTIVE(T1) && !TIMER_ACTIVE(T2) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T4)) DO SET_TIMER T4 3
+IF (TIMER_ACTIVE(T1) || TIMER_ACTIVE(T2) || TIMER_ACTIVE(T4)) GOTO POWERUP_RUN
 
 ; --- Combat logic ---
 CLEAR_TARGET_POWERUP
@@ -60,9 +65,10 @@ IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO FIRE_SLOT1 TARGET
 GOTO LOOP
 
 LABEL POWERUP_RUN
+IF (SLOT_ACTIVE(SLOT3)) DO STOP_SLOT3
 MOVE_TO_TARGET
-IF ((TIMER_DONE(T1) && TIMER_DONE(T2)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO))) DO CLEAR_TARGET_POWERUP
-IF ((TIMER_DONE(T1) && TIMER_DONE(T2)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO))) DO SET_MOVE_TO_SECTOR 5
+IF ((TIMER_DONE(T1) && TIMER_DONE(T2) && TIMER_DONE(T4)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO) && !POWERUP_EXISTS(ENERGY))) DO CLEAR_TARGET_POWERUP
+IF ((TIMER_DONE(T1) && TIMER_DONE(T2) && TIMER_DONE(T4)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO) && !POWERUP_EXISTS(ENERGY))) DO SET_MOVE_TO_SECTOR 5
 GOTO LOOP
 
 LABEL BACKOFF

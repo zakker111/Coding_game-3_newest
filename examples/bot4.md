@@ -14,6 +14,7 @@
   - `STOP_SLOT2`
 - Bursts the saw when it bumps or reaches melee range.
 - Uses the shield reactively when bullets are nearby.
+- If energy gets low, turns its toggles off and rushes an `ENERGY` powerup before diving back in.
 - Sidesteps when very close to avoid repeated bump-lock.
 
 ## Script
@@ -24,11 +25,16 @@
 ;@slot3 EMPTY
 ; bot4 — Slot-Driven Saw Diver
 ; Loadout: SLOT1=SAW, SLOT2=SHIELD
-; Summary: chase CLOSEST_BOT; drive SAW/SHIELD through USE_SLOTn / STOP_SLOTn; sidestep when too close.
+; Summary: chase CLOSEST_BOT; drive SAW/SHIELD through USE_SLOTn / STOP_SLOTn; refuel from ENERGY when low; sidestep when too close.
 
 SET_MOVE_TO_BOT CLOSEST_BOT
 
 LABEL LOOP
+
+; If energy gets low, break off and refuel before trying to burst again.
+IF (ENERGY < 45 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T3)) DO TARGET_POWERUP ENERGY
+IF (ENERGY < 45 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T3)) DO SET_TIMER T3 4
+IF (TIMER_ACTIVE(T3)) GOTO REFUEL
 
 ; SAW burst window after a bump.
 IF (BUMPED_BOT() && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO USE_SLOT1 SELF
@@ -57,5 +63,13 @@ IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2
 IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1
 WAIT 2
 SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+
+LABEL REFUEL
+IF (SLOT_ACTIVE(SLOT1)) DO STOP_SLOT1
+IF (SLOT_ACTIVE(SLOT2)) DO STOP_SLOT2
+MOVE_TO_TARGET
+IF (ENERGY >= 75 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO CLEAR_TIMER T3
+IF (ENERGY >= 75 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO SET_MOVE_TO_BOT CLOSEST_BOT
 GOTO LOOP
 ```

@@ -35,7 +35,8 @@ export const BULLET_SPEED_UNITS_PER_TICK = 16
 export const BULLET_TTL_TICKS = 18
 export const BULLET_DAMAGE = 10
 
-export const BULLET_AMMO_COST = 1
+// Kept high enough that ammo powerups matter during ordinary Workshop matches.
+export const BULLET_AMMO_COST = 2
 export const BULLET_COOLDOWN_TICKS = 4
 
 export const WALL_BUMP_DAMAGE = 2
