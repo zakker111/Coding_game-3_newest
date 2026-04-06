@@ -16,6 +16,8 @@ const KNOWN_KINDS = new Set([
   'WAIT',
   'SET_TIMER',
   'CLEAR_TIMER',
+  'SET_REG',
+  'ADD_REG',
 
   // targeting
   'SET_TARGET_BOT',
@@ -47,6 +49,7 @@ export function initBotVm(program) {
     pc: 1,
     waitRemaining: 0,
     timers: { 1: 0, 2: 0, 3: 0 },
+    vars: { R1: 0, R2: 0, R3: 0, R4: 0 },
     target: { botSelector: null, bulletId: null, powerupType: null },
     moveGoal: null,
   }
@@ -73,6 +76,7 @@ export function stepBotVm(vm, observation) {
   const nextVm = {
     ...vm,
     timers: { ...vm.timers },
+    vars: { ...(vm.vars ?? { R1: 0, R2: 0, R3: 0, R4: 0 }) },
     target: { ...vm.target },
   }
 
@@ -188,6 +192,10 @@ function evalCond(expr, vm, observation) {
   const ctx = {
     ...(observation && typeof observation === 'object' ? observation : {}),
     timers,
+    vars: {
+      ...(observation && typeof observation === 'object' && observation.vars ? observation.vars : {}),
+      ...(vm?.vars ?? {}),
+    },
 
     // Prefer explicit hasTargetBot from the sim layer (it can incorporate
     // validity checks like target existence/alive). Fall back to the VM's
@@ -238,6 +246,24 @@ function execInstr(instr, vm, effects) {
   if (kind === 'CLEAR_TIMER') {
     const timer = instr.timer
     if (timer === 1 || timer === 2 || timer === 3) vm.timers[timer] = 0
+    return
+  }
+
+  if (kind === 'SET_REG') {
+    const register = instr.register
+    if (register === 'R1' || register === 'R2' || register === 'R3' || register === 'R4') {
+      vm.vars[register] = clampRegisterValue(instr.value)
+    }
+    return
+  }
+
+  if (kind === 'ADD_REG') {
+    const register = instr.register
+    if (register === 'R1' || register === 'R2' || register === 'R3' || register === 'R4') {
+      const current = Number.isInteger(vm.vars[register]) ? vm.vars[register] : 0
+      const delta = Number.isInteger(instr.delta) ? instr.delta : 0
+      vm.vars[register] = clampRegisterValue(current + delta)
+    }
     return
   }
 
@@ -304,4 +330,12 @@ function execInstr(instr, vm, effects) {
   }
 
   // Unknown kinds are treated as INVALID by `stepBotVm`.
+}
+
+/**
+ * @param {unknown} value
+ */
+function clampRegisterValue(value) {
+  const n = Number.isInteger(value) ? value : 0
+  return Math.max(0, Math.min(999, n))
 }

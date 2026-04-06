@@ -17,6 +17,10 @@ import { parseExpression } from './expr.js'
  */
 
 /**
+ * @typedef {'R1' | 'R2' | 'R3' | 'R4'} RegisterId
+ */
+
+/**
  * @typedef {(
  *   | { kind: 'INVALID' }
  *   | { kind: 'NOP' }
@@ -51,7 +55,11 @@ import { parseExpression } from './expr.js'
  *   | { kind: 'MOVE_TO_LOWEST_HEALTH_BOT' }
  *   | { kind: 'MOVE_TO_POWERUP', type: PowerupType }
  *   | { kind: 'MOVE_TO_ARENA_EDGE', dir: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' }
+ *   | { kind: 'MOVE_TO_TARGET_UNTIL_IN_RANGE', range: number }
+ *   | { kind: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE', range: number }
  *   | { kind: 'CLEAR_MOVE' }
+ *   | { kind: 'SET_REG', register: RegisterId, value: number }
+ *   | { kind: 'ADD_REG', register: RegisterId, delta: number }
  *   | { kind: 'MODULE_TOGGLE', module: 'SAW' | 'SHIELD', on: boolean }
  *   | { kind: 'USE_SLOT', slot: 1 | 2 | 3, target: string }
  *   | { kind: 'STOP_SLOT', slot: 1 | 2 | 3 }
@@ -71,6 +79,8 @@ const OPCODE_ALIASES = new Map([
   ['MOVE_TO_NEAREST_BOT', 'MOVE_TO_CLOSEST_BOT'],
   ['MOVE_TO_WEAKEST_BOT', 'MOVE_TO_LOWEST_HEALTH_BOT'],
   ['MOVE_TO_WALL', 'MOVE_TO_ARENA_EDGE'],
+  ['HOLD_POSITION', 'CLEAR_MOVE'],
+  ['RETREAT_TO_SECTOR', 'SET_MOVE_TO_SECTOR'],
 
   // Module-type sugar (v1): default weapon is SLOT1, so FIRE_BULLET compiles to USE_SLOT1.
   ['FIRE_BULLET', 'USE_SLOT1'],
@@ -413,6 +423,54 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET_BULLET' }
   if (op === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET' }
 
+  if (op === 'SET') {
+    const register = parseRegister(parts[1])
+    const value = parseNonNegativeInt(parts[2])
+    if (!register || value == null || parts.length !== 3) {
+      errors.push({ line: lineNo, message: 'SET expects: SET R1|R2|R3|R4 <0..999>' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'SET_REG', register, value }
+  }
+
+  if (op === 'INC') {
+    const register = parseRegister(parts[1])
+    if (!register || parts.length !== 2) {
+      errors.push({ line: lineNo, message: 'INC expects: INC R1|R2|R3|R4' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: 1 }
+  }
+
+  if (op === 'DEC') {
+    const register = parseRegister(parts[1])
+    if (!register || parts.length !== 2) {
+      errors.push({ line: lineNo, message: 'DEC expects: DEC R1|R2|R3|R4' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: -1 }
+  }
+
+  if (op === 'ADD') {
+    const register = parseRegister(parts[1])
+    const value = parseNonNegativeInt(parts[2])
+    if (!register || value == null || parts.length !== 3) {
+      errors.push({ line: lineNo, message: 'ADD expects: ADD R1|R2|R3|R4 <0..999>' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: value }
+  }
+
+  if (op === 'SUB') {
+    const register = parseRegister(parts[1])
+    const value = parseNonNegativeInt(parts[2])
+    if (!register || value == null || parts.length !== 3) {
+      errors.push({ line: lineNo, message: 'SUB expects: SUB R1|R2|R3|R4 <0..999>' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: -value }
+  }
+
   if (op === 'MOVE') {
     const dir = parseMoveDir(parts[1])
     if (!dir || parts.length !== 2) {
@@ -569,6 +627,30 @@ function parseSimpleInstruction(line, lineNo, errors) {
     return { kind: 'MOVE_TO_ARENA_EDGE', dir }
   }
 
+  if (op === 'MOVE_TO_TARGET_UNTIL_IN_RANGE') {
+    const range = parseNonNegativeInt(parts[1])
+    if (range == null || parts.length !== 2) {
+      errors.push({
+        line: lineNo,
+        message: 'MOVE_TO_TARGET_UNTIL_IN_RANGE expects: MOVE_TO_TARGET_UNTIL_IN_RANGE <0..999>',
+      })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'MOVE_TO_TARGET_UNTIL_IN_RANGE', range }
+  }
+
+  if (op === 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE') {
+    const range = parseNonNegativeInt(parts[1])
+    if (range == null || parts.length !== 2) {
+      errors.push({
+        line: lineNo,
+        message: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE expects: MOVE_AWAY_FROM_TARGET_UNTIL_RANGE <0..999>',
+      })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE', range }
+  }
+
   if (op === 'CLEAR_MOVE') {
     if (parts.length !== 1) {
       errors.push({ line: lineNo, message: 'CLEAR_MOVE expects no arguments' })
@@ -633,6 +715,17 @@ function parsePositiveInt(s) {
   if (!s) return 0
   const n = Number.parseInt(s, 10)
   if (!Number.isInteger(n) || n <= 0) return 0
+  return n
+}
+
+/**
+ * @param {string | undefined} s
+ * @returns {number | null}
+ */
+function parseNonNegativeInt(s) {
+  if (s == null) return null
+  const n = Number.parseInt(s, 10)
+  if (!Number.isInteger(n) || n < 0 || n > 999) return null
   return n
 }
 
@@ -707,6 +800,16 @@ function parseMoveDir(s) {
   if (t === 'UP_RIGHT') return 'UP_RIGHT'
   if (t === 'DOWN_LEFT') return 'DOWN_LEFT'
   if (t === 'DOWN_RIGHT') return 'DOWN_RIGHT'
+  return null
+}
+
+/**
+ * @param {string | undefined} s
+ * @returns {RegisterId | null}
+ */
+function parseRegister(s) {
+  const t = (s ?? '').toUpperCase()
+  if (t === 'R1' || t === 'R2' || t === 'R3' || t === 'R4') return t
   return null
 }
 

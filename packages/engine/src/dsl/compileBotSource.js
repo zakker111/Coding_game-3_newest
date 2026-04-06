@@ -88,10 +88,17 @@ function normalizeInstruction(instr) {
   if (instr.kind === 'MOVE_TO_CLOSEST_BOT') return { kind: 'MOVE', target: { kind: 'BOT', token: 'CLOSEST_BOT' } }
   if (instr.kind === 'MOVE_TO_LOWEST_HEALTH_BOT') return { kind: 'MOVE', target: { kind: 'BOT', token: 'LOWEST_HEALTH_BOT' } }
   if (instr.kind === 'MOVE_TO_ARENA_EDGE') return { kind: 'MOVE', target: { kind: 'ARENA_EDGE', dir: instr.dir } }
+  if (instr.kind === 'MOVE_TO_TARGET_UNTIL_IN_RANGE') {
+    return { kind: 'SET_MOVE', target: { kind: 'TARGET', untilRange: instr.range } }
+  }
+  if (instr.kind === 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE') {
+    return { kind: 'SET_MOVE', target: { kind: 'TARGET_AWAY', untilRange: instr.range } }
+  }
 
   // Already-canonical instructions pass through:
   // - MOVE_DIR, CLEAR_MOVE
   // - NOP, WAIT, SET_TIMER, CLEAR_TIMER
+  // - SET_REG, ADD_REG
   // - MODULE_TOGGLE, USE_SLOT, STOP_SLOT
   // - INVALID
   return instr
