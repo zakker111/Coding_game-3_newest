@@ -113,7 +113,7 @@ test('example bot1 patrols its home sector in the documented zone loop', () => {
   assert.ok(visited.has('16,48'), 'expected bot1 to visit zone 3')
 })
 
-test('example bot2 prioritizes BOT1 and chases it with explicit targeting', () => {
+test('example bot2 starts on BOT1 and rotates targets with explicit cycling', () => {
   const replay = runMatchToReplay({
     seed: 1,
     tickCap: 30,
@@ -128,11 +128,15 @@ test('example bot2 prioritizes BOT1 and chases it with explicit targeting', () =
   const events = botEvents(replay, 'BOT2')
   const firstMove = events.find((e) => e.type === 'BOT_MOVED')
   const firstSpawn = events.find((e) => e.type === 'BULLET_SPAWN')
+  const execs = events.filter((e) => e.type === 'BOT_EXEC').map((e) => e.instrText)
+  const spawnTargets = events.filter((e) => e.type === 'BULLET_SPAWN').map((e) => e.targetBotId)
 
   assert.ok(firstMove, 'expected bot2 to move toward its chosen target')
   assert.equal(firstMove.dir, 'LEFT')
   assert.ok(firstSpawn, 'expected bot2 to fire at least once')
   assert.equal(firstSpawn.targetBotId, 'BOT1')
+  assert.ok(execs.includes('SET_TARGET NEXT_IF_DEAD'))
+  assert.deepEqual(spawnTargets.slice(0, 3), ['BOT1', 'BOT3', 'BOT4'])
 })
 
 test('example bot3 holds its corner when no threat or powerup detour is needed', () => {

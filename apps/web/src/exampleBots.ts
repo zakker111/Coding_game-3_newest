@@ -33,27 +33,27 @@ export const EXAMPLE_BOTS: Record<ExampleBotId, ExampleBot> = {
   },
   bot1: {
     id: 'bot1',
-    displayName: 'Zone Patrol Shooter',
+    displayName: 'Weakest-Link Patrol',
     sourceText: extractFirstTextFence(bot1Md),
   },
   bot2: {
     id: 'bot2',
-    displayName: 'Chaser Shooter',
+    displayName: 'Target Cycler',
     sourceText: extractFirstTextFence(bot2Md),
   },
   bot3: {
     id: 'bot3',
-    displayName: 'Corner Bunker',
+    displayName: 'Immediate-Move Bunker',
     sourceText: extractFirstTextFence(bot3Md),
   },
   bot4: {
     id: 'bot4',
-    displayName: 'Saw Rusher',
+    displayName: 'Slot-Driven Saw Diver',
     sourceText: extractFirstTextFence(bot4Md),
   },
   bot5: {
     id: 'bot5',
-    displayName: 'Burst Hunter',
+    displayName: 'Shielded Control Hunter',
     sourceText: extractFirstTextFence(bot5Md),
   },
   bot6: {

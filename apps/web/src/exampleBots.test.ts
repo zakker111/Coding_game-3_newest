@@ -15,9 +15,34 @@ describe('built-in example bots', () => {
     expect(src).toContain('MOVE_AWAY_FROM_TARGET')
   })
 
-  it('bot5 is a powerup-aware script with timers', () => {
+  it('bot1 patrol teaches weakest-target selection and bullet-target clearing', () => {
+    const src = EXAMPLE_BOTS.bot1.sourceText
+    expect(src).toContain('TARGET_LOWEST_HEALTH')
+    expect(src).toContain('TARGET_CLOSEST_BULLET')
+    expect(src).toContain('CLEAR_TARGET_BULLET')
+  })
+
+  it('bot2 teaches target cycling with immediate movement', () => {
+    const src = EXAMPLE_BOTS.bot2.sourceText
+    expect(src).toContain('TARGET_NEXT')
+    expect(src).toContain('TARGET_NEXT_IF_DEAD')
+    expect(src).toContain('MOVE_TO_TARGET')
+  })
+
+  it('bot4 teaches generic slot-driven toggle control', () => {
+    const src = EXAMPLE_BOTS.bot4.sourceText
+    expect(src).toContain('USE_SLOT1')
+    expect(src).toContain('USE_SLOT2')
+    expect(src).toContain('STOP_SLOT1')
+    expect(src).toContain('STOP_SLOT2')
+  })
+
+  it('bot5 is a powerup-aware script with target-state cleanup and slot3 defense', () => {
     const src = EXAMPLE_BOTS.bot5.sourceText
+    expect(src).toContain('CLEAR_TARGET')
+    expect(src).toContain('CLEAR_TARGET_POWERUP')
     expect(src).toContain('TARGET_POWERUP')
+    expect(src).toContain('USE_SLOT3')
     expect(src).toContain('SET_TIMER')
     expect(src).toContain('MOVE_TO_TARGET')
   })

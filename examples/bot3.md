@@ -1,4 +1,4 @@
-# Built-in bot: Corner Bunker (BULLET)
+# Built-in bot: Immediate-Move Bunker (BULLET)
 
 **Suggested loadout**
 - `SLOT1 = BULLET`
@@ -7,10 +7,11 @@
 
 **Intended behavior**
 - Defaults to a fixed “home” location.
-- If bullets are nearby, briefly dodges to avoid sitting in a firing lane.
-- If a bot is **very close** (or we just bumped), briefly sidesteps within its current sector.
-- If resources are low, sets a **powerup move goal** to the nearest relevant powerup.
-- Uses `WAIT` to briefly **commit** to a powerup run (keeps walking toward the goal while not re-planning).
+- Demonstrates **immediate movement** instructions instead of persistent move goals:
+  - `MOVE_TO_SECTOR`
+  - `MOVE_TO_POWERUP`
+- If bullets are nearby, briefly targets the closest bullet, moves away from it, and clears the bullet target.
+- If a bot is **very close** (or we just bumped), briefly steps deeper into its home sector.
 - Opportunistically fires using an **inline selector** (no target register).
 
 ## Script
@@ -19,60 +20,40 @@
 ;@slot1 BULLET
 ;@slot2 EMPTY
 ;@slot3 EMPTY
-; bot3 — Corner Bunker
+; bot3 — Immediate-Move Bunker
 ; Loadout: SLOT1=BULLET
-; Summary: hold a home corner; avoid bump-lock; dodge bullets; run to powerups when low (with a short WAIT); shoot NEAREST_BOT when close.
-
-SET_MOVE_TO_SECTOR 1 ZONE 1
+; Summary: hold a home corner with immediate movement; make one-tick powerup detours; dodge bullets via the bullet target register; shoot NEAREST_BOT when close.
 
 LABEL LOOP
-
-; If we're about to collide, sidestep within our current sector.
-IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
 
 ; If enemy bullets are nearby, dodge for a tick.
 IF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS
 
-; Pick a powerup goal (priority: health → ammo).
+; If we're about to collide, take a short step inward.
+IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
+
+; Make one-tick detours to the nearest useful powerup.
 ; (Thresholds are tuned so this behavior is visible in short Workshop runs.)
-IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) DO SET_MOVE_TO_POWERUP HEALTH
-IF (AMMO < 80 && POWERUP_EXISTS(AMMO)) DO SET_MOVE_TO_POWERUP AMMO
+IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) DO MOVE_TO_POWERUP HEALTH
+IF (HEALTH >= 70 && AMMO < 80 && POWERUP_EXISTS(AMMO)) DO MOVE_TO_POWERUP AMMO
 
-; If we decided to go get a powerup, commit for 2 ticks while the goal keeps moving us.
-; Note: WAIT is control-flow and cannot be nested under IF (...) DO ....
-IF ((HEALTH < 70 && POWERUP_EXISTS(HEALTH)) || (AMMO < 80 && POWERUP_EXISTS(AMMO))) GOTO COMMIT_POWERUP
-
-; Otherwise, go back home.
-IF (HEALTH >= 70 && AMMO >= 80) DO SET_MOVE_TO_SECTOR 1 ZONE 1
+; Otherwise, reassert the home corner immediately.
+IF (HEALTH >= 70 && (AMMO >= 80 || !POWERUP_EXISTS(AMMO))) DO MOVE_TO_SECTOR 1 ZONE 1
 
 ; Only shoot when something is fairly close (helps conserve ammo).
 IF (SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 120) DO FIRE_SLOT1 NEAREST_BOT
 
 GOTO LOOP
 
-LABEL COMMIT_POWERUP
-WAIT 2
-GOTO LOOP
-
 LABEL BACKOFF
-; Step to the opposite zone in our current sector, then resume normal logic.
-CLEAR_MOVE
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1
-WAIT 2
-CLEAR_MOVE
+; Step deeper into the home sector for a tick, then resume normal logic.
+MOVE_TO_SECTOR 1 ZONE 4
 GOTO LOOP
 
 LABEL DODGE_BULLETS
-; Quick evasive step: move to a different zone for 1 tick.
-CLEAR_MOVE
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 1
-WAIT 1
-CLEAR_MOVE
+; Quick evasive step: move away from the closest bullet, then clear the bullet target.
+TARGET_CLOSEST_BULLET
+IF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET
+IF (HAS_TARGET_BULLET()) DO CLEAR_TARGET_BULLET
 GOTO LOOP
 ```
