@@ -19,7 +19,10 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ## Unreleased
 
-- No unreleased changes tracked yet.
+- Workshop-only inactive opponent slots:
+  - BOT2..BOT4 can be set to `None (inactive)` in the React Workshop for local inspection runs
+  - randomize still fills opponent slots with real bots only
+  - the inactive-slot affordance is local Workshop UX, not part of the server match contract
 
 ---
 

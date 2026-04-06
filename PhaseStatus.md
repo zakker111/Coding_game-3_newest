@@ -12,7 +12,7 @@ This repo already has a working end-to-end local loop:
 Goals:
 - Start the smallest server-side slice now that the local deterministic loop and deploy parity guardrails are in place.
 - Keep engine semantics locked while the server consumes the already-tested local replay contract.
-- Treat further local-loop work as additive hardening, not as a reason to delay Phase 8 again.
+- Treat further local-loop work as additive hardening, not as a reason to delay Phase 8 again. Workshop-only inactive opponent slots remain a local UI affordance and are not part of the server-side match surface.
 
 ---
 
@@ -67,6 +67,7 @@ Implemented:
 - Tick-events parity with deploy Workshop (`All`, filter/search, richer raw JSON).
 - Replay export affordances in the React Workshop.
 - Follow-on source-line / `pc` highlighting shipped for BOT1 via local compile metadata in the app.
+- Workshop match setup supports local-only inactive opponent slots (`None` for BOT2..BOT4) so replay inspection can focus on one-bot or two-bot runs without changing the server contract.
 - Replay `loadoutIssues` are surfaced prominently in the React Workshop tabs + Inspector while keeping the detailed list in `Loadout`.
 - Deploy Workshop now mirrors the replay loadout-warning affordance in tabs + Inspector.
 - Bullet despawn interpolation/fade is already shipped in both Workshop surfaces.

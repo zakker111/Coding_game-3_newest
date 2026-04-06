@@ -18,6 +18,7 @@ Recently completed (this merge set)
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
 - Phase 6 golden determinism fixtures committed + enforced in CI.
 - Replay contract and deploy Workshop static-contract tests now lock the current 0.2.0 schema/QA surface more explicitly.
+- Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
 Next slice (non-server roadmap)
 - Start the smallest server runner slice now that the local-loop parity/sign-off work is in place.
@@ -33,6 +34,7 @@ Implemented now
 - [x] Explicit per-bot loadouts are the authoritative contract across engine, Workshop, deploy docs, and server planning docs.
 - [x] Bullet targeting, example-bot follow-through, and deploy inspector `Target bullet` parity are shipped.
 - [x] Replay/debug ergonomics are shipped in both Workshop surfaces.
+- [x] Workshop-only inactive opponent slots are available in local match setup and do not widen the server contract.
 - [x] Golden determinism guardrails and deploy drift checks are in place.
 - [x] Phase 7 release-grade parity/sign-off is in place:
   - node-level deploy-engine parity coverage
@@ -64,6 +66,7 @@ Done (shipped)
 - [x] Workshop build tag visible in `/workshop/`.
 - [x] Example bots have `;@slot1/2/3` headers (first 3 non-blank lines in script).
 - [x] Explicit per-bot 3-slot loadouts are wired through Workshop/engine (no source scanning).
+- [x] Workshop local setup can mark BOT2..BOT4 as inactive (`None`) for local-only inspection runs; randomize still picks real opponents.
 - [x] Server planning docs now use the same explicit per-bot loadout contract as the engine.
 - [x] ARMOR implemented and tested (mitigation + speed penalty; SHIELD→ARMOR ordering).
 - [x] Golden determinism fixtures committed and `pnpm golden:check` is strict.

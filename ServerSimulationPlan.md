@@ -100,6 +100,11 @@ In addition to daily scheduled matches, the same runner supports ad-hoc “sandb
 - The runner executes it using the same determinism contract and replay schema as daily matches.
 - The client then loads the replay via `GET /api/matches/:matchId/replay`.
 
+Important boundary:
+- the React Workshop may expose client-only conveniences such as marking BOT2..BOT4 as `None (inactive)` for purely local inspection runs
+- that inactive-slot affordance is not part of the server sandbox contract
+- any server-backed sandbox/daily match should still send the normal explicit active bot/loadout inputs it intends to simulate
+
 ---
 
 ## 4) Worker architecture (recommended)

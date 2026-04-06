@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 
 import appCss from './index.css?raw'
@@ -34,6 +34,8 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
 
   expect(screen.getByText('Match setup')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Randomize opponents' })).toBeInTheDocument()
+  expect(screen.getAllByRole('option', { name: 'None (inactive)' })).toHaveLength(3)
+  expect(screen.getByText(/Opponent slots can be set to None for Workshop-only local inspection/i)).toBeInTheDocument()
   expect(screen.getByText('Tick events')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'All' })).toBeDisabled()
   expect(screen.getByRole('button', { name: 'Raw' })).toBeDisabled()
@@ -56,4 +58,18 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   const pre = Array.from(container.querySelectorAll('pre')).find((node) => node.textContent?.includes('Run a match to see events.'))
   expect(pre).toBeTruthy()
   expect(pre?.style.overflow).toBe('auto')
+
+  // 4) Randomize should always repopulate opponent slots with real bots.
+  const opponentSelects = ['BOT2 · Opponent', 'BOT3 · Opponent', 'BOT4 · Opponent'].map((label) => {
+    const card = screen.getByText(label).closest('section')
+    return card?.querySelector<HTMLSelectElement>('select.workshop-select') ?? null
+  })
+  expect(opponentSelects).toHaveLength(3)
+  expect(opponentSelects.every(Boolean)).toBe(true)
+
+  fireEvent.change(opponentSelects[0]!, { target: { value: '__NONE__' } })
+  expect(opponentSelects[0]!.value).toBe('__NONE__')
+
+  fireEvent.click(screen.getByRole('button', { name: 'Randomize opponents' }))
+  expect(opponentSelects.map((select) => select!.value)).not.toContain('__NONE__')
 })
