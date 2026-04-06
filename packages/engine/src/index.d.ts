@@ -1,4 +1,5 @@
-import type { Loadout, Replay, SlotId } from '@coding-game/replay'
+import type { Replay, SlotId } from '@coding-game/replay'
+import type { Loadout } from '@coding-game/ruleset'
 
 export type BotSourceSpec = {
   slotId: SlotId

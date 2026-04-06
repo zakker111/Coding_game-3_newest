@@ -49,6 +49,11 @@ For any server-run match in v1, use the same loadout contract as the shipped loc
 - invalid loadouts are deterministically normalized
 - normalization issues are surfaced as `loadoutIssues`
 
+Data ownership split (important for future inventory work):
+- `@coding-game/ruleset` owns the global module catalog and normalization logic
+- server inventory state owns what modules a user has unlocked/owns
+- match/replay snapshots store only the resolved equipped `loadout_snapshot`
+
 The Workshop may still embed the chosen loadout as locked source headers (`;@slot1`, `;@slot2`, `;@slot3`) for UI/editing, but server simulation should use the stored match config `loadout` rather than source scanning.
 
 **v1 product constraint (to keep UI and storage simple):** each user has **at most 3 bots**.
@@ -151,6 +156,14 @@ A replay should minimally include:
 - `POST /api/auth/login` (username + password)
 - `POST /api/auth/logout` (optional)
 - `GET /api/me`
+
+### 3.1.1 Ruleset metadata
+
+- `GET /api/ruleset`
+  - recommended response shape:
+    - `rulesetVersion`
+    - `loadoutSlotCount`
+    - `modules[]` (serialized from `@coding-game/ruleset`)
 
 ### 3.2 Bots (v1: mutable bots + optional version history)
 

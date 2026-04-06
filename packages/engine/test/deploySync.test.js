@@ -14,7 +14,7 @@ test('deploy-time copies are in sync with authoritative sources', async () => {
   await checkDeployFiles(repoRoot)
 })
 
-test('deploy sync target list covers mirrored replay and engine artifacts', async () => {
+test('deploy sync target list covers mirrored replay, ruleset, and engine artifacts', async () => {
   const targets = await listDeploySyncTargets(repoRoot)
   const dests = new Set(targets.map((t) => t.dest))
 
@@ -23,6 +23,8 @@ test('deploy sync target list covers mirrored replay and engine artifacts', asyn
   assert.ok(dests.has('deploy/replay/index.js'))
   assert.ok(dests.has('deploy/replay/index.d.ts'))
   assert.ok(dests.has('deploy/replay/generateSampleReplay.js'))
+  assert.ok(dests.has('deploy/ruleset/index.js'))
+  assert.ok(dests.has('deploy/ruleset/index.d.ts'))
   assert.ok(dests.has('deploy/engine/src/index.js'))
   assert.ok(dests.has('deploy/engine/src/sim/runMatchToReplay.js'))
 })

@@ -3,6 +3,7 @@
 This document describes the deterministic match simulation currently implemented by `packages/engine` (`rulesetVersion = 0.2.0`).
 
 Implemented simulation code lives in:
+- `packages/ruleset/src/index.js` (authoritative ruleset catalog + loadout normalization)
 - `packages/engine/src/sim/runMatchToReplay.js`
 - `packages/engine/src/sim/bulletSim.js`
 - `packages/engine/src/sim/powerupSim.js`
@@ -109,6 +110,10 @@ Important:
 
 Recognized module ids:
 - `BULLET | SAW | SHIELD | ARMOR`
+
+Implementation note:
+- the authoritative runtime catalog and normalization helper live in `@coding-game/ruleset`
+- Workshop defaults such as `DEFAULT_WORKSHOP_LOADOUT` are UI policy, not gameplay rules
 
 Module semantics:
 - `BULLET`: ammo weapon; `USE_SLOTn <BOT_TARGET>` fires a bullet (subject to cooldown + ammo)

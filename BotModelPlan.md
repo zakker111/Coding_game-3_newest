@@ -228,6 +228,7 @@ Deprecation strategy (recommended):
 3) Versioning model:
    - A) **single version**: DSL changes are part of `rulesetVersion`
    - B) **two versions**: `rulesetVersion` + `dslVersion` pinned separately (what this document currently assumes)
-4) When server-side loadouts return, do we:
-   - store loadout on each immutable BotVersion, or
-   - store loadout separately as “match config” (less common)
+4) Server-side loadouts/inventory split (recommended):
+   - keep user inventory/ownership separate from immutable BotVersion data
+   - pin equipped `loadout` on match config / match snapshots (and optionally on saved bot metadata if the product wants a default)
+   - replays only need the resolved loadout snapshot, not the user’s full inventory

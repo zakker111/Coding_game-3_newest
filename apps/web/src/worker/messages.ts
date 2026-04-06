@@ -1,3 +1,4 @@
+import { isLoadout } from '@coding-game/ruleset'
 import type { Loadout, Replay, SlotId } from '@coding-game/replay'
 
 export type BotSpec = {
@@ -28,11 +29,6 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function isSlotId(v: unknown): v is SlotId {
   return v === 'BOT1' || v === 'BOT2' || v === 'BOT3' || v === 'BOT4'
-}
-
-function isLoadout(v: unknown): v is Loadout {
-  if (!Array.isArray(v) || v.length !== 3) return false
-  return v.every((slot) => slot === null || slot === 'BULLET' || slot === 'SAW' || slot === 'SHIELD' || slot === 'ARMOR')
 }
 
 function isBotSpec(v: unknown): v is BotSpec {

@@ -1,3 +1,5 @@
+import { EMPTY_LOADOUT, RULESET_VERSION, normalizeLoadout } from '@coding-game/ruleset'
+
 import { compileBotSource } from '../dsl/compileBotSource.js'
 import { initBotVm, stepBotVm } from '../vm/botVm.js'
 
@@ -51,9 +53,7 @@ const SPAWN_POS_BY_ID = {
   BOT4: { x: 176, y: 176 },
 }
 
-const RULESET_VERSION = '0.2.0'
-
-const DEFAULT_LOADOUT = /** @type {[any, any, any]} */ ([null, null, null])
+const DEFAULT_LOADOUT = EMPTY_LOADOUT
 
 // (Ruleset.md v1 recommended baseSpeed 16 - 1 equipped slot penalty 4 => 12.)
 const BASE_SPEED_UNITS_PER_TICK = 12
@@ -91,64 +91,6 @@ function findSlotIndex(loadout, moduleId) {
     if (loadout[i] === moduleId) return i
   }
   return -1
-}
-
-function normalizeLoadout(raw) {
-  /** @type {any[]} */
-  const inputArr = Array.isArray(raw) ? raw.slice(0, 3) : []
-  while (inputArr.length < 3) inputArr.push(null)
-
-  /** @type {[any, any, any]} */
-  const loadout = [null, null, null]
-
-  /** @type {Array<{ kind: 'UNKNOWN_MODULE'|'DUPLICATE'|'MULTI_WEAPON', slot: 1|2|3, module?: string }>} */
-  const issues = []
-
-  // 1) Unknown modules => null.
-  for (let i = 0; i < 3; i++) {
-    const v = inputArr[i]
-    if (v == null) {
-      loadout[i] = null
-      continue
-    }
-
-    if (v === 'BULLET' || v === 'SAW' || v === 'SHIELD' || v === 'ARMOR') {
-      loadout[i] = v
-    } else {
-      issues.push({ kind: 'UNKNOWN_MODULE', slot: (i + 1), module: String(v) })
-      loadout[i] = null
-    }
-  }
-
-  // 2) De-dupe (keep earliest).
-  const seen = new Set()
-  for (let i = 0; i < 3; i++) {
-    const v = loadout[i]
-    if (v == null) continue
-    if (!seen.has(v)) {
-      seen.add(v)
-      continue
-    }
-    issues.push({ kind: 'DUPLICATE', slot: (i + 1), module: v })
-    loadout[i] = null
-  }
-
-  // 3) At most one weapon (keep earliest).
-  const weaponSlots = []
-  for (let i = 0; i < 3; i++) {
-    const v = loadout[i]
-    if (v === 'BULLET' || v === 'SAW') weaponSlots.push(i)
-  }
-
-  if (weaponSlots.length > 1) {
-    for (let j = 1; j < weaponSlots.length; j++) {
-      const i = weaponSlots[j]
-      issues.push({ kind: 'MULTI_WEAPON', slot: (i + 1), module: String(loadout[i]) })
-      loadout[i] = null
-    }
-  }
-
-  return { loadout, issues }
 }
 
 /**

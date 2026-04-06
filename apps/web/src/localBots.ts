@@ -1,3 +1,4 @@
+import { isLoadout } from '@coding-game/ruleset'
 import type { Loadout } from '@coding-game/replay'
 
 import { applyLoadoutHeaderDirectives, DEFAULT_WORKSHOP_LOADOUT, parseLoadoutHeaderDirectives } from './loadout'
@@ -22,11 +23,6 @@ export const MAX_LOCAL_BOTS = 3
 const LEGACY_DRAFTS_STORAGE_KEY = 'nowt:workshop:drafts:v1'
 
 type LegacyDrafts = Partial<Record<'BOT1' | 'BOT2' | 'BOT3' | 'BOT4', string>>
-
-function isLoadout(v: unknown): v is Loadout {
-  if (!Array.isArray(v) || v.length !== 3) return false
-  return v.every((slot) => slot === null || slot === 'BULLET' || slot === 'SAW' || slot === 'SHIELD' || slot === 'ARMOR')
-}
 
 function deriveInitialLoadoutFromSource(sourceText: string): Loadout {
   const parsed = parseLoadoutHeaderDirectives(sourceText)

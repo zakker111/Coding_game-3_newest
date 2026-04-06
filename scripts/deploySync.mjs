@@ -23,7 +23,21 @@ const DEPLOY_MIRROR_SPECS = [
       return relPath.endsWith('.js') || relPath.endsWith('.d.ts')
     },
   },
+  {
+    sourceRootRel: path.join('packages', 'ruleset', 'src'),
+    destRootRel: path.join('deploy', 'ruleset'),
+    include(relPath) {
+      return relPath.endsWith('.js') || relPath.endsWith('.d.ts')
+    },
+  },
 ]
+
+const DEPLOY_BARE_IMPORT_TARGETS = {
+  '@coding-game/ruleset': {
+    '.js': path.join('deploy', 'ruleset', 'index.js'),
+    '.d.ts': path.join('deploy', 'ruleset', 'index.d.ts'),
+  },
+}
 
 /**
  * @param {string} s
@@ -72,6 +86,40 @@ async function ensureParentDir(filePath) {
   await fs.mkdir(path.dirname(filePath), { recursive: true })
 }
 
+function ensureRelativeImportSpecifier(spec) {
+  return spec.startsWith('.') ? spec : `./${spec}`
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function getMirroredImportTarget(repoRoot, dstPath, bareSpecifier) {
+  const ext = dstPath.endsWith('.d.ts') ? '.d.ts' : path.extname(dstPath)
+  const targetRel = DEPLOY_BARE_IMPORT_TARGETS[bareSpecifier]?.[ext]
+  if (!targetRel) return null
+
+  const targetPath = path.join(repoRoot, targetRel)
+  const rel = normalizeRelPath(path.relative(path.dirname(dstPath), targetPath))
+  return ensureRelativeImportSpecifier(rel)
+}
+
+function rewriteMirroredImports(repoRoot, dstPath, content) {
+  let next = content
+
+  for (const bareSpecifier of Object.keys(DEPLOY_BARE_IMPORT_TARGETS)) {
+    const replacement = getMirroredImportTarget(repoRoot, dstPath, bareSpecifier)
+    if (!replacement) continue
+
+    const escapedSpecifier = escapeRegExp(bareSpecifier)
+    next = next.replace(new RegExp(`(from\\s+['"])${escapedSpecifier}(['"])`, 'g'), `$1${replacement}$2`)
+    next = next.replace(new RegExp(`(import\\s+['"])${escapedSpecifier}(['"])`, 'g'), `$1${replacement}$2`)
+    next = next.replace(new RegExp(`(import\\(\\s*['"])${escapedSpecifier}(['"]\\s*\\))`, 'g'), `$1${replacement}$2`)
+  }
+
+  return next
+}
+
 async function syncCopiedFile(repoRoot, spec) {
   const srcPath = path.join(repoRoot, spec.sourceRel)
   const dstPath = path.join(repoRoot, spec.destRel)
@@ -105,7 +153,8 @@ async function syncMirroredFiles(repoRoot, spec) {
     const srcPath = path.join(srcRoot, relPath)
     const dstPath = path.join(dstRoot, relPath)
     await ensureParentDir(dstPath)
-    await fs.writeFile(dstPath, await fs.readFile(srcPath, 'utf8'))
+    const src = await fs.readFile(srcPath, 'utf8')
+    await fs.writeFile(dstPath, rewriteMirroredImports(repoRoot, dstPath, src))
   }
 
   for (const relPath of destFiles) {
@@ -134,7 +183,7 @@ async function checkMirroredFiles(repoRoot, spec, issues) {
     const srcPath = path.join(srcRoot, relPath)
     const dstPath = path.join(dstRoot, relPath)
 
-    const src = normalizeNewlines(await fs.readFile(srcPath, 'utf8')).trimEnd()
+    const src = normalizeNewlines(rewriteMirroredImports(repoRoot, dstPath, await fs.readFile(srcPath, 'utf8'))).trimEnd()
     const dst = normalizeNewlines(await fs.readFile(dstPath, 'utf8')).trimEnd()
 
     if (src !== dst) {

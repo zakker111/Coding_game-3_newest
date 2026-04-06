@@ -15,6 +15,7 @@
     "src"
   ],
   "dependencies": {
+    "@coding-game/ruleset": "workspace:*",
     "@coding-game/replay": "workspace:*"
   },
   "devDependencies": {

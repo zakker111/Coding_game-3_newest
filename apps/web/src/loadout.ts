@@ -1,4 +1,6 @@
-import type { Loadout, ModuleId, SlotId } from '@coding-game/replay'
+import { isKnownModuleId } from '@coding-game/ruleset'
+import type { Loadout, ModuleId } from '@coding-game/ruleset'
+import type { SlotId } from '@coding-game/replay'
 
 function normalizeNewlines(s: string): string {
   return s.replace(/\r\n?/g, '\n')
@@ -11,7 +13,7 @@ const KNOWN_MODULES: readonly ModuleId[] = ['BULLET', 'SAW', 'SHIELD', 'ARMOR']
 function parseModuleId(raw: string): ModuleId | null {
   const upper = raw.trim().toUpperCase()
   if (upper === 'EMPTY' || upper === 'NONE') return null
-  if ((KNOWN_MODULES as readonly string[]).includes(upper)) return upper as ModuleId
+  if (isKnownModuleId(upper)) return upper
   // Unknown module => treat as empty.
   return null
 }

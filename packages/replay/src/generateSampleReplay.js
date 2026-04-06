@@ -1,3 +1,5 @@
+import { loadoutHasModule, normalizeLoadout } from '@coding-game/ruleset'
+
 import { createRng, rngChoice, rngInt } from './prng.js'
 
 const BOT_CENTER_MIN = 8
@@ -87,10 +89,6 @@ function oppositeDir(dir) {
 
 function bumpPairKey(a, b) {
   return a < b ? `${a}|${b}` : `${b}|${a}`
-}
-
-function loadoutHasModule(loadout, moduleId) {
-  return Array.isArray(loadout) && loadout.includes(moduleId)
 }
 
 function stripBotSourceForHeuristics(sourceText) {
@@ -389,19 +387,12 @@ function normalizeHeaderBots(input, fallback) {
 
     /** @type {[any, any, any]} */
     let loadout = [null, null, null]
+    let loadoutIssues
 
     if (Array.isArray(b?.loadout) && b.loadout.length === 3) {
-      /** @type {[any, any, any]} */
-      const normalized = [null, null, null]
-
-      for (let i = 0; i < 3; i++) {
-        const raw = b.loadout[i]
-        if (raw == null) normalized[i] = null
-        else if (raw === 'BULLET' || raw === 'SAW' || raw === 'SHIELD' || raw === 'ARMOR') normalized[i] = raw
-        else normalized[i] = null
-      }
-
-      loadout = normalized
+      const normalized = normalizeLoadout(b.loadout)
+      loadout = normalized.loadout
+      loadoutIssues = normalized.issues.length ? normalized.issues : undefined
     }
 
     return {
@@ -410,6 +401,7 @@ function normalizeHeaderBots(input, fallback) {
       appearance: appearance ?? defaultAppearanceForSlot(slotId),
       sourceText,
       loadout,
+      loadoutIssues,
     }
   })
 }

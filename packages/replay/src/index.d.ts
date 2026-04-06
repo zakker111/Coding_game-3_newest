@@ -1,16 +1,7 @@
+import type { Loadout, LoadoutIssue, LoadoutIssueKind, ModuleId } from '@coding-game/ruleset'
+
 export type SlotId = 'BOT1' | 'BOT2' | 'BOT3' | 'BOT4'
-
-export type ModuleId = 'BULLET' | 'SAW' | 'SHIELD' | 'ARMOR'
-
-export type Loadout = [ModuleId | null, ModuleId | null, ModuleId | null]
-
-export type LoadoutIssueKind = 'UNKNOWN_MODULE' | 'DUPLICATE' | 'MULTI_WEAPON'
-
-export type LoadoutIssue = {
-  kind: LoadoutIssueKind
-  slot: 1 | 2 | 3
-  module?: string
-}
+export type { Loadout, LoadoutIssue, LoadoutIssueKind, ModuleId } from '@coding-game/ruleset'
 
 export type ReplayAppearance = {
   kind: 'COLOR'

@@ -1,5 +1,5 @@
 {
-  "name": "@coding-game/replay",
+  "name": "@coding-game/ruleset",
   "private": true,
   "version": "0.0.4",
   "type": "module",
@@ -14,9 +14,6 @@
   "files": [
     "src"
   ],
-  "dependencies": {
-    "@coding-game/ruleset": "workspace:*"
-  },
   "scripts": {
     "build": "node -e \"import('./src/index.js')\"",
     "test": "node --test"

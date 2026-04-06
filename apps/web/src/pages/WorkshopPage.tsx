@@ -2,7 +2,9 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { compileBotSource } from '@coding-game/engine'
-import type { KnownReplayEvent, Loadout, ModuleId, Replay, ReplayEvent, SlotId } from '@coding-game/replay'
+import { MODULE_IDS, isKnownModuleId, normalizeLoadout } from '@coding-game/ruleset'
+import type { Loadout, ModuleId } from '@coding-game/ruleset'
+import type { KnownReplayEvent, Replay, ReplayEvent, SlotId } from '@coding-game/replay'
 
 import { getLineRangeForLine, getSourceLineForPc, getSourceLineText, getSourceLines } from '../botSourceDebug'
 import { EXAMPLE_BOTS, EXAMPLE_OPPONENT_IDS } from '../exampleBots'
@@ -24,18 +26,18 @@ import { formatReplayLoadoutIssue, getReplayHeaderBotsBySlot, getReplayLoadoutIs
 import { ArenaCanvas, type ArenaRenderState } from '../ui/arena'
 import { runLocalInWorker } from '../worker/runLocalInWorker'
 
-const LOADOUT_OPTION_VALUES = ['EMPTY', 'BULLET', 'SAW', 'SHIELD', 'ARMOR'] as const
-type LoadoutOptionValue = (typeof LOADOUT_OPTION_VALUES)[number]
+type LoadoutOptionValue = 'EMPTY' | ModuleId
+const LOADOUT_OPTION_VALUES: readonly LoadoutOptionValue[] = ['EMPTY', ...MODULE_IDS]
 
 function parseLoadoutOptionValue(v: string): ModuleId | null {
   const upper = String(v ?? '').toUpperCase()
   if (upper === 'EMPTY') return null
-  if (upper === 'BULLET' || upper === 'SAW' || upper === 'SHIELD' || upper === 'ARMOR') return upper
+  if (isKnownModuleId(upper)) return upper
   return null
 }
 
 function formatLoadoutOptionValue(mod: ModuleId | null): LoadoutOptionValue {
-  if (mod === 'BULLET' || mod === 'SAW' || mod === 'SHIELD' || mod === 'ARMOR') return mod
+  if (mod != null && isKnownModuleId(mod)) return mod
   return 'EMPTY'
 }
 
@@ -1020,23 +1022,15 @@ export function WorkshopPage() {
   }, [editorSourceText, highlightedBot1SourceLine])
 
   const bot1LoadoutWarnings = React.useMemo(() => {
-    const loadout = selectedMyBotLoadout
-
-    const counts = new Map<ModuleId, number>()
-    for (const mod of loadout) {
-      if (mod == null) continue
-      counts.set(mod, (counts.get(mod) ?? 0) + 1)
-    }
-
-    const dupes = [...counts.entries()]
-      .filter(([, n]) => n > 1)
-      .map(([m]) => m)
-
-    const weaponCount = loadout.filter((m) => m === 'BULLET' || m === 'SAW').length
+    const { issues } = normalizeLoadout(selectedMyBotLoadout)
+    const dupes = issues
+      .filter((issue) => issue.kind === 'DUPLICATE' && issue.module)
+      .map((issue) => issue.module as ModuleId)
+    const hasMultiWeapon = issues.some((issue) => issue.kind === 'MULTI_WEAPON')
 
     const warnings: string[] = []
     if (dupes.length) warnings.push(`Duplicate modules: ${dupes.join(', ')}`)
-    if (weaponCount > 1) warnings.push('More than one weapon selected (BULLET/SAW)')
+    if (hasMultiWeapon) warnings.push('More than one weapon selected (BULLET/SAW)')
 
     return warnings
   }, [selectedMyBotLoadout])

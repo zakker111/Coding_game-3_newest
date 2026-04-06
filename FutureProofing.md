@@ -28,6 +28,27 @@ We need an extensibility layer.
 
 ## 2) Core strategy: keep the VM instruction set small; make modules data-driven
 
+### 2.0 Authoritative catalog ownership (implemented workspace rule)
+The authoritative module/loadout contract should live in the neutral workspace package:
+- `packages/ruleset` (`@coding-game/ruleset`)
+
+That package owns:
+- `rulesetVersion`
+- recognized `ModuleId` values
+- the module catalog/metadata
+- deterministic loadout normalization
+
+This split is intentional:
+- `@coding-game/ruleset` = global catalog + rules
+- `packages/engine` = simulation behavior for each shipped module
+- server storage = per-user inventory ownership / unlocks
+- Workshop = UI defaults like starter loadouts
+
+That keeps future module additions mechanical:
+1. add/update the catalog in `@coding-game/ruleset`
+2. implement deterministic engine behavior
+3. add tests
+
 ### 2.1 Stable instruction “spine”
 Keep these categories stable (rarely change):
 - control flow (`LABEL`, `GOTO`, `IF ...`)

@@ -5,6 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { compileBotSource, runMatchToReplay } from '@coding-game/engine'
+import { isKnownModuleId } from '@coding-game/ruleset'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -25,8 +26,6 @@ function loadExampleBot(n) {
   const md = readFileSync(filename, 'utf8')
   return extractTextFence(md)
 }
-
-const KNOWN_MODULES = ['BULLET', 'SAW', 'SHIELD', 'ARMOR']
 
 /**
  * @param {string} sourceText
@@ -51,7 +50,7 @@ function deriveLoadoutFromHeader(sourceText) {
     if (m) {
       const slot = Number(m[1])
       const tok = String(m[2] ?? '').trim().toUpperCase()
-      const mod = tok === 'EMPTY' || tok === 'NONE' ? null : KNOWN_MODULES.includes(tok) ? tok : null
+      const mod = tok === 'EMPTY' || tok === 'NONE' ? null : isKnownModuleId(tok) ? tok : null
       if (slot >= 1 && slot <= 3) loadout[slot - 1] = mod
     }
 
