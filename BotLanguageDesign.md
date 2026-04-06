@@ -110,6 +110,9 @@ Target kinds (stable):
 - **LOCATION**:
   - `SECTOR <N>` (1..9, sector center)
   - `SECTOR <N> ZONE <Z>` (`Z` = 1..4, zone center)
+  - future sugar:
+    - `POWERUP HEALTH|AMMO|ENERGY|ANY` (resolve to the closest currently valid powerup location of that type)
+    - `RANDOM_POSITION` (must resolve deterministically from stable replay inputs; recommended to ship first as random sector/zone center rather than arbitrary coordinates)
 
 - **NONE**:
   - `NONE`
@@ -128,7 +131,7 @@ Then:
 
 - Grenade launchers may want a bot target or a sector target.
 - Mines typically don’t need a bot target.
-- Teleport needs a location target.
+- Teleport needs a location target and benefits from powerup/random-location sugar.
 - Helper/minion spawners often need `NONE` or `SELF`.
 
 ---
@@ -172,6 +175,55 @@ Examples (all simulation-side; bots can only *read* via `SLOT_QUERY` if you choo
 
 The language surface stays the same: bots still just `USE_SLOTn <TARGET>`.
 
+### 4.2 Recommended tactical movement helpers (future sugar over persistent move goals)
+
+These are the highest-value movement additions if you want bots to manage spacing and positioning without forcing every player to hand-write the same loops.
+
+Recommended helpers:
+
+- `MOVE_TO_TARGET_UNTIL_IN_RANGE <n>`
+  - move toward the current target bot until `DIST_TO_TARGET() <= n`
+  - then clear the movement goal automatically
+
+- `MOVE_AWAY_FROM_TARGET_UNTIL_RANGE <n>`
+  - move away from the current target bot until `DIST_TO_TARGET() >= n`
+  - then clear the movement goal automatically
+
+- `HOLD_POSITION`
+  - clear current movement intent and remain anchored until a later instruction changes it
+
+- `ORBIT_TARGET`
+  - move around the current target bot instead of directly toward or away from it
+  - recommended first version: fixed default orbit radius and deterministic direction
+
+- `RETREAT_TO_SECTOR <n>`
+  - set a persistent retreat goal toward a specific sector anchor
+  - useful for heal/regroup/rearm behavior
+
+Design rule:
+- these should compile down to the same move-goal machinery already proposed in §2.3, not to bespoke physics paths
+
+### 4.3 Recommended competitive sensing helpers (future)
+
+These are the most useful next sensing additions for richer arena decisions:
+
+- `ENEMIES_IN_RANGE(n)` → int
+  - count alive enemy bots within range `n`
+
+- `COUNT_ALIVE_ENEMIES()` → int
+  - count alive enemy bots globally
+
+- `DIST_TO_CLOSEST_POWERUP(ANY|HEALTH|AMMO|ENERGY)` → int
+  - return the distance to the nearest currently spawned powerup of the requested kind
+
+- `LOWEST_HEALTH_ENEMY_IN_RANGE(n)` → bool / selector candidate
+  - recommended first version: predicate that answers whether a valid low-health enemy exists in range
+  - if direct target acquisition is wanted later, add a paired target instruction instead of overloading the predicate
+
+- `DRONE_COUNT()` → int
+  - recommended as sugar for a generic helper count such as `OWNED_COUNT(HEAL_DRONE)`
+  - especially useful if the repair-drone module is added
+
 ---
 
 ## 5) Optional: add tiny bot-local registers (for richer strategies)
@@ -180,6 +232,8 @@ Timers alone can implement many strategies, but registers make scripting feel mo
 
 Conservative option:
 - Add 3–4 integer registers: `R1..R4` (range `0..999`)
+- treat these as the first official bot-local **variables**
+- if a friendlier naming layer is desired later, `VAR1..VAR4` can be syntax sugar over the same registers
 
 Minimal instruction set:
 - `SET R1 <INT>`
@@ -196,6 +250,10 @@ Determinism:
 - overflow clamps or wraps (must be documented if added)
 
 If you want to keep v1 ultra-simple, omit registers and lean on timers + label state machines.
+If you want slightly richer strategy without turning the language into a full programming language, a good compromise is:
+- integer variables (`R1..R4`)
+- optional flag sugar (`F1..F4`) compiled to `0/1` registers
+- no arrays, no strings, no user-defined functions
 
 ---
 
@@ -219,18 +277,22 @@ Three compatible models:
 ### 7.1 Laser / beam weapon
 
 Mechanics (module-defined):
-- delivery: `BEAM` (or `HITSCAN` for a single-tick “pulse laser”)
-- cost: energy only, or hybrid
-- cooldown: medium (or toggle drain if sustained)
+- fast targeted energy line weapon
+- delivery: `HITSCAN`, `BEAM`, or a very fast linear projectile (implementation choice)
+- cost: energy only
+- cooldown: medium
 - targeting:
   - bot target (`BOT` kind)
-  - (deferred) direction target (`DIRECTION` kind via `DIR ...`) if you introduce directional beams/cones
-- shield interaction (future): may set `ignoresShield` so beams can pass through active shields
+- defense interaction:
+  - ignores armor
+  - active shield deflects it
+- client-side presentation:
+  - render as a visible line/beam rather than a bullet sprite for readability
 
 Language interaction:
 - `USE_SLOTn TARGET` / `USE_SLOTn BOT2`
-- (deferred) `USE_SLOTn DIR RIGHT`
 - optional predicates: `SLOT_QUERY(SLOTn, READY)`
+- if directional beams are ever added later, that should be a separate extension, not a requirement for the first laser version
 
 ### 7.2 Sniper rifle
 
@@ -256,23 +318,66 @@ Language interaction:
 
 Mechanics:
 - `DEPLOYABLE`
-- triggers when a bot enters mine sector
+- uses ammo to place
+- has an arming delay plus a fuse / lifetime timer
+- explodes if:
+  - a bot enters/hits its sector after arming,
+  - its fuse expires,
+  - it is hit by bullet or laser
 - AoE radius=1 sector with falloff
+- targetable/destructible deployable, which implies future replay/debug visibility for mine entities
 
 Language interaction:
 - `USE_SLOTn NONE` (drop at feet), or
 - `USE_SLOTn SECTOR <N>` (if you allow targeted placement)
 
-### 7.5 Teleport
+### 7.5 Reflector
 
 Mechanics:
-- location effect
-- energy cost + cooldown
+- defensive utility module
+- recommended as toggle or short-duration active effect
+- primary job: reflect or redirect incoming projectile weapons
+- should be a natural counter to bullet-heavy metas
+
+Language interaction:
+- `USE_SLOTn SELF`
+- `STOP_SLOTn`
+
+### 7.6 Repair drone module
+
+Mechanics:
+- uses ammo to spawn small orbiting heal drones
+- drones heal the owner in pulses / phases
+- drones are destructible by bullet hits
+- living drones consume owner energy over time
+- if owner energy reaches 0, remaining drones vanish
+
+Language interaction:
+- `USE_SLOTn SELF`
+- optional `STOP_SLOTn` if you want bots to dismiss drones early
+- recommended sensing support:
+  - `DRONE_COUNT()`
+  - generic helper counts such as `OWNED_COUNT(HEAL_DRONE)`
+
+### 7.7 Teleport
+
+Mechanics:
+- location utility effect
+- cost: half the bot’s full energy bar per use
+- cooldown: medium/high
+- accepted targets:
+  - `SECTOR <N>`
+  - future zone/location targets
+  - powerup targets
+  - deterministic random destination
 
 Language interaction:
 - `USE_SLOTn SECTOR <N>`
+- future:
+  - `USE_SLOTn POWERUP HEALTH|AMMO|ENERGY|ANY`
+  - `USE_SLOTn RANDOM_POSITION`
 
-### 7.6 Burst MG / rifle (burst + recoil/spread)
+### 7.8 Burst MG / rifle (burst + recoil/spread)
 
 Mechanics:
 - delivery: `HITSCAN` (or `PROJECTILE` if bullets have travel time)
@@ -285,7 +390,7 @@ Language interaction:
   - `SLOT_QUERY(SLOTn, BURST_REMAINING)`
   - `SLOT_QUERY(SLOTn, COOLDOWN_REMAINING)`
 
-### 7.7 Wavy projectile weapon (trajectory variety without new language)
+### 7.9 Wavy projectile weapon (trajectory variety without new language)
 
 Mechanics:
 - delivery: `PROJECTILE`
@@ -319,6 +424,18 @@ When you’re ready to evolve the spec, the next safe edits are:
    - allow `USE_SLOTn DIR UP|DOWN|LEFT|RIGHT|UP_LEFT|UP_RIGHT|DOWN_LEFT|DOWN_RIGHT`
    - keep existing v1 `<TARGET>` (bots + locations + `SELF|NONE`) unchanged
 4) Optionally add registers if you want deeper programming strategies.
+5) Add tactical movement helpers:
+   - `MOVE_TO_TARGET_UNTIL_IN_RANGE <n>`
+   - `MOVE_AWAY_FROM_TARGET_UNTIL_RANGE <n>`
+   - `HOLD_POSITION`
+   - `ORBIT_TARGET`
+   - `RETREAT_TO_SECTOR <n>`
+6) Add focused competitive sensing helpers:
+   - `ENEMIES_IN_RANGE(n)`
+   - `COUNT_ALIVE_ENEMIES()`
+   - `DIST_TO_CLOSEST_POWERUP(ANY|HEALTH|AMMO|ENERGY)`
+   - `LOWEST_HEALTH_ENEMY_IN_RANGE(n)`
+   - `DRONE_COUNT()`
 
 ---
 
@@ -345,3 +462,12 @@ When you’re ready to evolve the spec, the next safe edits are:
 5) Bot-local registers:
 - **A)** none (timers only)
 - **B)** add `R1..R4` with minimal ops
+  - recommended interpretation: these are the first supported bot-local **variables**
+
+6) Tactical movement sugar:
+- **A)** keep only low-level movement and require players to hand-build spacing loops
+- **B)** add the helpers in §4.2 (recommended)
+
+7) Competitive sensing helpers:
+- **A)** keep only current low-level predicates
+- **B)** add the helpers in §4.3 while keeping generic counters underneath (recommended)

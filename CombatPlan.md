@@ -268,21 +268,86 @@ Recommended properties:
 Deterministic collision requirement:
 - movement must use deterministic continuous collision (swept segment, or deterministic micro-segments for non-linear trajectories; see §5.2) so the projectile cannot tunnel through walls or bots.
 
-### 4.4 Laser (beam / hitscan) that ignores shields
+### 4.4 Laser (fast line weapon) that ignores armor and is deflected by shield
 
-A laser weapon can be modeled as hitscan (like sniper) but with different damage semantics.
+The requested laser is better modeled as a very fast targeted energy line weapon than as a normal bullet.
 
 Recommended properties:
-- `delivery = HITSCAN` (or `BEAM` if you later want a 1-tick persistent entity)
-- typically energy cost instead of ammo
+- `delivery = HITSCAN`, `BEAM`, or a very fast linear projectile with swept collision
+- uses energy rather than ammo
+- targets a bot target deterministically at fire time
+- renders as a visible line in the client so spectators can read it immediately
+- resolves faster than the standard bullet
 
-Damage model extension (future):
-- add a damage property/flag that can be checked by defense modules:
-  - `ignoresShield: true` (or `damageFlags: [IGNORES_SHIELD]`)
-- shield mitigation (future module) must be defined so this flag is applied deterministically.
-  - desired gameplay: lasers/beams can **pass through an active shield** (the shield does not absorb/reflect them).
+Damage / defense interaction:
+- `ignoresArmor: true`
+- active shield deflects the laser
+- recommended first version:
+  - armor does not mitigate laser damage
+  - shielded target negates/deflects the laser by a fixed deterministic rule
 
-### 4.5 Sine-wave / wavy projectiles (deterministic trajectory representation)
+Replay/UI requirement:
+- emit enough replay data for the client to draw the laser line without reconstructing hidden logic
+
+### 4.5 Reflector
+
+A reflector is a defensive module designed to counter projectile-heavy metas.
+
+Recommended properties:
+- `activation = TOGGLE` or short-duration active burst
+- energy cost on use and/or drain while active
+- accepted target kind: `SELF`
+- defensive flag:
+  - `deflectsProjectiles: true`
+
+Recommended first behavior:
+- reflect bullets and other projectile weapons by a deterministic rule
+- do not automatically counter every damage type equally; keeping lasers, mines, and splash distinct preserves module diversity
+
+### 4.6 Repair drones
+
+A repair module is best modeled as a helper-spawn module rather than direct instant healing.
+
+Recommended properties:
+- activation spawns one or more orbiting heal drones
+- uses ammo to spawn
+- each living drone drains owner energy over time
+- if owner energy reaches `0`, active repair drones vanish
+- drones can be destroyed individually by bullet hits
+- drones orbit deterministically and heal in pulses / phases
+
+Recommended entity fields:
+- `droneId`
+- `ownerBotId`
+- `orbitIndex`
+- `hp`
+- `active`
+
+Balancing intent:
+- strong sustain, but vulnerable to anti-drone fire and energy denial
+- should pair naturally with a counter/query such as `DRONE_COUNT()`
+
+### 4.7 Teleport
+
+Teleport should be a location utility module with a very clear cost profile.
+
+Recommended properties:
+- `costEnergy = 50%` of max energy
+- deterministic cooldown
+- accepted targets:
+  - sector / zone anchors
+  - powerup destinations
+  - deterministic random destination
+
+Recommended first implementation order:
+1. teleport to sector / zone anchors
+2. teleport to closest powerup of a requested type
+3. only then add “random position”, defined as a deterministic pseudo-random arena point derived from stable replay inputs
+
+Design note:
+- for readability, “random position” may be better shipped first as “random sector/zone center” rather than arbitrary sub-sector coordinates
+
+### 4.8 Sine-wave / wavy projectiles (deterministic trajectory representation)
 
 Some projectile weapons may want a “wavy” path. This must be represented in a fully deterministic, integer-friendly way (no platform-dependent floating point math).
 
@@ -412,7 +477,7 @@ Deterministic ordering:
 
 ## 7) Deployable: Mines
 
-A mine is a persistent entity placed into the arena that detonates after a bot hits it.
+A mine is a persistent entity placed into the arena that detonates when triggered, shot, or timed out.
 
 ### 7.1 Placement model (still to decide)
 
@@ -427,17 +492,35 @@ Choose one deterministic placement rule:
 - `ownerBotId`
 - `sector`
 - `armRemaining` (ticks; arming delay)
+- `fuseRemaining` (ticks; explodes when it reaches 0 even if no bot triggered it)
 - `ttlRemaining` (ticks)
+- optional destructibility state:
+  - `hp` or a simpler “detonates on first damaging hit” rule
 
 ### 7.3 Arming + trigger
 
 Baseline:
 - mine does nothing while `armRemaining > 0`
-- once armed, mine detonates when a bot enters its sector ("hits it")
+- once armed, mine detonates when:
+  - a bot enters its sector ("hits it"),
+  - `fuseRemaining == 0`,
+  - it is hit by a bullet or laser
+
+Requested behavior:
+- mines are not just passive traps; they are also targetable deployables that can be cleared by ranged weapons
 
 Trigger targeting (still to decide):
 - **A) Any bot triggers** (including owner)
 - **B) Enemies only trigger** (owner immune)
+
+Projectile interaction (needs locking):
+- **A)** first damaging hit always detonates the mine
+- **B)** first damaging hit destroys it silently
+- **C)** bullet destroys silently, laser detonates
+
+Recommended:
+- **A)** first damaging hit always detonates the mine
+- this keeps mine-clearing readable and tactically interesting
 
 ### 7.4 Detonation (AoE)
 
@@ -452,6 +535,8 @@ Locked v1 falloff:
 Module-defined numbers:
 - `damageCenter`
 - `damageAdjacent`
+- `costAmmo`
+- `fuseTicks`
 
 Attribution:
 - `source = BOT`, `sourceBotId = ownerBotId`, `kind = OTHER` (or `MINE` later)
@@ -510,10 +595,19 @@ Replay requirements:
 - confirm “sub-step then hit-check” is the rule
 - decide whether the replay must emit every sub-step move, or only spawn + final hit/outcome
 
-7) Wavy projectile wave function (see §4.5):
+7) Wavy projectile wave function (see §4.8):
 - integer sine LUT vs triangle wave
 - how to choose `lateralDir` at spawn (fixed rule vs deterministic RNG derived from stable ids)
 
-8) Laser ignore-shields flag (see §4.4):
-- field name (`ignoresShield` vs `damageFlags`)
-- whether it ignores only shields or also other defenses
+8) Laser defense interaction (see §4.4):
+- field names (`ignoresArmor`, `deflectedByShield`, or a shared `damageFlags` model)
+- exact deterministic rule when a shield intercepts a laser
+
+9) Repair drone limits:
+- max drones per bot
+- heal pulse amount / cadence
+- whether drone hit points are `1` or configurable
+
+10) Teleport destination model:
+- sector/zone only first, or powerup/random in phase 1
+- whether random destination means arbitrary arena point or random sector/zone center
