@@ -13,6 +13,7 @@
     "check:deploy": "node scripts/sync-deploy.mjs --check",
     "check:deploy:imports": "node scripts/check-deploy-imports.mjs",
     "serve:deploy": "node scripts/serve-deploy.mjs",
+    "serve:app:dist": "node scripts/serve-deploy.mjs --root apps/web/dist --port 4173",
     "qa:workshop": "node scripts/qa-workshop.mjs",
 
     "build:all": "pnpm -r build",

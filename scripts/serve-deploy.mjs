@@ -7,11 +7,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const repoRoot = path.resolve(__dirname, '..')
-const deployRoot = path.join(repoRoot, 'deploy')
 
 function parseArgs(argv) {
   let host = '127.0.0.1'
   let port = 8787
+  let root = 'deploy'
 
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
@@ -23,12 +23,16 @@ function parseArgs(argv) {
       port = Number(argv[++i])
     } else if (a.startsWith('--port=')) {
       port = Number(a.slice('--port='.length))
+    } else if (a === '--root' && argv[i + 1]) {
+      root = argv[++i]
+    } else if (a.startsWith('--root=')) {
+      root = a.slice('--root='.length)
     }
   }
 
   if (!Number.isFinite(port) || port <= 0) port = 8787
 
-  return { host, port }
+  return { host, port, root }
 }
 
 function contentTypeFor(filePath) {
@@ -70,7 +74,8 @@ function respond(res, statusCode, body, headers = {}) {
   res.end(body)
 }
 
-const { host, port } = parseArgs(process.argv.slice(2))
+const { host, port, root } = parseArgs(process.argv.slice(2))
+const staticRoot = path.resolve(repoRoot, root)
 
 const server = http.createServer(async (req, res) => {
   if (!req.url || !req.method) return respond(res, 400, 'Bad Request')
@@ -86,8 +91,8 @@ const server = http.createServer(async (req, res) => {
 
   // Redirect "directory without trailing slash" → "directory/".
   // This matters because relative module imports resolve differently without the slash.
-  const candidatePath = path.resolve(deployRoot, `.${pathname}`)
-  if (!candidatePath.startsWith(deployRoot)) {
+  const candidatePath = path.resolve(staticRoot, `.${pathname}`)
+  if (!candidatePath.startsWith(staticRoot)) {
     return respond(res, 403, 'Forbidden')
   }
 
@@ -125,6 +130,6 @@ const server = http.createServer(async (req, res) => {
 })
 
 server.listen(port, host, () => {
-  console.log(`Serving ${path.relative(repoRoot, deployRoot)} at http://${host}:${port}/`) // eslint-disable-line no-console
+  console.log(`Serving ${path.relative(repoRoot, staticRoot)} at http://${host}:${port}/`) // eslint-disable-line no-console
   console.log(`Workshop: http://${host}:${port}/workshop/`) // eslint-disable-line no-console
 })

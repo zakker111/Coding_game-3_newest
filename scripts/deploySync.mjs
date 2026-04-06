@@ -1,11 +1,155 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
+const DEPLOY_COPY_SPECS = [
+  {
+    sourceRel: 'BotInstructions.md',
+    destRel: path.join('deploy', 'bot-instructions.md'),
+  },
+]
+
+const DEPLOY_MIRROR_SPECS = [
+  {
+    sourceRootRel: path.join('packages', 'engine', 'src'),
+    destRootRel: path.join('deploy', 'engine', 'src'),
+    include(relPath) {
+      return relPath.endsWith('.js')
+    },
+  },
+  {
+    sourceRootRel: path.join('packages', 'replay', 'src'),
+    destRootRel: path.join('deploy', 'replay'),
+    include(relPath) {
+      return relPath.endsWith('.js') || relPath.endsWith('.d.ts')
+    },
+  },
+]
+
 /**
  * @param {string} s
  */
 export function normalizeNewlines(s) {
   return s.replace(/\r\n?/g, '\n')
+}
+
+function normalizeRelPath(relPath) {
+  return String(relPath).split(path.sep).join('/')
+}
+
+async function listRelativeFilesRecursive(rootDir, include) {
+  /** @type {string[]} */
+  const out = []
+
+  async function walk(currentRel) {
+    const dirPath = currentRel ? path.join(rootDir, currentRel) : rootDir
+    const entries = await fs.readdir(dirPath, { withFileTypes: true }).catch((err) => {
+      if (err && /** @type {NodeJS.ErrnoException} */ (err).code === 'ENOENT') return null
+      throw err
+    })
+
+    if (!entries) return
+
+    entries.sort((a, b) => a.name.localeCompare(b.name))
+
+    for (const entry of entries) {
+      const relPath = currentRel ? path.join(currentRel, entry.name) : entry.name
+      if (entry.isDirectory()) {
+        await walk(relPath)
+        continue
+      }
+      if (!entry.isFile()) continue
+
+      const relPosix = normalizeRelPath(relPath)
+      if (!include || include(relPosix)) out.push(relPosix)
+    }
+  }
+
+  await walk('')
+  return out
+}
+
+async function ensureParentDir(filePath) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true })
+}
+
+async function syncCopiedFile(repoRoot, spec) {
+  const srcPath = path.join(repoRoot, spec.sourceRel)
+  const dstPath = path.join(repoRoot, spec.destRel)
+  await ensureParentDir(dstPath)
+  await fs.writeFile(dstPath, await fs.readFile(srcPath, 'utf8'))
+}
+
+async function checkCopiedFile(repoRoot, spec, issues) {
+  const srcPath = path.join(repoRoot, spec.sourceRel)
+  const dstPath = path.join(repoRoot, spec.destRel)
+
+  const src = normalizeNewlines(await fs.readFile(srcPath, 'utf8')).trimEnd()
+  const dst = normalizeNewlines(await fs.readFile(dstPath, 'utf8')).trimEnd()
+
+  if (src !== dst) {
+    issues.push(
+      `${normalizeRelPath(spec.destRel)} is out of sync with ${normalizeRelPath(spec.sourceRel)}. Run \`pnpm sync:deploy\`.`,
+    )
+  }
+}
+
+async function syncMirroredFiles(repoRoot, spec) {
+  const srcRoot = path.join(repoRoot, spec.sourceRootRel)
+  const dstRoot = path.join(repoRoot, spec.destRootRel)
+
+  const sourceFiles = await listRelativeFilesRecursive(srcRoot, spec.include)
+  const destFiles = await listRelativeFilesRecursive(dstRoot, spec.include)
+  const sourceSet = new Set(sourceFiles)
+
+  for (const relPath of sourceFiles) {
+    const srcPath = path.join(srcRoot, relPath)
+    const dstPath = path.join(dstRoot, relPath)
+    await ensureParentDir(dstPath)
+    await fs.writeFile(dstPath, await fs.readFile(srcPath, 'utf8'))
+  }
+
+  for (const relPath of destFiles) {
+    if (sourceSet.has(relPath)) continue
+    await fs.unlink(path.join(dstRoot, relPath))
+  }
+}
+
+async function checkMirroredFiles(repoRoot, spec, issues) {
+  const srcRoot = path.join(repoRoot, spec.sourceRootRel)
+  const dstRoot = path.join(repoRoot, spec.destRootRel)
+
+  const sourceFiles = await listRelativeFilesRecursive(srcRoot, spec.include)
+  const destFiles = await listRelativeFilesRecursive(dstRoot, spec.include)
+  const sourceSet = new Set(sourceFiles)
+  const destSet = new Set(destFiles)
+
+  for (const relPath of sourceFiles) {
+    if (!destSet.has(relPath)) {
+      issues.push(
+        `${normalizeRelPath(path.join(spec.destRootRel, relPath))} is missing (authoritative source: ${normalizeRelPath(path.join(spec.sourceRootRel, relPath))}). Run \`pnpm sync:deploy\`.`,
+      )
+      continue
+    }
+
+    const srcPath = path.join(srcRoot, relPath)
+    const dstPath = path.join(dstRoot, relPath)
+
+    const src = normalizeNewlines(await fs.readFile(srcPath, 'utf8')).trimEnd()
+    const dst = normalizeNewlines(await fs.readFile(dstPath, 'utf8')).trimEnd()
+
+    if (src !== dst) {
+      issues.push(
+        `${normalizeRelPath(path.join(spec.destRootRel, relPath))} is out of sync with ${normalizeRelPath(path.join(spec.sourceRootRel, relPath))}. Run \`pnpm sync:deploy\`.`,
+      )
+    }
+  }
+
+  for (const relPath of destFiles) {
+    if (sourceSet.has(relPath)) continue
+    issues.push(
+      `${normalizeRelPath(path.join(spec.destRootRel, relPath))} has no authoritative source in ${normalizeRelPath(spec.sourceRootRel)}. Run \`pnpm sync:deploy\` to remove stale mirrored files.`,
+    )
+  }
 }
 
 /**
@@ -150,42 +294,70 @@ export async function generateWorkshopExampleBotsJs(repoRoot) {
 /**
  * @param {string} repoRoot
  */
+export async function listDeploySyncTargets(repoRoot) {
+  /** @type {Array<{ kind: 'copy' | 'mirror' | 'generated', source: string, dest: string }>} */
+  const targets = []
+
+  for (const spec of DEPLOY_COPY_SPECS) {
+    targets.push({
+      kind: 'copy',
+      source: normalizeRelPath(spec.sourceRel),
+      dest: normalizeRelPath(spec.destRel),
+    })
+  }
+
+  for (const spec of DEPLOY_MIRROR_SPECS) {
+    const srcRoot = path.join(repoRoot, spec.sourceRootRel)
+    const relFiles = await listRelativeFilesRecursive(srcRoot, spec.include)
+    for (const relPath of relFiles) {
+      targets.push({
+        kind: 'mirror',
+        source: normalizeRelPath(path.join(spec.sourceRootRel, relPath)),
+        dest: normalizeRelPath(path.join(spec.destRootRel, relPath)),
+      })
+    }
+  }
+
+  targets.push({
+    kind: 'generated',
+    source: 'examples/*.md',
+    dest: 'deploy/workshop/exampleBots.js',
+  })
+
+  targets.sort((a, b) => a.dest.localeCompare(b.dest) || a.source.localeCompare(b.source))
+  return targets
+}
+
+/**
+ * @param {string} repoRoot
+ */
 export async function syncDeployFiles(repoRoot) {
-  const botInstructionsSrc = path.join(repoRoot, 'BotInstructions.md')
-  const botInstructionsDst = path.join(repoRoot, 'deploy', 'bot-instructions.md')
-  const instructions = await fs.readFile(botInstructionsSrc, 'utf8')
-  await fs.writeFile(botInstructionsDst, instructions)
+  for (const spec of DEPLOY_COPY_SPECS) {
+    await syncCopiedFile(repoRoot, spec)
+  }
+
+  for (const spec of DEPLOY_MIRROR_SPECS) {
+    await syncMirroredFiles(repoRoot, spec)
+  }
 
   const exampleBotsDst = path.join(repoRoot, 'deploy', 'workshop', 'exampleBots.js')
   const generated = await generateWorkshopExampleBotsJs(repoRoot)
   await fs.writeFile(exampleBotsDst, generated)
-
-  const sampleReplaySrc = path.join(repoRoot, 'packages', 'replay', 'src', 'generateSampleReplay.js')
-  const sampleReplayDst = path.join(repoRoot, 'deploy', 'replay', 'generateSampleReplay.js')
-  const sampleReplay = await fs.readFile(sampleReplaySrc, 'utf8')
-  await fs.writeFile(sampleReplayDst, sampleReplay)
 }
 
 /**
  * @param {string} repoRoot
  */
 export async function checkDeployFiles(repoRoot) {
-  const botInstructionsSrc = path.join(repoRoot, 'BotInstructions.md')
-  const botInstructionsDst = path.join(repoRoot, 'deploy', 'bot-instructions.md')
+  /** @type {string[]} */
+  const issues = []
 
-  const src = normalizeNewlines(await fs.readFile(botInstructionsSrc, 'utf8')).trimEnd()
-  const dst = normalizeNewlines(await fs.readFile(botInstructionsDst, 'utf8')).trimEnd()
-  if (src !== dst) {
-    throw new Error('deploy/bot-instructions.md is out of sync with BotInstructions.md')
+  for (const spec of DEPLOY_COPY_SPECS) {
+    await checkCopiedFile(repoRoot, spec, issues)
   }
 
-  const sampleReplaySrc = path.join(repoRoot, 'packages', 'replay', 'src', 'generateSampleReplay.js')
-  const sampleReplayDst = path.join(repoRoot, 'deploy', 'replay', 'generateSampleReplay.js')
-
-  const sampleSrc = normalizeNewlines(await fs.readFile(sampleReplaySrc, 'utf8')).trimEnd()
-  const sampleDst = normalizeNewlines(await fs.readFile(sampleReplayDst, 'utf8')).trimEnd()
-  if (sampleSrc !== sampleDst) {
-    throw new Error('deploy/replay/generateSampleReplay.js is out of sync with packages/replay/src/generateSampleReplay.js')
+  for (const spec of DEPLOY_MIRROR_SPECS) {
+    await checkMirroredFiles(repoRoot, spec, issues)
   }
 
   const exampleBotsPath = path.join(repoRoot, 'deploy', 'workshop', 'exampleBots.js')
@@ -287,5 +459,9 @@ export async function checkDeployFiles(repoRoot) {
     if (wantName !== gotName) {
       throw new Error(`deploy/workshop/exampleBots.js displayName mismatch for ${b.id}`)
     }
+  }
+
+  if (issues.length) {
+    throw new Error(issues.join('\n'))
   }
 }

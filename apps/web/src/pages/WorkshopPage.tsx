@@ -202,6 +202,10 @@ type TickEventLine = {
   tone?: 'muted' | 'bad' | 'good'
 }
 
+type WorkshopQaApi = {
+  getReplay: () => Replay | null
+}
+
 const BOT_ID_NAME_FIELDS = [
   ['botId', 'botName'],
   ['otherBotId', 'otherBotName'],
@@ -571,6 +575,16 @@ export function WorkshopPage() {
   }, [playback.playing, playback.speed, playback.replay])
 
   const replay = playback.replay
+
+  React.useEffect(() => {
+    ;(window as Window & { __NOWT_WORKSHOP_QA__?: WorkshopQaApi }).__NOWT_WORKSHOP_QA__ = {
+      getReplay: () => replay,
+    }
+
+    return () => {
+      delete (window as Window & { __NOWT_WORKSHOP_QA__?: WorkshopQaApi }).__NOWT_WORKSHOP_QA__
+    }
+  }, [replay])
 
   React.useEffect(() => {
     setReplayExportNotice(null)

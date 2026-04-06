@@ -1,5 +1,6 @@
 import { chromium } from 'playwright'
 import { spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,6 +9,7 @@ const __dirname = path.dirname(__filename)
 
 function parseArgs(argv) {
   const baseUrls = ['http://127.0.0.1:8787']
+  let appUrl = ''
   let headless = true
   let serve = false
 
@@ -29,12 +31,18 @@ function parseArgs(argv) {
       continue
     }
 
+    if ((a === '--app-url' && argv[i + 1]) || a.startsWith('--app-url=')) {
+      appUrl = a === '--app-url' ? argv[++i] : a.slice('--app-url='.length)
+      continue
+    }
+
     if (a === '--headed') headless = false
     if (a === '--serve') serve = true
   }
 
   return {
     baseUrls: baseUrls.map((u) => u.replace(/\/$/, '')),
+    appUrl: appUrl ? appUrl.replace(/\/$/, '') : '',
     headless,
     serve,
   }
@@ -110,12 +118,12 @@ async function waitForServerReady(proc, { timeoutMs }) {
   })
 }
 
-function startStaticServer(baseUrl) {
+function startStaticServer(baseUrl, root = 'deploy') {
   const { host, port } = parseBaseUrl(baseUrl)
 
   const proc = spawn(
     process.execPath,
-    [path.join(__dirname, 'serve-deploy.mjs'), '--host', host, '--port', String(port)],
+    [path.join(__dirname, 'serve-deploy.mjs'), '--host', host, '--port', String(port), '--root', root],
     { stdio: ['ignore', 'pipe', 'pipe'] }
   )
 
@@ -133,6 +141,93 @@ async function safeGoto(page, url) {
     if (/interrupted by another navigation/i.test(msg)) return
 
     throw err
+  }
+}
+
+function stableStringify(value) {
+  if (value == null || typeof value !== 'object') return JSON.stringify(value)
+  if (Array.isArray(value)) return `[${value.map((v) => stableStringify(v)).join(',')}]`
+
+  const keys = Object.keys(value).sort()
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`
+}
+
+function normalizeReplayForParity(replay) {
+  if (!replay || typeof replay !== 'object') return null
+
+  return {
+    schemaVersion: replay.schemaVersion,
+    rulesetVersion: replay.rulesetVersion,
+    ticksPerSecond: replay.ticksPerSecond,
+    matchSeed: replay.matchSeed,
+    tickCap: replay.tickCap,
+    bots: (replay.bots || []).map((bot) => ({
+      slotId: bot.slotId,
+      loadout: bot.loadout ?? [null, null, null],
+      loadoutIssues: bot.loadoutIssues ?? [],
+    })),
+    state: replay.state,
+    events: replay.events,
+  }
+}
+
+function hashReplayForParity(replay) {
+  return createHash('sha256').update(stableStringify(normalizeReplayForParity(replay))).digest('hex')
+}
+
+async function waitForQaReplay(page, timeout = 30_000) {
+  await page.waitForFunction(
+    () => Boolean(globalThis.__NOWT_WORKSHOP_QA__?.getReplay?.()),
+    null,
+    { timeout },
+  )
+
+  return await page.evaluate(() => globalThis.__NOWT_WORKSHOP_QA__?.getReplay?.() ?? null)
+}
+
+async function runWorkshopParityQa({ deployBaseUrl, appBaseUrl, headless }) {
+  const browser = await chromium.launch({ headless })
+  const context = await browser.newContext()
+  const deployPage = await context.newPage()
+  const appPage = await context.newPage()
+
+  const failures = []
+  const assert = (cond, msg) => {
+    if (!cond) failures.push(msg)
+  }
+
+  console.log(`[qa:workshop] Baseline parity: deploy=${deployBaseUrl}/workshop/ app=${appBaseUrl}/workshop/`)
+
+  await deployPage.goto(`${deployBaseUrl}/workshop/`, { waitUntil: 'domcontentloaded' })
+  await deployPage.waitForSelector('#runBtn')
+  await deployPage.click('#runBtn')
+  await deployPage.waitForFunction(() => {
+    const el = document.getElementById('runBtn')
+    return Boolean(el && !el.disabled)
+  }, null, { timeout: 30_000 })
+  const deployReplay = await waitForQaReplay(deployPage)
+
+  await appPage.goto(`${appBaseUrl}/workshop/`, { waitUntil: 'domcontentloaded' })
+  await appPage.getByRole('button', { name: 'Run / Preview' }).click()
+  await appPage.getByRole('button', { name: 'Run / Preview' }).waitFor({ state: 'visible', timeout: 30_000 })
+  const appReplay = await waitForQaReplay(appPage)
+
+  const deployHash = hashReplayForParity(deployReplay)
+  const appHash = hashReplayForParity(appReplay)
+
+  assert(Boolean(deployReplay), 'Expected deploy Workshop QA hook to expose a replay after running baseline match.')
+  assert(Boolean(appReplay), 'Expected app Workshop QA hook to expose a replay after running baseline match.')
+  assert(
+    deployHash === appHash,
+    `Expected deploy/app baseline replay parity. deploy=${deployHash} app=${appHash}`,
+  )
+
+  await browser.close()
+
+  return {
+    failures,
+    deployHash,
+    appHash,
   }
 }
 
@@ -541,10 +636,12 @@ function printReport({ baseUrl, result }) {
 }
 
 async function main() {
-  const { baseUrls, headless, serve } = parseArgs(process.argv.slice(2))
+  const { baseUrls, appUrl, headless, serve } = parseArgs(process.argv.slice(2))
 
   /** @type {import('node:child_process').ChildProcess | null} */
   let serverProc = null
+  /** @type {import('node:child_process').ChildProcess | null} */
+  let appServerProc = null
 
   if (serve) {
     const localUrl = baseUrls.find((u) => {
@@ -560,9 +657,15 @@ async function main() {
       throw new Error(`--serve requires a local base URL (got: ${baseUrls.join(', ')})`)
     }
 
-    const started = startStaticServer(localUrl)
+    const started = startStaticServer(localUrl, 'deploy')
     serverProc = started.proc
     await waitForServerReady(serverProc, { timeoutMs: 10_000 })
+
+    if (appUrl) {
+      const appStarted = startStaticServer(appUrl, path.join('apps', 'web', 'dist'))
+      appServerProc = appStarted.proc
+      await waitForServerReady(appServerProc, { timeoutMs: 10_000 })
+    }
   }
 
   try {
@@ -574,10 +677,31 @@ async function main() {
       if (result.failures.length) anyFailures = true
     }
 
+    if (appUrl) {
+      const parityResult = await runWorkshopParityQa({
+        deployBaseUrl: baseUrls[0],
+        appBaseUrl: appUrl,
+        headless,
+      })
+
+      const prefix = `[qa:workshop] (parity ${baseUrls[0]} vs ${appUrl})`
+      if (parityResult.failures.length) {
+        console.log(`\n${prefix} FAILURES:`)
+        for (const failure of parityResult.failures) console.log(`- ${failure}`)
+      } else {
+        console.log(`\n${prefix} OK (${parityResult.deployHash})`)
+      }
+
+      if (parityResult.failures.length) anyFailures = true
+    }
+
     if (anyFailures) process.exitCode = 1
   } finally {
     if (serverProc) {
       serverProc.kill('SIGTERM')
+    }
+    if (appServerProc) {
+      appServerProc.kill('SIGTERM')
     }
   }
 }

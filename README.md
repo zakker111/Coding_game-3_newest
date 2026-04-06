@@ -60,14 +60,39 @@ pnpm gate:phase1
 Additional recommended checks (deploy/workshop):
 
 ```bash
+pnpm sync:deploy           # maintainers run this after changing authoritative deploy-fed sources
 pnpm check:deploy          # ensure deploy-time copies match repo sources
 pnpm check:deploy:imports  # ensure deploy JS relative imports resolve to files
 pnpm qa:workshop -- --serve --url http://127.0.0.1:8787
+pnpm qa:workshop -- --serve --url http://127.0.0.1:8787 --app-url http://127.0.0.1:4173
 ```
 
 Note: `site/` is a legacy prototype and is intentionally excluded from the pnpm workspace + CI.
 
 ## Deploying (static)
+
+Before cutting a release or publishing static artifacts:
+
+1. Update the authoritative source files, not their deploy copies:
+   - `BotInstructions.md`
+   - `examples/*.md`
+   - `packages/replay/src/*`
+   - `packages/engine/src/**/*.js`
+2. Run `pnpm sync:deploy`.
+3. Run `pnpm check:deploy && pnpm check:deploy:imports`.
+4. Build with `pnpm build`.
+5. For Workshop-affecting changes, run the deploy smoke:
+   - deploy-only: `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787`
+   - deploy vs app parity baseline: `pnpm qa:workshop -- --serve --url http://127.0.0.1:8787 --app-url http://127.0.0.1:4173`
+
+Who runs this:
+- the engineer preparing the release or merging a change that touches deploy-fed authoritative sources
+- reviewers should expect `deploy/` drift to be resolved in the same change, not deferred
+
+`pnpm sync:deploy` is intended to be deterministic:
+- mirrored files are traversed in sorted path order
+- generated example bots are emitted in numeric bot order
+- stale mirrored files under the managed deploy trees are removed on sync
 
 Build the client-only app:
 

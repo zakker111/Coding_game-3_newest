@@ -126,15 +126,6 @@ function formatReplayLoadoutIssue(issue) {
   return `${issue.kind} (slot ${issue.slot}${issue.module ? `: ${issue.module}` : ''})`
 }
 
-function mixSeed(seed, bots) {
-  let h = seed >>> 0
-  for (const b of bots) {
-    h ^= fnv1a32(`${b.slotId}\n${b.sourceText}\n${loadoutSig(b.loadout)}\n`)
-    h = Math.imul(h, 2654435761) >>> 0
-  }
-  return h >>> 0
-}
-
 function computeRunSignature(seed, tickCap, specsBySlot) {
   let h = fnv1a32(`seed:${seed}\ntickCap:${tickCap}\n`)
   for (const slotId of SLOT_IDS) {
@@ -604,6 +595,12 @@ let alpha = 1
 let rafId = 0
 let lastNow = 0
 let accMs = 0
+
+globalThis.__NOWT_WORKSHOP_QA__ = {
+  getReplay() {
+    return replay
+  },
+}
 
 const render = attachArenaRenderer(canvas)
 
@@ -1396,13 +1393,6 @@ async function run() {
     BOT4: { sourceText: sources.BOT4, loadout: deriveLoadoutForSlot('BOT4', sources.BOT4) },
   }
 
-  const botsForMix = SLOT_IDS.map((slotId) => ({
-    slotId,
-    sourceText: specsBySlot[slotId].sourceText ?? '',
-    loadout: specsBySlot[slotId].loadout,
-  }))
-  const mixed = mixSeed(seed, botsForMix)
-
   const headerBots = [
     {
       slotId: 'BOT1',
@@ -1436,7 +1426,7 @@ async function run() {
 
   try {
     const replayFromWorker = await runMatchInEngineWorker({
-      seed: mixed,
+      seed,
       tickCap,
       bots: headerBots.map((b) => ({ slotId: b.slotId, sourceText: b.sourceText, loadout: b.loadout })),
     })
