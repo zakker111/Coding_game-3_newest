@@ -272,6 +272,10 @@ When the AI edits this repository:
 
 - It must **search and cite** relevant code locations (file path + identifier) before making non-trivial changes.
 - It must keep patches small and reviewable.
+- If the user says **"deploy"**, interpret that as:
+  - publish the current site/game to a live `*.cosine.page` URL
+  - return the live deploy URL to the user
+  - do not treat “deploy” as merely building locally, syncing static files, or pushing a branch
 - It must list:
   - files changed
   - what changed
