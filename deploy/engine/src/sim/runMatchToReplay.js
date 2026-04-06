@@ -636,6 +636,17 @@ function buildObservation(bot, bots, bullets, powerupState) {
       }
       return count
     },
+    lowestHealthEnemyInRange: (range) => {
+      const limit = Math.max(0, Math.floor(range))
+      let bestHp = null
+      for (const other of bots) {
+        if (!other.alive) continue
+        if (other.botId === bot.botId) continue
+        if (manhattan(bot.pos, other.pos) > limit) continue
+        if (bestHp == null || other.hp < bestHp) bestHp = other.hp
+      }
+      return bestHp ?? 0
+    },
     hasTargetPowerup: () => Boolean(targetPowerupType && powerupExists(powerupState, targetPowerupType)),
     powerupInSector: (type, s, zOrNull) => {
       const sectorN = Math.floor(s)
@@ -1117,6 +1128,45 @@ function resolveMoveTarget(bot, target, bots, bullets, powerupState, clearGoalOn
     return null
   }
 
+  if (target.kind === 'TARGET_ORBIT') {
+    const botTargetId = bot.vm?.target?.botSelector
+    const botTarget =
+      botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
+        ? botsById(bots, botTargetId)
+        : null
+
+    if (!botTarget || !botTarget.alive) {
+      if (clearGoalOnInvalid) bot.vm.moveGoal = null
+      return null
+    }
+
+    const ORBIT_RADIUS = 96
+    const ORBIT_BAND = 12
+
+    const dxToTarget = botTarget.pos.x - bot.pos.x
+    const dyToTarget = botTarget.pos.y - bot.pos.y
+    const distance = manhattan(bot.pos, botTarget.pos)
+
+    let dx = dyToTarget
+    let dy = -dxToTarget
+
+    if (dx === 0 && dy === 0) {
+      dx = speed
+      dy = 0
+    }
+
+    if (distance > ORBIT_RADIUS + ORBIT_BAND) {
+      dx += dxToTarget
+      dy += dyToTarget
+    } else if (distance < ORBIT_RADIUS - ORBIT_BAND) {
+      dx -= dxToTarget
+      dy -= dyToTarget
+    }
+
+    const scaled = scaleDeltaToMaxLen(dx, dy, speed)
+    return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
+  }
+
   if (target.kind === 'BOT') {
     const botTarget = resolveBotTargetToken(bot, target.token, bots)
 
@@ -1389,6 +1439,7 @@ function formatMoveTarget(target) {
   if (target.kind === 'TARGET_AWAY') {
     return Number.isInteger(target.untilRange) ? `TARGET_AWAY UNTIL_RANGE ${target.untilRange}` : 'TARGET_AWAY'
   }
+  if (target.kind === 'TARGET_ORBIT') return 'TARGET_ORBIT'
   if (target.kind === 'BOT') return `BOT ${target.token}`
   if (target.kind === 'POWERUP') return `POWERUP ${target.type}`
   if (target.kind === 'SECTOR') return target.zone ? `SECTOR ${target.sector} ZONE ${target.zone}` : `SECTOR ${target.sector}`
