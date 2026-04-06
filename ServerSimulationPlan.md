@@ -17,7 +17,7 @@ It complements:
 The server must:
 
 1) **Accept bot submissions** (source text) and validate/compile them.
-   - v1 server uses a fixed default loadout for all bots (see `ServerPlan.md`).
+   - v1 server uses the same explicit per-bot loadout contract as the local engine (see `ServerPlan.md`).
 2) **Run headless simulations** for daily matches with a deterministic match runner.
 3) **Store match artifacts**:
    - results (placements, stats)
@@ -41,7 +41,7 @@ A match is fully determined by:
 - `ruleset_version`
 - `match_seed`
 - the 4 participants’ bot code snapshots
-  - v1: `{ botId, source_hash, source_text }`
+  - v1: `{ botId, source_hash, source_text, loadout }`
   - future: `{ botVersionId }` (or `{ botId, botVersion, source_hash, compiledIrHash }`)
 - spawn placement (derived from seed or explicitly stored)
 
@@ -72,7 +72,7 @@ At the start of each day:
    - `run_seed`
    - `status = planned`
 2) Snapshot the participating bots for that run.
-   - v1: snapshot `{ botId, source_hash, source_text }` so mid-day edits can’t affect the run.
+   - v1: snapshot `{ botId, source_hash, source_text, loadout }` so mid-day edits can’t affect the run.
    - future: snapshot immutable `BotVersion` ids.
 
 ### 3.2 Match generation
@@ -195,7 +195,7 @@ Resource + cooldown enforcement:
 Replays are critical to user trust.
 
 Minimum replay fields:
-- replay header: `ruleset_version`, `match_seed`, per-slot `{ botId, source_hash }` (and v1: `source_text` snapshot), spawn assignments
+- replay header: `ruleset_version`, `match_seed`, per-slot `{ botId, source_hash, loadout }` (and v1: `source_text` snapshot), spawn assignments
 - per tick:
   - executed instruction trace per bot
   - events (see `ReplayViewerPlan.md`):

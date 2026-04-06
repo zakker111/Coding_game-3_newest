@@ -154,7 +154,8 @@ For a given daily run, results must be reproducible from stored artifacts:
 - exact ruleset version
 
 Note on loadouts:
-- v1 server-run matches use a fixed default loadout for all bots (see `ServerPlan.md`). Client-side loadout/equipment does not affect daily competition results in v1.
+- v1 server-run matches should use the same explicit per-bot loadout contract as the local engine (see `ServerPlan.md`).
+- Omitted loadouts default to `[null, null, null]`, invalid loadouts are deterministically normalized, and any resulting `loadoutIssues` are informational rather than match-blocking.
 
 ---
 
@@ -166,7 +167,7 @@ Per match:
 - replay reference
 
 Per daily run:
-- list of participating bots (botIds + source hashes; v1 may also store source_text snapshots in replays)
+- list of participating bots (botIds + source hashes + loadouts; v1 may also store source_text snapshots in replays)
 - updated season points table
 - daily leaderboard snapshot
 

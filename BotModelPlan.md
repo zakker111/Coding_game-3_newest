@@ -55,13 +55,17 @@ To run matches, v1 server only requires:
 - `botId` (derived from username + bot name)
 - `sourceText` (DSL)
 
-**v1 simplification:** server-side simulation depends only on bot code (no per-bot equipment/loadout stored server-side yet).
+**v1 server contract:** server-side simulation depends on bot code plus explicit per-bot `loadout`, matching the local engine contract.
 
-For server-run matches in v1, assume a fixed default loadout for all bots (see `ServerPlan.md`), so slot-based instructions still work.
+For server-run matches in v1:
+- `loadout` is explicit match input
+- omitted loadout defaults to `[null, null, null]`
+- invalid loadouts are deterministically normalized and may surface `loadoutIssues`
 
 On match scheduling/execution, snapshot per participant:
 - `sourceText` (as `sourceText`/`source_text_snapshot`)
 - `sourceHash`
+- `loadout`
 
 Even without immutable versions, we can still keep deterministic references for later by:
 - canonicalizing `sourceText`

@@ -37,19 +37,19 @@ For v1, the server should store only what’s needed to:
 - persist user bots, and
 - run daily headless matches deterministically.
 
-**v1 simplification (explicit):** server-side simulation depends only on:
+**v1 server contract (explicit):** server-side simulation depends on:
 - `owner_username`
 - `bot_name`
 - `source_text` (Bot Instruction DSL)
+- `loadout` (explicit 3-slot match input)
 
-In particular, **equipment/loadout is not required for v1 server simulation**.
+For any server-run match in v1, use the same loadout contract as the shipped local engine:
+- per-bot `loadout` is provided as match input
+- if omitted, default is all-empty: `[null, null, null]`
+- invalid loadouts are deterministically normalized
+- normalization issues are surfaced as `loadoutIssues`
 
-For any server-run match in v1, assume a single fixed default loadout for all bots:
-- `SLOT1 = BULLET`, `SLOT2 = (empty)`, `SLOT3 = (empty)`
-
-Planned (when server-side loadouts are supported):
-- Per-bot `loadout` is provided as match input; if omitted, default is all-empty: `[null, null, null]`.
-- The Workshop will still embed the chosen loadout as locked source headers (`;@slot1`, `;@slot2`, `;@slot3`) for UI/editing, but server simulation will use the stored match config `loadout` rather than source scanning.
+The Workshop may still embed the chosen loadout as locked source headers (`;@slot1`, `;@slot2`, `;@slot3`) for UI/editing, but server simulation should use the stored match config `loadout` rather than source scanning.
 
 **v1 product constraint (to keep UI and storage simple):** each user has **at most 3 bots**.
 
@@ -73,7 +73,7 @@ Reproducibility rule (still required):
     - `source_hash` (computed from canonicalized `source_text`)
 
 Notes:
-- v1 server does **not** store equipment/loadout for simulation.
+- v1 server should store the authoritative `loadout` alongside bot snapshots or match-participant snapshots used for simulation.
 - (Optional, post-v1) store presentation metadata like `display_name` / `appearance`.
 
 - **BotVersion** (immutable snapshots; supports Workshop “load older saved code”)
@@ -120,6 +120,7 @@ This keeps v1 simple: there is always something to select/edit, and the server s
     - `botId`: `{owner_username}/{name}`
     - `source_hash` (computed from canonicalized source at match time)
     - `source_text_snapshot` (required for v1 replayability)
+    - `loadout_snapshot` (resolved 3-slot loadout used for the match)
   - `result` (winner, placements, scores, etc.)
   - `replay_ref` (pointer to stored replay)
   - `error_metadata` (only if failed)
@@ -136,7 +137,8 @@ A replay should minimally include:
   - `appearance` (v1: a simple color token is fine)
   - `source_hash`
   - `source_text` (v1: include the snapshot to avoid needing immutable server versions)
-  - `loadout` (optional; in v1 server-run matches, this can be omitted or set to the fixed default)
+  - `loadout` (resolved 3-slot loadout used for the match)
+  - `loadoutIssues` (optional informational warnings if normalization occurred)
 - per-tick events + instruction trace
 
 ---
@@ -239,6 +241,7 @@ A replay should minimally include:
 
     Notes:
     - The server always uses the **latest saved** `Bot.source_text` for each `botId`.
+    - The server-run match should also use the explicit per-participant `loadout` for each slot, defaulting omitted values to `[null, null, null]` and applying the same deterministic normalization as the local engine.
     - Workshop UX should require an explicit **Save** before “Run on Server” if the editor has unsaved changes.
 
   - response (async):
@@ -271,12 +274,12 @@ Validation/canonicalization (v1):
   - `LABEL name` unique
   - `GOTO name` / `IF ... GOTO name` must reference an existing label
 
-(v1) No equipment/loadout validation is required server-side, because server-run simulation only uses bot `source_text`.
-
-(If/when equipment is added server-side later, validate loadout:
+(v1) Loadout validation is required server-side and should match the local engine contract. Validate and normalize:
 - 3 slots (`SLOT1..SLOT3`); slots may be empty
+- unknown modules normalize to `null` and emit `UNKNOWN_MODULE`
 - no duplicate modules among equipped slots
-- at most one weapon module equipped (`BULLET` or `SAW`))
+- at most one weapon module equipped (`BULLET` or `SAW`)
+- surface normalization as non-blocking `loadoutIssues`)
 
 Compile to internal representation:
 - compile instructions into a small deterministic opcode form
