@@ -62,6 +62,14 @@ export type ReplayGrenadeState = {
   fuse: number
 }
 
+export type ReplayMineState = {
+  mineId: string
+  ownerBotId: SlotId
+  sector: number
+  armRemaining: number
+  fuseRemaining: number
+}
+
 export type ReplayPowerupState = {
   powerupId: string
   type: 'HEALTH' | 'AMMO' | 'ENERGY'
@@ -74,6 +82,7 @@ export type ReplayTickState = {
   bots: ReplayBotState[]
   bullets: ReplayBulletState[]
   grenades?: ReplayGrenadeState[]
+  mines?: ReplayMineState[]
   powerups: ReplayPowerupState[]
 }
 
@@ -90,6 +99,7 @@ export type BotExecReason =
 export type ResourceDeltaCause =
   | 'SHOOT'
   | 'THROW_GRENADE'
+  | 'PLACE_MINE'
   | 'SAW_DRAIN'
   | 'SHIELD_DRAIN'
   | 'PICKUP_HEALTH'
@@ -227,6 +237,39 @@ export type GrenadeDespawnEvent = {
   pos?: Pos
 }
 
+export type MinePlaceEvent = {
+  type: 'MINE_PLACE'
+  mineId: string
+  ownerBotId: SlotId
+  sector: number
+  armTicks: number
+}
+
+export type MineArmedEvent = {
+  type: 'MINE_ARMED'
+  mineId: string
+}
+
+export type MineTriggerEvent = {
+  type: 'MINE_TRIGGER'
+  mineId: string
+  triggerBotId: SlotId
+}
+
+export type MineDetonateEvent = {
+  type: 'MINE_DETONATE'
+  mineId: string
+  centerSector: number
+  damageCenter: number
+  damageAdjacent: number
+}
+
+export type MineDespawnEvent = {
+  type: 'MINE_DESPAWN'
+  mineId: string
+  reason: 'TTL' | 'EXPLODED'
+}
+
 export type DamageEvent = {
   type: 'DAMAGE'
   victimBotId: SlotId
@@ -267,6 +310,11 @@ export type KnownReplayEvent =
   | GrenadeMoveEvent
   | GrenadeExplodeEvent
   | GrenadeDespawnEvent
+  | MinePlaceEvent
+  | MineArmedEvent
+  | MineTriggerEvent
+  | MineDetonateEvent
+  | MineDespawnEvent
   | DamageEvent
   | BotDiedEvent
   | MatchEndEvent

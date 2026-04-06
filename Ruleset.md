@@ -109,7 +109,7 @@ Important:
 - The engine does **not** read `;@slot*` header directives; those are UI/serialization metadata only.
 
 Recognized module ids:
-- `BULLET | SAW | SHIELD | ARMOR | GRENADE`
+- `BULLET | SAW | SHIELD | ARMOR | GRENADE | MINE`
 
 Implementation note:
 - the authoritative runtime catalog and normalization helper live in `@coding-game/ruleset`
@@ -118,6 +118,7 @@ Implementation note:
 Module semantics:
 - `BULLET`: ammo weapon; `USE_SLOTn <BOT_TARGET>` fires a bullet (subject to cooldown + ammo)
 - `GRENADE`: ammo weapon; `USE_SLOTn <BOT_TARGET>` throws a grenade projectile that explodes after a short fuse, damaging bots in the impact sector and adjacent sectors
+- `MINE`: ammo weapon; `USE_SLOTn NONE` drops a mine in the bot’s current sector. Mines arm after a short delay, then detonate when an enemy enters that sector or when their fuse expires. Current engine behavior excludes the owner from mine trigger/damage.
 - `SAW`: melee weapon; `SAW ON/OFF` toggles it and drains energy while active; `USE_SLOTn` behaves like turning SAW on when that slot contains SAW
 - `SHIELD`: defense; `SHIELD ON/OFF` toggles it and drains energy while active; `USE_SLOTn` behaves like turning SHIELD on when that slot contains SHIELD
 - `ARMOR` (passive):
@@ -134,12 +135,12 @@ Loadout shape/defaulting:
 
 Normalization steps:
 1) Unknown modules → `null`
-   - any string not in `{BULLET, SAW, SHIELD, ARMOR, GRENADE}` becomes `null`
+   - any string not in `{BULLET, SAW, SHIELD, ARMOR, GRENADE, MINE}` becomes `null`
 2) Dedupe modules
    - keep the earliest slot for each module id
    - later duplicates become `null`
 3) Weapon limit
-   - at most 1 weapon among `{BULLET, SAW, GRENADE}`
+   - at most 1 weapon among `{BULLET, SAW, GRENADE, MINE}`
    - keep the earliest weapon slot; later weapon slots become `null`
 
 Issue recording (`loadoutIssues`):
