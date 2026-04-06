@@ -69,13 +69,13 @@ const ARMOR_DAMAGE_DIV = 3
 const STALEMATE_GRACE_TICKS = 120
 const STALEMATE_COUNTDOWN_TICKS = 30
 
-// Stable v1 SAW numbers (match `packages/replay/src/generateSampleReplay.js`).
+// Stable v1 SAW numbers.
 const SAW_DAMAGE = 6
-const SAW_ENERGY_DRAIN = 1
+const SAW_ENERGY_DRAIN = 2
 const SAW_ATTACK_RANGE = BOT_HALF_SIZE * 2 + 2
 const SAW_ATTACK_RANGE2 = SAW_ATTACK_RANGE * SAW_ATTACK_RANGE
 
-const SHIELD_ENERGY_DRAIN = 1
+const SHIELD_ENERGY_DRAIN = 2
 
 function applyArmorMitigation(amount) {
   return amount - Math.floor(amount / ARMOR_DAMAGE_DIV)
