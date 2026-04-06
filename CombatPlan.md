@@ -433,7 +433,15 @@ Determinism notes:
 
 ## 6) Timed explosive projectile: Grenade (delayed bullet)
 
-A grenade is a projectile that detonates after a fixed delay (fuse).
+A grenade is a projectile that detonates after a fixed delay (fuse) and deals AoE damage at the detonation point.
+
+Recommended first identity:
+- this should be the canonical “timer-based explosive projectile” module
+- the grenade should not need direct impact detonation in its first version
+- the core gameplay pattern is:
+  - launch projectile
+  - wait for fuse
+  - explode with area damage
 
 ### 6.1 Grenade entity fields
 
@@ -452,6 +460,12 @@ Recommended deterministic update per tick:
 2) decrement `fuseRemaining`
 3) if `fuseRemaining == 0`: detonate and remove grenade
 4) decrement `ttlRemaining`; if it reaches 0, remove grenade (failsafe)
+
+Planning note:
+- if an impact-detonation variant is ever added later, treat it as either:
+  - a separate grenade archetype, or
+  - a ruleset/module parameter
+- do not blur the first version; the initial planned grenade should be “explodes when timer runs out”
 
 ### 6.3 Detonation (AoE)
 

@@ -308,7 +308,13 @@ Language interaction:
 
 Mechanics:
 - delivery: `PROJECTILE`
-- projectile effect: explodes on impact or after `fuseTicks`
+- projectile effect: timed/fused explosive projectile
+- recommended first version:
+  - grenade travels as a projectile
+  - grenade explodes when its timer / fuse runs out
+  - explosion deals AoE damage with center-vs-adjacent falloff
+- optional later extension:
+  - impact detonation in addition to fuse detonation, if that turns out to be better for balance
 - AoE radius=1 sector with falloff (per `CombatPlan.md`)
 
 Language interaction:
