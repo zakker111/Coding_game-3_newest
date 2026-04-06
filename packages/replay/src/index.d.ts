@@ -54,6 +54,14 @@ export type ReplayBulletState = {
   vel: Pos
 }
 
+export type ReplayGrenadeState = {
+  grenadeId: string
+  ownerBotId: SlotId
+  pos: Pos
+  vel: Pos
+  fuse: number
+}
+
 export type ReplayPowerupState = {
   powerupId: string
   type: 'HEALTH' | 'AMMO' | 'ENERGY'
@@ -65,6 +73,7 @@ export type ReplayTickState = {
   t: number
   bots: ReplayBotState[]
   bullets: ReplayBulletState[]
+  grenades?: ReplayGrenadeState[]
   powerups: ReplayPowerupState[]
 }
 
@@ -80,6 +89,7 @@ export type BotExecReason =
 
 export type ResourceDeltaCause =
   | 'SHOOT'
+  | 'THROW_GRENADE'
   | 'SAW_DRAIN'
   | 'SHIELD_DRAIN'
   | 'PICKUP_HEALTH'
@@ -184,6 +194,39 @@ export type BulletDespawnEvent = {
   pos?: Pos
 }
 
+export type GrenadeSpawnEvent = {
+  type: 'GRENADE_SPAWN'
+  grenadeId: string
+  ownerBotId: SlotId
+  pos: Pos
+  vel: Pos
+  fuse: number
+  targetBotId?: SlotId
+  targetPos?: Pos
+}
+
+export type GrenadeMoveEvent = {
+  type: 'GRENADE_MOVE'
+  grenadeId: string
+  fromPos: Pos
+  toPos: Pos
+}
+
+export type GrenadeExplodeEvent = {
+  type: 'GRENADE_EXPLODE'
+  grenadeId: string
+  ownerBotId: SlotId
+  pos: Pos
+  sector: number
+}
+
+export type GrenadeDespawnEvent = {
+  type: 'GRENADE_DESPAWN'
+  grenadeId: string
+  reason: 'TTL' | 'EXPLODED'
+  pos?: Pos
+}
+
 export type DamageEvent = {
   type: 'DAMAGE'
   victimBotId: SlotId
@@ -220,6 +263,10 @@ export type KnownReplayEvent =
   | BulletMoveEvent
   | BulletHitEvent
   | BulletDespawnEvent
+  | GrenadeSpawnEvent
+  | GrenadeMoveEvent
+  | GrenadeExplodeEvent
+  | GrenadeDespawnEvent
   | DamageEvent
   | BotDiedEvent
   | MatchEndEvent

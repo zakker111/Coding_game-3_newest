@@ -104,7 +104,7 @@ Loadout notes (v1):
     1. Coerce to 3 slots: take the first 3 entries; if fewer, pad with `EMPTY`.
     2. Unknown module ids → `EMPTY` (record `UNKNOWN_MODULE`).
     3. Deduplicate modules: keep the earliest occurrence; later duplicates → `EMPTY` (record `DUPLICATE`).
-    4. Enforce weapon limit: keep only the earliest weapon among `{BULLET, SAW}`; later weapons → `EMPTY` (record `MULTI_WEAPON`).
+    4. Enforce weapon limit: keep only the earliest weapon among `{BULLET, SAW, GRENADE}`; later weapons → `EMPTY` (record `MULTI_WEAPON`).
   - Important: if a match runner omits `loadout`, bots will have `EMPTY/EMPTY/EMPTY` and slot-based module instructions will no-op.
   - UX contract: if `loadoutIssues` is non-empty, UIs/replay viewers should surface it as a **visible, non-blocking warning/error** (the match still runs).
 - **rulesetVersion `0.1.0` (legacy; not current engine behavior):** per-bot loadouts were not a first-class match input; module capability was inferred from source scanning:
@@ -379,6 +379,7 @@ Compatibility aliases (v1):
 
 Current engine module behavior when used via `USE_SLOTn` / `FIRE_SLOTn`:
 - **BULLET**: fires only at bot targets (`<BOT_TARGET>`); non-bot targets are `INVALID_TARGET_KIND` no-ops.
+- **GRENADE**: throws only at bot targets (`<BOT_TARGET>`); non-bot targets are `INVALID_TARGET_KIND` no-ops. Grenades travel as projectiles, then explode after a short fuse and deal AoE damage in the destination sector and adjacent sectors.
 - **SAW**: same as `SAW ON` (target ignored).
 - **SHIELD**: same as `SHIELD ON` (target ignored).
 - **ARMOR**: passive module; `USE_SLOTn ...` and `STOP_SLOTn` are deterministic no-ops.

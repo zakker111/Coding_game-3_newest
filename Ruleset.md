@@ -109,7 +109,7 @@ Important:
 - The engine does **not** read `;@slot*` header directives; those are UI/serialization metadata only.
 
 Recognized module ids:
-- `BULLET | SAW | SHIELD | ARMOR`
+- `BULLET | SAW | SHIELD | ARMOR | GRENADE`
 
 Implementation note:
 - the authoritative runtime catalog and normalization helper live in `@coding-game/ruleset`
@@ -117,6 +117,7 @@ Implementation note:
 
 Module semantics:
 - `BULLET`: ammo weapon; `USE_SLOTn <BOT_TARGET>` fires a bullet (subject to cooldown + ammo)
+- `GRENADE`: ammo weapon; `USE_SLOTn <BOT_TARGET>` throws a grenade projectile that explodes after a short fuse, damaging bots in the impact sector and adjacent sectors
 - `SAW`: melee weapon; `SAW ON/OFF` toggles it and drains energy while active; `USE_SLOTn` behaves like turning SAW on when that slot contains SAW
 - `SHIELD`: defense; `SHIELD ON/OFF` toggles it and drains energy while active; `USE_SLOTn` behaves like turning SHIELD on when that slot contains SHIELD
 - `ARMOR` (passive):
@@ -133,12 +134,12 @@ Loadout shape/defaulting:
 
 Normalization steps:
 1) Unknown modules → `null`
-   - any string not in `{BULLET, SAW, SHIELD, ARMOR}` becomes `null`
+   - any string not in `{BULLET, SAW, SHIELD, ARMOR, GRENADE}` becomes `null`
 2) Dedupe modules
    - keep the earliest slot for each module id
    - later duplicates become `null`
 3) Weapon limit
-   - at most 1 weapon among `{BULLET, SAW}`
+   - at most 1 weapon among `{BULLET, SAW, GRENADE}`
    - keep the earliest weapon slot; later weapon slots become `null`
 
 Issue recording (`loadoutIssues`):

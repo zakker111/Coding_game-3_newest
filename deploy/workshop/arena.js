@@ -225,6 +225,97 @@ function getInterpolatedBullets(replay, tick, a) {
   return out
 }
 
+function getInterpolatedGrenades(replay, tick, a) {
+  const t = clamp(tick, 0, replay.tickCap)
+  const next = replay.state?.[t]
+  const prev = t > 0 ? replay.state?.[t - 1] : next
+
+  if (!next || !prev) return []
+
+  const prevGrenades = prev?.grenades || []
+  const nextGrenades = next?.grenades || []
+
+  const prevById = new Map(prevGrenades.map((g) => [g.grenadeId, g]))
+  const nextById = new Map(nextGrenades.map((g) => [g.grenadeId, g]))
+
+  const grenadeIds = new Set()
+  for (const g of prevGrenades) grenadeIds.add(g.grenadeId)
+  for (const g of nextGrenades) grenadeIds.add(g.grenadeId)
+
+  const tickEvents = (replay.events && replay.events[t]) || []
+
+  const spawnsByGrenadeId = new Map(
+    tickEvents.filter((e) => e && e.type === 'GRENADE_SPAWN' && e.grenadeId).map((e) => [e.grenadeId, e])
+  )
+
+  const despawnsByGrenadeId = new Map(
+    tickEvents.filter((e) => e && e.type === 'GRENADE_DESPAWN' && e.grenadeId).map((e) => [e.grenadeId, e])
+  )
+
+  const out = []
+  for (const grenadeId of grenadeIds) {
+    const g0 = prevById.get(grenadeId)
+    const g1 = nextById.get(grenadeId)
+    if (!g0 && !g1) continue
+
+    if (g0 && !g1) {
+      if (a >= 1) continue
+
+      const despawn = despawnsByGrenadeId.get(grenadeId)
+      const to = despawn?.pos || g0.pos
+
+      out.push({
+        grenadeId,
+        ownerBotId: g0.ownerBotId,
+        vel: g0.vel,
+        fuse: g0.fuse,
+        pos: {
+          x: g0.pos.x + (to.x - g0.pos.x) * a,
+          y: g0.pos.y + (to.y - g0.pos.y) * a,
+        },
+        alpha: 1 - a,
+      })
+      continue
+    }
+
+    if (!g0 && g1) {
+      const spawn = spawnsByGrenadeId.get(grenadeId)
+      const from = spawn?.pos || (g1.vel ? { x: g1.pos.x - g1.vel.x, y: g1.pos.y - g1.vel.y } : { x: g1.pos.x, y: g1.pos.y })
+
+      out.push({
+        grenadeId,
+        ownerBotId: g1.ownerBotId,
+        vel: g1.vel,
+        fuse: g1.fuse,
+        pos: {
+          x: from.x + (g1.pos.x - from.x) * a,
+          y: from.y + (g1.pos.y - from.y) * a,
+        },
+      })
+      continue
+    }
+
+    const from = (g0 && g0.pos) || g1.pos
+    const to = (g1 && g1.pos) || g0.pos
+    const vel = (g1 && g1.vel) || g0.vel
+    const ownerBotId = (g1 && g1.ownerBotId) || g0.ownerBotId
+    const fuse = (g1 && g1.fuse) ?? (g0 && g0.fuse)
+
+    out.push({
+      grenadeId,
+      ownerBotId,
+      vel,
+      fuse,
+      pos: {
+        x: from.x + (to.x - from.x) * a,
+        y: from.y + (to.y - from.y) * a,
+      },
+    })
+  }
+
+  return out
+}
+
 function draw(ctx, cssSize, scale, renderState, selectedBotId) {
   ctx.clearRect(0, 0, cssSize, cssSize)
 
@@ -336,6 +427,33 @@ function draw(ctx, cssSize, scale, renderState, selectedBotId) {
       ctx.strokeStyle = 'rgba(0,0,0,0.45)'
       ctx.lineWidth = Math.max(1, Math.floor(0.25 * scale))
       ctx.stroke()
+    }
+
+    ctx.restore()
+  }
+
+  for (const g of renderState.grenades || []) {
+    const x = g.pos.x * scale
+    const y = g.pos.y * scale
+    const r = Math.max(3, Math.floor(1.8 * scale))
+
+    ctx.save()
+    if (typeof g.alpha === 'number') ctx.globalAlpha = clamp(g.alpha, 0, 1)
+
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fillStyle = slotFallbackColor(g.ownerBotId)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.8)'
+    ctx.lineWidth = Math.max(1, Math.floor(0.25 * scale))
+    ctx.stroke()
+
+    if (typeof g.fuse === 'number') {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'
+      ctx.font = `${Math.max(8, Math.floor(2.2 * scale))}px ui-monospace, monospace`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(Math.max(0, g.fuse)), x, y)
     }
 
     ctx.restore()
@@ -459,6 +577,7 @@ export function attachArenaRenderer(canvas) {
       label: labelMap[b.botId] || b.botId,
     }))
     const bullets = getInterpolatedBullets(replay, tick, alpha)
+    const grenades = getInterpolatedGrenades(replay, tick, alpha)
 
     const t = clamp(tick, 0, replay.tickCap)
     const snapState = replay.state[t] || null
@@ -468,7 +587,7 @@ export function attachArenaRenderer(canvas) {
       pos: locToWorld(p.loc),
     }))
 
-    draw(ctx, cssSize, scale, { bots, bullets, powerups }, selectedBotId)
+    draw(ctx, cssSize, scale, { bots, bullets, grenades, powerups }, selectedBotId)
   }
 
   return {

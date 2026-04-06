@@ -4,7 +4,7 @@ export const LOADOUT_SLOT_COUNT = 3
 
 export const EMPTY_LOADOUT = /** @type {[null, null, null]} */ ([null, null, null])
 
-export const MODULE_IDS = /** @type {const} */ (['BULLET', 'SAW', 'SHIELD', 'ARMOR'])
+export const MODULE_IDS = /** @type {const} */ (['BULLET', 'SAW', 'SHIELD', 'ARMOR', 'GRENADE'])
 
 export const MODULE_DEFINITIONS = {
   BULLET: {
@@ -40,6 +40,15 @@ export const MODULE_DEFINITIONS = {
     activation: 'PASSIVE',
     targetKinds: ['NONE'],
     uiLabel: 'Armor',
+  },
+  GRENADE: {
+    id: 'GRENADE',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'INSTANT',
+    targetKinds: ['BOT'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Grenade',
   },
 }
 

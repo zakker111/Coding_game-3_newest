@@ -39,6 +39,14 @@ export const BULLET_DAMAGE = 10
 export const BULLET_AMMO_COST = 2
 export const BULLET_COOLDOWN_TICKS = 4
 
+export const GRENADE_SPEED_UNITS_PER_TICK = 24
+export const GRENADE_FUSE_TICKS = 4
+export const GRENADE_TTL_TICKS = 10
+export const GRENADE_DAMAGE_CENTER = 18
+export const GRENADE_DAMAGE_ADJACENT = 10
+export const GRENADE_AMMO_COST = 6
+export const GRENADE_COOLDOWN_TICKS = 8
+
 export const WALL_BUMP_DAMAGE = 2
 
 // Damage dealt to both bots when they collide (bot-to-bot bump / ramming).

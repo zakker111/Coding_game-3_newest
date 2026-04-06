@@ -725,6 +725,111 @@ export function WorkshopPage() {
     return out
   }, [alpha, playback.playing, playback.tick, replay])
 
+  const grenadesForRender = React.useMemo(() => {
+    if (!replay) return []
+
+    const t = clamp(playback.tick, 0, replay.tickCap)
+    const a = playback.playing ? alpha : 1
+
+    const next = replay.state[t]
+    const prev = t > 0 ? replay.state[t - 1] : next
+
+    if (!next || !prev) return []
+
+    const prevGrenades = prev.grenades ?? []
+    const nextGrenades = next.grenades ?? []
+
+    const prevById = new Map(prevGrenades.map((g) => [g.grenadeId, g]))
+    const nextById = new Map(nextGrenades.map((g) => [g.grenadeId, g]))
+
+    const grenadeIds = new Set<string>()
+    for (const g of prevGrenades) grenadeIds.add(g.grenadeId)
+    for (const g of nextGrenades) grenadeIds.add(g.grenadeId)
+
+    const spawnsByGrenadeId = new Map(
+      (replay.events[t] ?? [])
+        .filter((e): e is Extract<KnownReplayEvent, { type: 'GRENADE_SPAWN' }> => isKnownReplayEventType(e, 'GRENADE_SPAWN'))
+        .map((e) => [e.grenadeId, e]),
+    )
+
+    const despawnsByGrenadeId = new Map(
+      (replay.events[t] ?? [])
+        .filter((e): e is Extract<KnownReplayEvent, { type: 'GRENADE_DESPAWN' }> => isKnownReplayEventType(e, 'GRENADE_DESPAWN'))
+        .map((e) => [e.grenadeId, e]),
+    )
+
+    const out = [] as Array<{
+      grenadeId: string
+      ownerBotId: SlotId
+      pos: { x: number; y: number }
+      vel: { x: number; y: number }
+      fuse?: number
+      alpha?: number
+    }>
+
+    for (const grenadeId of grenadeIds) {
+      const g0 = prevById.get(grenadeId)
+      const g1 = nextById.get(grenadeId)
+      if (!g0 && !g1) continue
+
+      if (g0 && !g1) {
+        if (a >= 1) continue
+
+        const despawn = despawnsByGrenadeId.get(grenadeId)
+        const to = despawn?.pos ?? g0.pos
+
+        out.push({
+          grenadeId,
+          ownerBotId: g0.ownerBotId,
+          vel: g0.vel,
+          fuse: g0.fuse,
+          pos: {
+            x: g0.pos.x + (to.x - g0.pos.x) * a,
+            y: g0.pos.y + (to.y - g0.pos.y) * a,
+          },
+          alpha: 1 - a,
+        })
+        continue
+      }
+
+      if (!g0 && g1) {
+        const spawn = spawnsByGrenadeId.get(grenadeId)
+        const from = spawn?.pos ?? { x: g1.pos.x - g1.vel.x, y: g1.pos.y - g1.vel.y }
+
+        out.push({
+          grenadeId,
+          ownerBotId: g1.ownerBotId,
+          vel: g1.vel,
+          fuse: g1.fuse,
+          pos: {
+            x: from.x + (g1.pos.x - from.x) * a,
+            y: from.y + (g1.pos.y - from.y) * a,
+          },
+        })
+        continue
+      }
+
+      const from = g0?.pos ?? g1!.pos
+      const to = g1?.pos ?? g0!.pos
+      const vel = g1?.vel ?? g0!.vel
+      const ownerBotId = g1?.ownerBotId ?? g0!.ownerBotId
+      const fuse = g1?.fuse ?? g0?.fuse
+
+      out.push({
+        grenadeId,
+        ownerBotId,
+        vel,
+        fuse,
+        pos: {
+          x: from.x + (to.x - from.x) * a,
+          y: from.y + (to.y - from.y) * a,
+        },
+      })
+    }
+
+    return out
+  }, [alpha, playback.playing, playback.tick, replay])
+
   const powerupsForRender = React.useMemo(() => {
     if (!replay) return []
     const t = clamp(playback.tick, 0, replay.tickCap)
@@ -753,9 +858,10 @@ export function WorkshopPage() {
         displayName: displayNameBySlot[b.botId],
       })),
       bullets: bulletsForRender,
+      grenades: grenadesForRender,
       powerups: powerupsForRender,
     }
-  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, powerupsForRender, visibleReplaySlots])
+  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, grenadesForRender, powerupsForRender, visibleReplaySlots])
 
   const selectedBotState = React.useMemo(() => {
     if (!replay) return null
