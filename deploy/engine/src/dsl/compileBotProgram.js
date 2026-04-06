@@ -27,14 +27,15 @@ import { parseExpression } from './expr.js'
  *   | { kind: 'SET_TIMER', timer: 1 | 2 | 3, ticks: number }
  *   | { kind: 'CLEAR_TIMER', timer: 1 | 2 | 3 }
  *   | { kind: 'TARGET_CLOSEST' }
- *   | { kind: 'TARGET_CLOSEST_BULLET' }
  *   | { kind: 'TARGET_LOWEST_HEALTH' }
  *   | { kind: 'TARGET_NEXT' }
  *   | { kind: 'TARGET_NEXT_IF_DEAD' }
+ *   | { kind: 'TARGET_CLOSEST_BULLET' }
  *   | { kind: 'TARGET_POWERUP', type: PowerupType }
  *   | { kind: 'SET_TARGET', bot: BotId }
  *   | { kind: 'CLEAR_TARGET_BOT' }
  *   | { kind: 'CLEAR_TARGET_POWERUP' }
+ *   | { kind: 'CLEAR_TARGET_BULLET' }
  *   | { kind: 'CLEAR_TARGET' }
  *   | { kind: 'MOVE_DIR', dir: MoveDir }
  *   | { kind: 'SET_MOVE_TO_TARGET' }
@@ -43,7 +44,6 @@ import { parseExpression } from './expr.js'
  *   | { kind: 'SET_MOVE_TO_POWERUP', type: PowerupType }
  *   | { kind: 'SET_MOVE_TO_BOT', target: string }
  *   | { kind: 'MOVE_TO_TARGET' }
- *   | { kind: 'MOVE_AWAY_FROM_TARGET' }
  *   | { kind: 'MOVE_TO_ZONE', zone: 1 | 2 | 3 | 4 }
  *   | { kind: 'MOVE_TO_SECTOR', sector: 1|2|3|4|5|6|7|8|9, zone?: 1|2|3|4 }
  *   | { kind: 'MOVE_TO_BOT', target: string }
@@ -382,9 +382,9 @@ function parseSimpleInstruction(line, lineNo, errors) {
 
   if (op === 'TARGET_CLOSEST') return { kind: 'TARGET_CLOSEST' }
 
-  if (op === 'TARGET_CLOSEST_BULLET') return { kind: 'TARGET_CLOSEST_BULLET' }
-
   if (op === 'TARGET_LOWEST_HEALTH') return { kind: 'TARGET_LOWEST_HEALTH' }
+
+  if (op === 'TARGET_CLOSEST_BULLET') return { kind: 'TARGET_CLOSEST_BULLET' }
 
   if (op === 'TARGET_NEXT') return { kind: 'TARGET_NEXT' }
 
@@ -410,6 +410,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
 
   if (op === 'CLEAR_TARGET_BOT') return { kind: 'CLEAR_TARGET_BOT' }
   if (op === 'CLEAR_TARGET_POWERUP') return { kind: 'CLEAR_TARGET_POWERUP' }
+  if (op === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET_BULLET' }
   if (op === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET' }
 
   if (op === 'MOVE') {

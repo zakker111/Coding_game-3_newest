@@ -46,15 +46,15 @@ function normalizeInstruction(instr) {
   // Target register writes.
   if (instr.kind === 'SET_TARGET') return { kind: 'SET_TARGET_BOT', selector: instr.bot }
   if (instr.kind === 'TARGET_CLOSEST') return { kind: 'SET_TARGET_BOT', selector: 'CLOSEST_BOT' }
-  if (instr.kind === 'TARGET_CLOSEST_BULLET') return { kind: 'SET_TARGET_BULLET', selector: 'CLOSEST_BULLET' }
   if (instr.kind === 'TARGET_LOWEST_HEALTH') return { kind: 'SET_TARGET_BOT', selector: 'LOWEST_HEALTH_BOT' }
   if (instr.kind === 'TARGET_NEXT') return { kind: 'SET_TARGET_BOT', selector: 'NEXT' }
   if (instr.kind === 'TARGET_NEXT_IF_DEAD') return { kind: 'SET_TARGET_BOT', selector: 'NEXT_IF_DEAD' }
+  if (instr.kind === 'TARGET_CLOSEST_BULLET') return { kind: 'SET_TARGET_BULLET', selector: 'CLOSEST_BULLET' }
   if (instr.kind === 'TARGET_POWERUP') return { kind: 'SET_TARGET_POWERUP', type: instr.type }
 
   if (instr.kind === 'CLEAR_TARGET_BOT') return { kind: 'CLEAR_TARGET', which: 'BOT' }
-  if (instr.kind === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET', which: 'BULLET' }
   if (instr.kind === 'CLEAR_TARGET_POWERUP') return { kind: 'CLEAR_TARGET', which: 'POWERUP' }
+  if (instr.kind === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET', which: 'BULLET' }
   if (instr.kind === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET', which: 'ALL' }
 
   // Persistent movement goal writes.

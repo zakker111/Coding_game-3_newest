@@ -42,6 +42,10 @@ import { parseExpression } from './expr.js'
  * @property {Record<string, boolean> | ((slot: 1|2|3) => boolean)} [slotActive]
  *
  * @property {boolean | (() => boolean)} [hasTargetBot]
+ * @property {boolean | (() => boolean)} [hasTargetBullet]
+ *
+ * @property {number | (() => number)} [distToTargetBullet]
+ *
  * @property {boolean | (() => boolean)} [bumpedBot]
  *
  * @property {Record<string, (...args: (number|boolean)[]) => (number|boolean)>} [functions]
@@ -453,7 +457,7 @@ function evalNode(node, ctx) {
 
     if (fn === 'HAS_TARGET_BULLET') {
       if (node.arguments.length !== 0) return err('ARITY', 'HAS_TARGET_BULLET expects 0 arguments')
-      const v = resolveBoolish(ctx?.hasTargetBullet)
+      const v = resolveBoolish(/** @type {any} */ (ctx)?.hasTargetBullet)
       if (v == null) return err('MISSING', 'HAS_TARGET_BULLET not available in ctx')
       return ok(v)
     }
