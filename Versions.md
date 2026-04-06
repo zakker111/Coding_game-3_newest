@@ -47,8 +47,9 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - Phases 4, 5, and 5b are complete
   - bullet-targeting numeric-id regression coverage is already shipped
   - bullet-despawn interpolation is already shipped in both Workshop surfaces
-  - the next decision point is the Phase 8/server entry gate and loadout-contract alignment
-  - the server runner MVP remains explicitly deferred until that decision is made
+  - server planning docs now use the same explicit-loadout contract as the local engine
+  - the next decision point is whether the remaining local-loop audit work is small enough to defer
+  - the server runner MVP remains explicitly deferred until that audit is complete
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:

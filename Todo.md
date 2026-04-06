@@ -22,9 +22,21 @@ Next slice (non-server roadmap)
 - Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
 - Prioritize:
   - final local-loop audit and any remaining spec/schema alignment
-  - explicit Phase 8 entry decision on the server-side loadout contract
   - deploy/workshop guardrails so the static surfaces stay boring and reliable
 - Leave Phase 8 (server runner MVP) explicitly deferred until the local workflow feels complete.
+
+### Status board
+
+Implemented now
+- [x] Explicit per-bot loadouts are the authoritative contract across engine, Workshop, deploy docs, and server planning docs.
+- [x] Bullet targeting, example-bot follow-through, and deploy inspector `Target bullet` parity are shipped.
+- [x] Replay/debug ergonomics are shipped in both Workshop surfaces.
+- [x] Golden determinism guardrails and deploy drift checks are in place.
+
+Still open
+- [ ] Final local-loop audit for any remaining spec/schema drift or reliability gaps.
+- [ ] Deploy/workshop hardening beyond the current sync/import/smoke guardrails.
+- [ ] Phase 8 server runner MVP.
 
 ### Checklist (done vs. not done)
 
@@ -33,6 +45,7 @@ Done (shipped)
 - [x] Workshop build tag visible in `/workshop/`.
 - [x] Example bots have `;@slot1/2/3` headers (first 3 non-blank lines in script).
 - [x] Explicit per-bot 3-slot loadouts are wired through Workshop/engine (no source scanning).
+- [x] Server planning docs now use the same explicit per-bot loadout contract as the engine.
 - [x] ARMOR implemented and tested (mitigation + speed penalty; SHIELD→ARMOR ordering).
 - [x] Golden determinism fixtures committed and `pnpm golden:check` is strict.
 - [x] Bullet targeting + `MOVE_AWAY_FROM_TARGET` available and smoke-tested.

@@ -7,14 +7,14 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: final local-loop audit + Phase 8 entry decision
+## Next slice: final local-loop audit before Phase 8
 
 Goals:
 - Keep improving the existing local deterministic loop before introducing server scope.
 - Focus on:
   - closing any remaining spec/schema drift and determinism guardrails
   - keeping deploy/workshop guardrails boring and reliable
-  - reconciling the server-side loadout contract before Phase 8 starts
+  - keeping the planning docs/checklists aligned to the shipped implementation
 
 ---
 
@@ -98,5 +98,6 @@ Status: ✅ in place, with follow-up hardening available
 Status: ⏳ deferred until after the local-loop hardening/polish track
 
 Key items:
+- Server planning docs now assume the same explicit per-bot loadout contract as the local engine.
 - Headless deterministic match runner (scheduling + storage + replay output)
 - Auth + bot submissions + versioning + validation

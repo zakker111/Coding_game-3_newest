@@ -45,7 +45,7 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: server-entry decision gate + final local-loop audit
+## 3) Next slice: final local-loop audit before Phase 8
 
 Why this is next:
 - The local deterministic loop is now in good shape:
@@ -56,18 +56,22 @@ Why this is next:
   - the built-in example bots teach explicit bullet targeting and evasion
   - the deploy inspector exposes `Target bullet`
   - deploy smoke coverage exercises that path
-- The next meaningful decision is no longer another small local-loop parity patch; it is whether the repo is ready to begin server work, and under which loadout contract.
+- The server-side loadout contract is now aligned with the shipped engine/docs:
+  - server planning docs now use explicit per-bot loadouts
+  - omitted loadouts default to `[null, null, null]`
+  - normalization and `loadoutIssues` are part of the planned server contract
+- The remaining question is whether there is any material local-loop drift left before Phase 8 begins.
 
 Scope:
-- Reconcile the server-side loadout contract across the planning docs before Phase 8 starts.
 - Run a final local-loop audit for any remaining spec/schema drift that would make server work riskier.
+- Keep the active docs/checklists honest about what is implemented vs. still pending.
 - Keep the authoritative gameplay rules in `packages/engine`; avoid changing mechanics unless the audit proves a real mismatch.
 
 Acceptance criteria:
 - The roadmap/checklists no longer describe the bullet-target example/deploy-inspector work as pending.
-- The server planning docs agree on whether loadout is explicit or fixed-default for v1.
+- The server planning docs consistently use the explicit-loadout contract.
 - Any remaining local-loop drift is documented concretely, with verification evidence.
-- Phase 8 begins only after that decision is explicit.
+- Phase 8 begins only after the remaining audit items are judged small enough to defer.
 
 ---
 
