@@ -19,6 +19,14 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ## Unreleased
 
+- No unreleased changes tracked yet.
+
+---
+
+## 0.0.4 — 2026-04-06T12:25:00Z
+
+> Marketing version: **0.04** (SemVer: `0.0.4`).
+
 ### Added
 - Selftest improvements (coverage + diagnostics) for Workshop/engine integration.
 - Node-level deploy-engine parity coverage in `packages/engine/test/deployEngineParity.test.js`.

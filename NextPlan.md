@@ -1,4 +1,4 @@
-# NextPlan.md — What to build next (post `0.0.3`)
+# NextPlan.md — What to build next (post `0.0.4`)
 
 This repo already has a working, end-to-end **local** loop:
 - **Engine**: deterministic bot DSL → VM → simulation → replay (`packages/engine`)
