@@ -7,15 +7,14 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: non-server hardening + deploy parity
+## Next slice: final local-loop audit + Phase 8 entry decision
 
 Goals:
 - Keep improving the existing local deterministic loop before introducing server scope.
 - Focus on:
-  - closing remaining spec/schema drift and determinism guardrails
-  - polishing the remaining bullet-targeting follow-through (examples + deploy-side `targetBulletId` visibility)
-  - tightening deploy/workshop parity where the legacy surface still lags the React Workshop
-  - tightening deploy-sync and deploy-smoke hardening
+  - closing any remaining spec/schema drift and determinism guardrails
+  - keeping deploy/workshop guardrails boring and reliable
+  - reconciling the server-side loadout contract before Phase 8 starts
 
 ---
 

@@ -24,7 +24,7 @@ Determinism guardrail:
 ## 2) Recently completed (this merge set)
 
 - Replay/engine contract bumped to `schemaVersion = 0.2.0` (docs + deploy artifacts + mock/sample replays updated).
-- Deploy Workshop build tag bumped to **v0.3.4**.
+- Deploy Workshop build tag bumped to **v0.3.5**.
 - Example bots updated to include locked `;@slot1/2/3` header directives.
 - `packages/replay` sample generator is now **loadout-driven** (no SAW/SHIELD source scanning).
 - Bullet targeting + evasion v1 is available (`TARGET_CLOSEST_BULLET`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
@@ -45,31 +45,29 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: bullet-target example follow-through + deploy inspector parity
+## 3) Next slice: server-entry decision gate + final local-loop audit
 
 Why this is next:
 - The local deterministic loop is now in good shape:
   - collision/invariant hardening is landed
   - React Workshop replay/debug parity is landed
   - BOT1 source-line / `pc` highlighting is landed
-- The remaining non-server gap is now narrower and concrete:
-  - the built-in example bots still do not teach the explicit bullet-target flow that the engine already supports
-  - the deploy inspector still lags the React Workshop on `targetBulletId` visibility
-  - deploy sync/smoke coverage should lock those behaviors in before server scope widens the surface area
+- The previously planned bullet-target example follow-through is now shipped:
+  - the built-in example bots teach explicit bullet targeting and evasion
+  - the deploy inspector exposes `Target bullet`
+  - deploy smoke coverage exercises that path
+- The next meaningful decision is no longer another small local-loop parity patch; it is whether the repo is ready to begin server work, and under which loadout contract.
 
 Scope:
-- Update the built-in example bots so the starter path and one advanced path demonstrate explicit bullet targeting and evasion.
-- Mirror React’s existing bullet-target inspector visibility in `deploy/workshop`.
-- Tighten deploy-sync and deploy-smoke coverage around the example-bot and `targetBulletId` path.
-- Keep the authoritative gameplay rules in `packages/engine`; avoid widening scope into server concerns for this slice.
-- Keep the authoritative gameplay rules in `packages/engine`; avoid widening scope into server concerns for this slice.
+- Reconcile the server-side loadout contract across the planning docs before Phase 8 starts.
+- Run a final local-loop audit for any remaining spec/schema drift that would make server work riskier.
+- Keep the authoritative gameplay rules in `packages/engine`; avoid changing mechanics unless the audit proves a real mismatch.
 
 Acceptance criteria:
-- The roadmap/checklists no longer imply that deploy loadout-warning parity is undecided future work.
-- The shipped starter examples now teach the bullet-target flow explicitly.
-- The deploy inspector exposes `targetBulletId` for the selected bot.
-- Deploy sync/smoke coverage protects the example-bot and deploy-inspector bullet-target path.
-- Server work remains deferred until the local loop feels complete and stable.
+- The roadmap/checklists no longer describe the bullet-target example/deploy-inspector work as pending.
+- The server planning docs agree on whether loadout is explicit or fixed-default for v1.
+- Any remaining local-loop drift is documented concretely, with verification evidence.
+- Phase 8 begins only after that decision is explicit.
 
 ---
 

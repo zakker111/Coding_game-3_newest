@@ -12,7 +12,7 @@ Primary specs (authoritative for `rulesetVersion = 0.2.0`, `schemaVersion = 0.2.
 
 Recently completed (this merge set)
 - `schemaVersion = 0.2.0` end-to-end (engine output + deploy artifacts + sample/mock replays).
-- Deploy Workshop build tag bumped to **v0.3.4**.
+- Deploy Workshop build tag bumped to **v0.3.5**.
 - Example bots updated with locked loadout header directives (`;@slot1/2/3`).
 - `packages/replay` sample generator is now **loadout-driven** (no source scanning for SAW/SHIELD).
 - Bullet targeting + evasion v1 shipped (`TARGET_CLOSEST_BULLET`, `HAS_TARGET_BULLET()`, `DIST_TO_TARGET_BULLET()`, `MOVE_AWAY_FROM_TARGET`) with deterministic tie-break by numeric bullet creation order.
@@ -21,10 +21,9 @@ Recently completed (this merge set)
 Next slice (non-server roadmap)
 - Keep the focus on the existing local loop before touching auth, submissions, or server infrastructure.
 - Prioritize:
-  - local-loop hardening and remaining spec/schema alignment
-  - bullet-targeting follow-through (examples + deploy-side `targetBulletId` parity)
-  - deploy/workshop parity where the legacy surface still lags the React Workshop
-  - deploy-sync and deploy-smoke hardening so the static surfaces stay boring and reliable
+  - final local-loop audit and any remaining spec/schema alignment
+  - explicit Phase 8 entry decision on the server-side loadout contract
+  - deploy/workshop guardrails so the static surfaces stay boring and reliable
 - Leave Phase 8 (server runner MVP) explicitly deferred until the local workflow feels complete.
 
 ### Checklist (done vs. not done)
@@ -42,8 +41,8 @@ Next up
 - [x] Phase 4: correctness + invariants hardening.
 - [x] Phase 5: replay/debug parity + Workshop export affordances.
 - [x] Phase 5b: source-line / `pc` highlighting in the Workshop editor.
-- [ ] Local-loop hardening: close remaining spec/schema drift and workshop/deploy guardrails.
-- [ ] Bullet-targeting follow-up: examples and any remaining deploy parity UX.
+- [ ] Local-loop hardening: close any remaining spec/schema drift and workshop/deploy guardrails.
+- [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
 - [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
@@ -237,7 +236,7 @@ Completed (shipped)
 
 Remaining hardening / UX polish
 - [x] Add a determinism regression test that specifically covers bullet ids ≥ 10 (guards against accidental lexicographic compares like `B10 < B2`).
-- [ ] Update/extend example bots to demonstrate bullet-target-driven evasion (not just coarse threat booleans).
+- [x] Update/extend example bots to demonstrate bullet-target-driven evasion (not just coarse threat booleans).
 - [x] Replay/Workshop debug UX: surface `targetBulletId` (or related targeting state) so bullet targeting is inspectable.
 
 QA checklist
@@ -291,7 +290,7 @@ Remaining follow-up polish
 - [x] Make `loadoutIssues` more prominent in the React Workshop UI.
 - [x] Bullet despawn interpolation/fade is shipped in both Workshop surfaces.
 - [x] Legacy deploy Workshop mirrors the React replay loadout warnings.
-- [ ] Add deploy inspector parity for `targetBulletId`.
+- [x] Add deploy inspector parity for `targetBulletId`.
 
 Acceptance criteria
 - For any bot, a developer can switch between selected-bot events and full-tick events and search within them.

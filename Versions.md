@@ -39,16 +39,16 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - Legacy deploy Workshop inspector now mirrors the replay loadout warning affordance:
   - bot tabs show a warning marker when the replay header includes loadout normalization issues
   - Inspector shows the normalized-loadout warning details for the selected bot
-- Next local-loop slice is now the bullet-target follow-through:
-  - built-in example bots will teach explicit `TARGET_CLOSEST_BULLET` / `MOVE_AWAY_FROM_TARGET`
-  - deploy Workshop inspector will mirror React’s `targetBulletId` visibility
-  - deploy sync/smoke coverage will protect those paths
+- Bullet-target example follow-through is now shipped:
+  - built-in example bots teach explicit `TARGET_CLOSEST_BULLET` / `MOVE_AWAY_FROM_TARGET`
+  - deploy Workshop inspector mirrors React’s `targetBulletId` visibility
+  - deploy sync/smoke coverage protects those paths
 - Roadmap/docs now reflect the shipped engine state more accurately:
   - Phases 4, 5, and 5b are complete
   - bullet-targeting numeric-id regression coverage is already shipped
   - bullet-despawn interpolation is already shipped in both Workshop surfaces
-  - the active roadmap is non-server local-loop hardening/deploy parity
-  - the server runner MVP is explicitly deferred
+  - the next decision point is the Phase 8/server entry gate and loadout-contract alignment
+  - the server runner MVP remains explicitly deferred until that decision is made
 
 ### Updated
 - Spec clarifications for `rulesetVersion = 0.2.0` loadouts:
