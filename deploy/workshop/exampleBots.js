@@ -203,13 +203,13 @@ GOTO LOOP
 
   bot3: {
     id: 'bot3',
-    displayName: 'Immediate-Move Bunker',
-    sourceText: `;@slot1 BULLET
+    displayName: 'Immediate-Move Mine Bunker',
+    sourceText: `;@slot1 MINE
 ;@slot2 EMPTY
 ;@slot3 EMPTY
-; bot3 — Immediate-Move Bunker
-; Loadout: SLOT1=BULLET
-; Summary: hold a home corner with immediate movement; make one-tick powerup detours; dodge bullets via the bullet target register; shoot NEAREST_BOT when close.
+; bot3 — Immediate-Move Mine Bunker
+; Loadout: SLOT1=MINE
+; Summary: hold a home corner with immediate movement; drop mines in the bunker lane; make one-tick HEALTH/AMMO detours; dodge bullets via the bullet target register.
 
 LABEL LOOP
 
@@ -219,6 +219,9 @@ IF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS
 ; If we're about to collide, take a short step inward.
 IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
 
+; Keep a mine in our lane whenever the slot is ready.
+IF (SLOT_READY(SLOT1)) DO USE_SLOT1 NONE
+
 ; Make one-tick detours to the nearest useful powerup.
 ; (Thresholds are tuned so this behavior is visible in short Workshop runs.)
 IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) DO MOVE_TO_POWERUP HEALTH
@@ -226,9 +229,6 @@ IF (HEALTH >= 70 && AMMO < 80 && POWERUP_EXISTS(AMMO)) DO MOVE_TO_POWERUP AMMO
 
 ; Otherwise, reassert the home corner immediately.
 IF (HEALTH >= 70 && (AMMO >= 80 || !POWERUP_EXISTS(AMMO))) DO MOVE_TO_SECTOR 1 ZONE 1
-
-; Only shoot when something is fairly close (helps conserve ammo).
-IF (SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 120) DO FIRE_SLOT1 NEAREST_BOT
 
 GOTO LOOP
 
@@ -307,23 +307,24 @@ GOTO LOOP
 
   bot5: {
     id: 'bot5',
-    displayName: 'Shielded Control Hunter',
-    sourceText: `;@slot1 BULLET
+    displayName: 'Armored Grenade Controller',
+    sourceText: `;@slot1 GRENADE
 ;@slot2 ARMOR
-;@slot3 SHIELD
-; bot5 — Shielded Control Hunter
-; Loadout: SLOT1=BULLET, SLOT2=ARMOR, SLOT3=SHIELD
-; Summary: hold the center with ARMOR; clear/rebuild target state for HEALTH/AMMO/ENERGY runs; use SLOT3 SHIELD reactively; return to center for combat.
+;@slot3 REPAIR_DRONE
+; bot5 — Armored Grenade Controller
+; Loadout: SLOT1=GRENADE, SLOT2=ARMOR, SLOT3=REPAIR_DRONE
+; Summary: hold the center with ARMOR; clear/rebuild target state for HEALTH/AMMO/ENERGY runs; use SLOT3 REPAIR_DRONE for sustain; return to center for grenade pressure.
 
 ; Default posture: drift toward the center.
 SET_MOVE_TO_SECTOR 5
 
 LABEL LOOP
 
-; If bullets are nearby, pop SHIELD briefly through SLOT3.
-IF ((BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) && SLOT_READY(SLOT3) && !SLOT_ACTIVE(SLOT3)) DO USE_SLOT3 SELF
-IF ((BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) && SLOT_READY(SLOT3) && !SLOT_ACTIVE(SLOT3)) DO SET_TIMER T3 2
-IF (TIMER_DONE(T3) && SLOT_ACTIVE(SLOT3) && !BULLET_IN_SAME_SECTOR() && !BULLET_IN_ADJ_SECTOR()) DO STOP_SLOT3
+; Keep one repair drone orbiting while we control the center.
+IF (SLOT_READY(SLOT3) && DRONE_COUNT() == 0) DO USE_SLOT3 SELF
+
+; If energy gets low while a drone is active, dismiss it and refuel.
+IF (ENERGY < 35 && SLOT_ACTIVE(SLOT3)) DO STOP_SLOT3
 
 ; If we're about to collide, step to a nearby zone briefly.
 IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
@@ -335,7 +336,7 @@ IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO CLEAR_TARGET
 IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO TARGET_POWERUP HEALTH
 IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO SET_TIMER T1 3
 
-; Low energy (after shield use) → go to ENERGY.
+; Low energy (after drone upkeep) → go to ENERGY.
 IF (!TIMER_ACTIVE(T1) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T2)) DO CLEAR_TARGET
 IF (!TIMER_ACTIVE(T1) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T2)) DO TARGET_POWERUP ENERGY
 IF (!TIMER_ACTIVE(T1) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T2)) DO SET_TIMER T2 3
@@ -355,7 +356,6 @@ IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO FIRE_SLOT1 TARGET
 GOTO LOOP
 
 LABEL POWERUP_RUN
-IF (SLOT_ACTIVE(SLOT3)) DO STOP_SLOT3
 MOVE_TO_TARGET
 IF ((TIMER_DONE(T1) && TIMER_DONE(T2)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO) && !POWERUP_EXISTS(ENERGY))) DO CLEAR_TARGET_POWERUP
 IF ((TIMER_DONE(T1) && TIMER_DONE(T2)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO) && !POWERUP_EXISTS(ENERGY))) DO SET_MOVE_TO_SECTOR 5
