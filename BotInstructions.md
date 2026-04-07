@@ -13,7 +13,7 @@
 ## What bots can do
 
 - Branch (`GOTO`, `IF ... GOTO`, `IF ... DO ...`) and wait (`WAIT`, timers).
-- Select targets (bot targets, bullet targets, and powerup-type targets).
+- Select targets (bot targets, bullet targets, mine targets, and powerup-type targets).
 - Move immediately (`MOVE`, `MOVE_TO_*`) or set a persistent navigation goal (`SET_MOVE_TO_*`).
 - Use equipped modules through canonical slot-addressed actions (`USE_SLOTn` / `STOP_SLOTn`) and toggles (`SAW`, `SHIELD`).
 
@@ -183,6 +183,7 @@ The compiler still accepts older spellings for compatibility, but they are **leg
 Bot state:
 - `targetBotId` (optional)
 - `targetBulletId` (optional)
+- `targetMineId` (optional)
 - `targetPowerupType` (optional)
 
 ### 3.1 Bot target register writes
@@ -207,7 +208,17 @@ Tie-break rule for `TARGET_CLOSEST_BULLET`: closest by Manhattan distance; ties 
 |---|---|
 | `TARGET_CLOSEST_BULLET` | Set `targetBulletId` to the closest enemy bullet. If none exist, clears `targetBulletId`. |
 
-### 3.3 Powerup target register writes
+### 3.3 Mine target register writes
+
+Mines are first-class entities with stable `mineId` ordering.
+
+Tie-break rule for `TARGET_CLOSEST_MINE`: closest by Manhattan distance; ties break by **earliest creation order** (lowest numeric `mineId`, e.g. `M1 < M2 < …`).
+
+| Instruction | Effect |
+|---|---|
+| `TARGET_CLOSEST_MINE` | Set `targetMineId` to the closest enemy mine. If none exist, clears `targetMineId`. |
+
+### 3.4 Powerup target register writes
 
 Bots have global knowledge of powerup locations.
 
@@ -222,14 +233,19 @@ Powerup target invalidation:
   - At end of tick, `targetPowerupType` is auto-cleared.
 
 Priority:
-- If both `targetBotId` and `targetPowerupType` are set, `MOVE_TO_TARGET` prefers the bot target unless you clear it.
+- If multiple target registers are set, `MOVE_TO_TARGET` / `MOVE_AWAY_FROM_TARGET` resolve in this order:
+  - `targetBotId` (alive)
+  - `targetBulletId` (exists)
+  - `targetMineId` (exists)
+  - `targetPowerupType` (exists)
 
-### 3.4 Clearing targets
+### 3.5 Clearing targets
 
 | Instruction | Effect |
 |---|---|
 | `CLEAR_TARGET_BOT` | Clear `targetBotId`. |
 | `CLEAR_TARGET_BULLET` | Clear `targetBulletId`. |
+| `CLEAR_TARGET_MINE` | Clear `targetMineId`. |
 | `CLEAR_TARGET_POWERUP` | Clear `targetPowerupType`. |
 | `CLEAR_TARGET` | Clear all targets. |
 
@@ -255,8 +271,8 @@ General rules:
 | `MOVE_TO_CLOSEST_BOT` | Move toward closest alive bot (ties: lowest bot id). |
 | `MOVE_TO_LOWEST_HEALTH_BOT` | Move toward lowest-health alive bot (ties: lowest bot id). |
 | `MOVE_TO_ARENA_EDGE UP|DOWN|LEFT|RIGHT` | Move toward outer boundary in that direction; if already touching, no-op. |
-| `MOVE_TO_TARGET` | If valid `targetBotId`: like `MOVE_TO_BOT <targetBotId>`; else if valid `targetBulletId`: move away/toward uses bullet position; else if valid `targetPowerupType`: like `MOVE_TO_POWERUP <type>`; else no-op. |
-| `MOVE_AWAY_FROM_TARGET` | Move away from the currently selected target. Resolution priority: `targetBotId` (alive) > `targetBulletId` (exists) > `targetPowerupType` (exists). |
+| `MOVE_TO_TARGET` | If valid `targetBotId`: like `MOVE_TO_BOT <targetBotId>`; else if valid `targetBulletId`: move toward the bullet position; else if valid `targetMineId`: move toward the mine position; else if valid `targetPowerupType`: like `MOVE_TO_POWERUP <type>`; else no-op. |
+| `MOVE_AWAY_FROM_TARGET` | Move away from the currently selected target. Resolution priority: `targetBotId` (alive) > `targetBulletId` (exists) > `targetMineId` (exists) > `targetPowerupType` (exists). |
 | `MOVE_TO_TARGET_UNTIL_IN_RANGE <N>` | Set a persistent movement goal using `MOVE_TO_TARGET` resolution each tick, and auto-clear it once the resolved target is within Manhattan distance `<= N`. If no valid target resolves, the goal clears and no movement occurs. |
 | `MOVE_AWAY_FROM_TARGET_UNTIL_RANGE <N>` | Set a persistent movement goal using `MOVE_AWAY_FROM_TARGET` resolution each tick, and auto-clear it once the resolved target is at Manhattan distance `>= N`. If already far enough, this is effectively a no-op. |
 
@@ -443,6 +459,7 @@ Expression language is deterministic and C-like.
 Bot / target state:
 - `HAS_TARGET_BOT()` → bool
 - `HAS_TARGET_BULLET()` → bool
+- `HAS_TARGET_MINE()` → bool
 - `BOT_ALIVE(<BOT>)` → bool
 
 Location (derived from continuous position; tie-break boundaries deterministically, recommended lowest id):
@@ -460,6 +477,7 @@ Distances (world units; Manhattan):
 - `DIST_TO_BOT(<BOT>)` → int
 - `DIST_TO_TARGET_BOT()` → int (no valid target bot → `999`)
 - `DIST_TO_TARGET_BULLET()` → int (no valid target bullet → `999`)
+- `DIST_TO_TARGET_MINE()` → int (no valid target mine → `999`)
 - `DIST_TO_CLOSEST_BOT()` → int (none alive → `999`)
 - `COUNT_ALIVE_ENEMIES()` → int
 - `ENEMIES_IN_RANGE(<N>)` → int

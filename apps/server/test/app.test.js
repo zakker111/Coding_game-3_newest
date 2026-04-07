@@ -651,4 +651,5 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.equal(replay.matchSeed, 123)
   assert.ok(Array.isArray(replay.state))
   assert.ok(Array.isArray(replay.events))
+  assert.equal(Object.prototype.hasOwnProperty.call(replay.state[0].bots[0], 'targetMineId'), true)
 })

@@ -73,6 +73,15 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
         bot.targetBulletId == null || typeof bot.targetBulletId === 'string',
         `expected targetBulletId to be string|null in state[t=${snap.t}] for ${bot.botId}`,
       )
+      assert.equal(
+        Object.prototype.hasOwnProperty.call(bot, 'targetMineId'),
+        true,
+        `expected targetMineId field in state[t=${snap.t}] for ${bot.botId}`,
+      )
+      assert.ok(
+        bot.targetMineId == null || typeof bot.targetMineId === 'string',
+        `expected targetMineId to be string|null in state[t=${snap.t}] for ${bot.botId}`,
+      )
     }
   }
 })

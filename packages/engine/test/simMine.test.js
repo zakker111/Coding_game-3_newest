@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { runMatchToReplay } from '@coding-game/engine'
+import { findClosestEnemyMine } from '../src/sim/runMatchToReplay.js'
 import { MINE_COOLDOWN_TICKS } from '../src/sim/constants.js'
 
 function flatEvents(replay) {
@@ -90,4 +91,43 @@ test('runMatchToReplay: MINE follow-up use respects a longer cooldown before ano
 
   assert.ok(cooldownExec, 'expected follow-up mine use to hit cooldown before a second placement')
   assert.ok(placements.length >= 2, 'expected a second mine placement once the cooldown expires')
+})
+
+test('runMatchToReplay: TARGET_CLOSEST_MINE + MOVE_TO_TARGET are wired', () => {
+  const replay = runMatchToReplay({
+    seed: 2,
+    tickCap: 18,
+    bots: [
+      {
+        slotId: 'BOT1',
+        sourceText: 'LABEL LOOP\nUSE_SLOT1 NONE\nWAIT 10\nGOTO LOOP\n',
+        loadout: ['MINE', null, null],
+      },
+      {
+        slotId: 'BOT2',
+        sourceText: 'LABEL LOOP\nTARGET_CLOSEST_MINE\nMOVE_TO_TARGET\nGOTO LOOP\n',
+        loadout: [null, null, null],
+      },
+      { slotId: 'BOT3', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+      { slotId: 'BOT4', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+    ],
+  })
+
+  const anyBot2TargetMine = replay.state.some((tick) =>
+    tick.bots.some((bot) => bot.botId === 'BOT2' && typeof bot.targetMineId === 'string' && bot.targetMineId.length > 0),
+  )
+  const anyBot2Move = flatEvents(replay).some((e) => e.type === 'BOT_MOVED' && e.botId === 'BOT2')
+
+  assert.equal(anyBot2TargetMine, true)
+  assert.equal(anyBot2Move, true)
+})
+
+test('findClosestEnemyMine tie-break stays numeric for mine ids >= 10', () => {
+  const target = findClosestEnemyMine('BOT2', { x: 100, y: 100 }, [
+    { mineId: 'M10', ownerBotId: 'BOT1', pos: { x: 101, y: 100 } },
+    { mineId: 'M2', ownerBotId: 'BOT1', pos: { x: 99, y: 100 } },
+    { mineId: 'M11', ownerBotId: 'BOT3', pos: { x: 100, y: 99 } },
+  ])
+
+  assert.equal(target?.mineId, 'M2')
 })

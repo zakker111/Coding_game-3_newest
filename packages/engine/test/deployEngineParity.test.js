@@ -100,3 +100,46 @@ LABEL LOOP
 
   assert.equal(anyBot2TargetBullet, true)
 })
+
+test('deploy engine parity: mine-target replay core matches authoritative engine', () => {
+  const { authoritativeReplay } = compareParity(() => ({
+    seed: 2,
+    tickCap: 18,
+    bots: [
+      {
+        slotId: 'BOT1',
+        sourceText: `;@slot1 MINE
+;@slot2 EMPTY
+;@slot3 EMPTY
+
+LABEL LOOP
+  USE_SLOT1 NONE
+  WAIT 10
+  GOTO LOOP
+`,
+        loadout: ['MINE', null, null],
+      },
+      {
+        slotId: 'BOT2',
+        sourceText: `;@slot1 EMPTY
+;@slot2 EMPTY
+;@slot3 EMPTY
+
+LABEL LOOP
+  TARGET_CLOSEST_MINE
+  MOVE_TO_TARGET
+  GOTO LOOP
+`,
+        loadout: [null, null, null],
+      },
+      { slotId: 'BOT3', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+      { slotId: 'BOT4', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+    ],
+  }))
+
+  const anyBot2TargetMine = authoritativeReplay.state.some((tick) =>
+    tick.bots.some((bot) => bot.botId === 'BOT2' && typeof bot.targetMineId === 'string' && bot.targetMineId.length > 0),
+  )
+
+  assert.equal(anyBot2TargetMine, true)
+})
