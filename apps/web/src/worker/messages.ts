@@ -18,8 +18,22 @@ export type RunLocalMessage = {
   inactiveSlots?: SlotId[]
 }
 
+export type RunServerMirrorMessage = {
+  type: 'RUN_SERVER_MIRROR'
+  requestId: number
+  seed: number | string
+  tickCap: number
+  bots: BotSpec[]
+}
+
 export type RunResultMessage = {
   type: 'RUN_RESULT'
+  requestId: number
+  replay: Replay
+}
+
+export type RunServerMirrorResultMessage = {
+  type: 'RUN_SERVER_MIRROR_RESULT'
   requestId: number
   replay: Replay
 }
@@ -64,9 +78,26 @@ export function isRunLocalMessage(v: unknown): v is RunLocalMessage {
   return true
 }
 
+export function isRunServerMirrorMessage(v: unknown): v is RunServerMirrorMessage {
+  if (!isRecord(v)) return false
+  if (v.type !== 'RUN_SERVER_MIRROR') return false
+  if (typeof v.requestId !== 'number') return false
+  if (!(typeof v.seed === 'number' || typeof v.seed === 'string')) return false
+  if (typeof v.tickCap !== 'number') return false
+  if (!Array.isArray(v.bots) || !v.bots.every(isBotSpec)) return false
+  return true
+}
+
 export function isRunResultMessage(v: unknown): v is RunResultMessage {
   if (!isRecord(v)) return false
   if (v.type !== 'RUN_RESULT') return false
+  if (typeof v.requestId !== 'number') return false
+  return isReplay(v.replay)
+}
+
+export function isRunServerMirrorResultMessage(v: unknown): v is RunServerMirrorResultMessage {
+  if (!isRecord(v)) return false
+  if (v.type !== 'RUN_SERVER_MIRROR_RESULT') return false
   if (typeof v.requestId !== 'number') return false
   return isReplay(v.replay)
 }

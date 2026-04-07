@@ -35,9 +35,11 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   expect(screen.getByText('Match setup')).toBeInTheDocument()
   expect(screen.getByText('Server sandbox')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Randomize opponents' })).toBeInTheDocument()
-  expect(screen.getByRole('textbox', { name: 'Server URL' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Check server' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Run on server' })).toBeInTheDocument()
+  expect(screen.getByRole('combobox', { name: 'Server sandbox mode' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Check mirror' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Run mirror' })).toBeInTheDocument()
+  expect(screen.queryByRole('textbox', { name: 'Server URL' })).not.toBeInTheDocument()
+  expect(screen.getByText(/runs locally in the browser worker/i)).toBeInTheDocument()
   expect(screen.getAllByRole('option', { name: 'None (inactive)' })).toHaveLength(3)
   expect(screen.getByText(/Opponent slots can be set to None for Workshop-only local inspection/i)).toBeInTheDocument()
   expect(screen.getByText('Tick events')).toBeInTheDocument()
@@ -57,6 +59,13 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   expect(screen.queryByText(/Opponent code is read-only/i)).not.toBeInTheDocument()
   expect(screen.getByText('Slot 1 · BULLET')).toBeInTheDocument()
   expect(container.querySelectorAll('textarea')).toHaveLength(1)
+
+  fireEvent.change(screen.getByRole('combobox', { name: 'Server sandbox mode' }), {
+    target: { value: 'remote-http' },
+  })
+  expect(screen.getByRole('textbox', { name: 'Server URL' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Check server' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Run on server' })).toBeInTheDocument()
 
   // 3) Ensure the tick events <pre> remains a scroll container in the empty state.
   const pre = Array.from(container.querySelectorAll('pre')).find((node) => node.textContent?.includes('Run a match to see events.'))

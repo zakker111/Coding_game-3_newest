@@ -30,7 +30,10 @@ import {
   fetchServerMatch,
   fetchServerReplay,
   fetchServerRuleset,
+  getLocalMirroredRuleset,
+  LOCAL_SERVER_MIRROR_MODE,
   normalizeServerBaseUrl,
+  runLocalMirroredServerSimulation,
   type ServerMatchResponse,
   type ServerRulesetResponse,
 } from '../serverSimulation'
@@ -54,6 +57,7 @@ function formatLoadoutOptionValue(mod: ModuleId | null): LoadoutOptionValue {
 const OPPONENT_NONCE_KEY = 'nowt:workshop:opponentNonce:v1'
 const OPPONENT_ASSIGNMENTS_KEY = 'nowt:workshop:opponents:v1'
 const SERVER_BASE_URL_KEY = 'nowt:workshop:serverBaseUrl:v1'
+const SERVER_MODE_KEY = 'nowt:workshop:serverMode:v1'
 const NONE_OPPONENT_ID = '__NONE__'
 
 type OpponentAssignments = {
@@ -63,6 +67,7 @@ type OpponentAssignments = {
 }
 
 type ReplaySource = 'local' | 'server' | null
+type ServerSandboxMode = 'local-mirror' | 'remote-http'
 
 type ServerConnectionState =
   | { kind: 'idle'; message: string }
@@ -183,6 +188,15 @@ function readServerBaseUrl(): string {
     return normalizeServerBaseUrl(raw ?? DEFAULT_SERVER_BASE_URL)
   } catch {
     return DEFAULT_SERVER_BASE_URL
+  }
+}
+
+function readServerSandboxMode(): ServerSandboxMode {
+  try {
+    const raw = localStorage.getItem(SERVER_MODE_KEY)
+    return raw === 'remote-http' ? 'remote-http' : 'local-mirror'
+  } catch {
+    return 'local-mirror'
   }
 }
 
@@ -460,10 +474,11 @@ export function WorkshopPage() {
   const [appliedRun, setAppliedRun] = React.useState<AppliedRunInfo | null>(null)
   const [replaySource, setReplaySource] = React.useState<ReplaySource>(null)
 
+  const [serverSandboxMode, setServerSandboxMode] = React.useState<ServerSandboxMode>(LOCAL_SERVER_MIRROR_MODE)
   const [serverBaseUrl, setServerBaseUrl] = React.useState<string>(DEFAULT_SERVER_BASE_URL)
   const [serverConnectionState, setServerConnectionState] = React.useState<ServerConnectionState>({
     kind: 'idle',
-    message: 'Server not checked yet.',
+    message: 'Mirror mode ready. No backend required.',
   })
   const [serverRunning, setServerRunning] = React.useState(false)
   const [serverMatch, setServerMatch] = React.useState<ServerMatchResponse | null>(null)
@@ -482,6 +497,7 @@ export function WorkshopPage() {
   React.useEffect(() => {
     setMyBots(loadLocalBotLibrary(starterSourceText))
     setOpponents(readOpponentAssignments())
+    setServerSandboxMode(readServerSandboxMode())
     setServerBaseUrl(readServerBaseUrl())
     setLoaded(true)
   }, [starterSourceText])
@@ -511,6 +527,16 @@ export function WorkshopPage() {
       // ignore quota/unavailable
     }
   }, [loaded, serverBaseUrl])
+
+  React.useEffect(() => {
+    if (!loaded) return
+
+    try {
+      localStorage.setItem(SERVER_MODE_KEY, serverSandboxMode)
+    } catch {
+      // ignore quota/unavailable
+    }
+  }, [loaded, serverSandboxMode])
 
   const selectedMyBot = React.useMemo(() => {
     return myBots.bots.find((b) => b.id === myBots.selectedBotId) ?? myBots.bots[0]
@@ -1323,6 +1349,18 @@ export function WorkshopPage() {
   }
 
   async function handleCheckServer() {
+    if (serverSandboxMode === 'local-mirror') {
+      const ruleset = getLocalMirroredRuleset()
+      setServerConnectionState({
+        kind: 'ready',
+        message: `Mirror ready. rulesetVersion=${ruleset.rulesetVersion}, loadout slots=${ruleset.loadoutSlotCount}.`,
+        ruleset,
+      })
+      setServerRunError(null)
+      pushServerActivity('good', `Local mirror ready (ruleset ${ruleset.rulesetVersion}).`)
+      return
+    }
+
     const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
     setServerConnectionState({ kind: 'checking', message: 'Checking server…' })
     setServerRunError(null)
@@ -1371,7 +1409,6 @@ export function WorkshopPage() {
       return
     }
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
     const participants = SLOT_IDS.map((slot): { slot: SlotId; displayName: string; sourceText: string; loadout: Loadout } => ({
       slot,
       displayName: displayNameBySlot[slot],
@@ -1383,20 +1420,40 @@ export function WorkshopPage() {
     setServerRunError(null)
     setServerMatch(null)
     setServerReplay(null)
-    pushServerActivity('muted', `Submitting server sandbox run to ${baseUrl}.`)
+    pushServerActivity(
+      'muted',
+      serverSandboxMode === 'local-mirror'
+        ? 'Running local server-mirror sandbox.'
+        : `Submitting server sandbox run to ${normalizeServerBaseUrl(serverBaseUrl)}.`,
+    )
 
     try {
-      const created = await createServerSimulation(baseUrl, {
-        seed,
-        tickCap,
-        participants,
-      })
-      pushServerActivity('muted', `Server created match ${created.matchId} (${created.status}).`)
+      let match: ServerMatchResponse
+      let replay: Replay
 
-      const [match, replay] = await Promise.all([
-        fetchServerMatch(baseUrl, created.matchId),
-        fetchServerReplay(baseUrl, created.matchId),
-      ])
+      if (serverSandboxMode === 'local-mirror') {
+        const mirrored = await runLocalMirroredServerSimulation({
+          seed,
+          tickCap,
+          participants,
+        })
+        match = mirrored.match
+        replay = mirrored.replay
+        pushServerActivity('muted', `Mirror created match ${mirrored.created.matchId} (${mirrored.created.status}).`)
+      } else {
+        const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+        const created = await createServerSimulation(baseUrl, {
+          seed,
+          tickCap,
+          participants,
+        })
+        pushServerActivity('muted', `Server created match ${created.matchId} (${created.status}).`)
+
+        ;[match, replay] = await Promise.all([
+          fetchServerMatch(baseUrl, created.matchId),
+          fetchServerReplay(baseUrl, created.matchId),
+        ])
+      }
 
       setServerMatch(match)
       setServerReplay(replay)
@@ -1602,7 +1659,7 @@ export function WorkshopPage() {
       <section className="panel" style={{ marginTop: 16 }}>
         <div className="panel-title">Server sandbox</div>
         <div className="muted" style={{ marginTop: 6 }}>
-          Submit the current 4-slot setup to the Phase 8A server, inspect server-side match status/results, and load the returned replay into the existing viewer.
+          Run the current 4-slot setup through a server-style sandbox flow, inspect match status/results, and load the returned replay into the existing viewer.
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(320px, 1fr)', gap: 16, marginTop: 14 }}>
@@ -1615,6 +1672,20 @@ export function WorkshopPage() {
             }}
           >
             <label className="mini-field">
+              <div className="mini-label">Mode</div>
+              <select
+                aria-label="Server sandbox mode"
+                className="mini-input workshop-select"
+                value={serverSandboxMode}
+                onChange={(e) => setServerSandboxMode(e.target.value === 'remote-http' ? 'remote-http' : 'local-mirror')}
+              >
+                <option value="local-mirror">Local mirror (recommended)</option>
+                <option value="remote-http">Real server URL</option>
+              </select>
+            </label>
+
+            {serverSandboxMode === 'remote-http' ? (
+            <label className="mini-field">
               <div className="mini-label">Server URL</div>
               <input
                 aria-label="Server URL"
@@ -1624,19 +1695,39 @@ export function WorkshopPage() {
                 onChange={(e) => setServerBaseUrl(e.target.value)}
               />
             </label>
+            ) : (
+              <div className="muted" style={{ marginTop: 10 }}>
+                Uses the same validation, source hashing, loadout normalization, deterministic replay generation, and match-summary shape as the server — but runs locally in the browser worker, so deployed users do not need localhost.
+              </div>
+            )}
 
             <div className="controls" style={{ marginTop: 12 }}>
               <button className="ui-button ui-button-secondary" type="button" onClick={handleCheckServer} disabled={serverConnectionState.kind === 'checking'}>
-                {serverConnectionState.kind === 'checking' ? 'Checking…' : 'Check server'}
+                {serverConnectionState.kind === 'checking'
+                  ? 'Checking…'
+                  : serverSandboxMode === 'local-mirror'
+                    ? 'Check mirror'
+                    : 'Check server'}
               </button>
               <button
                 className="ui-button"
                 type="button"
                 onClick={handleRunOnServer}
                 disabled={serverRunning || Boolean(serverRunDisabledReason)}
-                title={serverRunDisabledReason ?? 'Run the current 4-slot setup on the server'}
+                title={
+                  serverRunDisabledReason ??
+                  (serverSandboxMode === 'local-mirror'
+                    ? 'Run the current 4-slot setup through the local server mirror'
+                    : 'Run the current 4-slot setup on the server')
+                }
               >
-                {serverRunning ? 'Running on server…' : 'Run on server'}
+                {serverRunning
+                  ? serverSandboxMode === 'local-mirror'
+                    ? 'Running mirror…'
+                    : 'Running on server…'
+                  : serverSandboxMode === 'local-mirror'
+                    ? 'Run mirror'
+                    : 'Run on server'}
               </button>
             </div>
 
