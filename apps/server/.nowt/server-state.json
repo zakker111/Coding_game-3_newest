@@ -1,0 +1,4997 @@
+{
+  "version": 1,
+  "nextUserId": 1,
+  "nextMatchId": 2,
+  "users": [],
+  "sessions": [],
+  "bots": [],
+  "matches": [
+    {
+      "matchId": "m_000001",
+      "kind": "sandbox",
+      "status": "complete",
+      "createdAt": "2026-04-07T10:08:11.387Z",
+      "updatedAt": "2026-04-07T10:08:11.397Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 100,
+            "ammo": 90,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 68,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 100,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 100,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": {
+        "schemaVersion": "0.2.0",
+        "rulesetVersion": "0.2.0",
+        "ticksPerSecond": 1,
+        "matchSeed": 456,
+        "tickCap": 40,
+        "bots": [
+          {
+            "slotId": "BOT1",
+            "displayName": "BOT1",
+            "appearance": {
+              "kind": "COLOR",
+              "color": "#4ade80"
+            },
+            "sourceText": ";@slot1 MINE\n;@slot2 EMPTY\n;@slot3 EMPTY\n\nLABEL LOOP\n  USE_SLOT1 NONE\n  WAIT 10\n  GOTO LOOP\n",
+            "loadout": [
+              "MINE",
+              null,
+              null
+            ]
+          },
+          {
+            "slotId": "BOT2",
+            "displayName": "BOT2",
+            "appearance": {
+              "kind": "COLOR",
+              "color": "#60a5fa"
+            },
+            "sourceText": "LABEL LOOP\n  TARGET_CLOSEST_MINE\n  IF (HAS_TARGET_MINE()) DO MOVE_TO_TARGET\n  GOTO LOOP\n",
+            "loadout": [
+              null,
+              null,
+              null
+            ]
+          },
+          {
+            "slotId": "BOT3",
+            "displayName": "BOT3",
+            "appearance": {
+              "kind": "COLOR",
+              "color": "#f472b6"
+            },
+            "sourceText": "WAIT 1\n",
+            "loadout": [
+              null,
+              null,
+              null
+            ]
+          },
+          {
+            "slotId": "BOT4",
+            "displayName": "BOT4",
+            "appearance": {
+              "kind": "COLOR",
+              "color": "#fbbf24"
+            },
+            "sourceText": "WAIT 1\n",
+            "loadout": [
+              null,
+              null,
+              null
+            ]
+          }
+        ],
+        "state": [
+          {
+            "t": 0,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 176,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": []
+          },
+          {
+            "t": 1,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 176,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 1,
+                "fuseRemaining": 17
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 2,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 164,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 16
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 3,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 164,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 15
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 4,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 164,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 14
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 5,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 152,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 13
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 6,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 152,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 12
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 7,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 152,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 11
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 8,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 140,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 10
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 9,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 140,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 9
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 10,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 140,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 8
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 11,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 128,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 7
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 12,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 128,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 6
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 13,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 128,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 5
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 14,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 116,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 4
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 15,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 116,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 3
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 16,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 116,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 2
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 17,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M1",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 1
+              }
+            ],
+            "powerups": []
+          },
+          {
+            "t": 18,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M1"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": []
+          },
+          {
+            "t": 19,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": []
+          },
+          {
+            "t": 20,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 21,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 22,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 23,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 24,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 25,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 26,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 95,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 27,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 1,
+                "fuseRemaining": 17
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 28,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 104,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 16
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 29,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 92,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 15
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 30,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 92,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 14
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 31,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 92,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 13
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 32,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 80,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 12
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              }
+            ]
+          },
+          {
+            "t": 33,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 80,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 11
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 34,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 80,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 10
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 35,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 68,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 9
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 36,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 68,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 8
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 37,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 68,
+                  "y": 16
+                },
+                "hp": 88,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "mines": [
+              {
+                "mineId": "M2",
+                "ownerBotId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "sector": 1,
+                "armRemaining": 0,
+                "fuseRemaining": 7
+              }
+            ],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 38,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 56,
+                  "y": 16
+                },
+                "hp": 68,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 3,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 39,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 56,
+                  "y": 16
+                },
+                "hp": 68,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": "M2"
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          },
+          {
+            "t": 40,
+            "bots": [
+              {
+                "botId": "BOT1",
+                "pos": {
+                  "x": 16,
+                  "y": 16
+                },
+                "hp": 100,
+                "ammo": 90,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT2",
+                "pos": {
+                  "x": 56,
+                  "y": 16
+                },
+                "hp": 68,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 2,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT3",
+                "pos": {
+                  "x": 16,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              },
+              {
+                "botId": "BOT4",
+                "pos": {
+                  "x": 176,
+                  "y": 176
+                },
+                "hp": 100,
+                "ammo": 100,
+                "energy": 100,
+                "alive": true,
+                "pc": 1,
+                "targetBulletId": null,
+                "targetMineId": null
+              }
+            ],
+            "bullets": [],
+            "powerups": [
+              {
+                "powerupId": "P1",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 6,
+                  "zone": 3
+                }
+              },
+              {
+                "powerupId": "P2",
+                "type": "AMMO",
+                "loc": {
+                  "sector": 9,
+                  "zone": 1
+                }
+              }
+            ]
+          }
+        ],
+        "events": [
+          [],
+          [
+            {
+              "type": "RESOURCE_DELTA",
+              "botId": "BOT1",
+              "ammoDelta": -5,
+              "energyDelta": 0,
+              "healthDelta": 0,
+              "cause": "PLACE_MINE"
+            },
+            {
+              "type": "MINE_PLACE",
+              "mineId": "M1",
+              "ownerBotId": "BOT1",
+              "pos": {
+                "x": 16,
+                "y": 16
+              },
+              "sector": 1,
+              "armTicks": 2
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "USE_SLOT1 NONE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 176,
+                "y": 16
+              },
+              "toPos": {
+                "x": 164,
+                "y": 16
+              },
+              "dir": "LEFT"
+            },
+            {
+              "type": "MINE_ARMED",
+              "mineId": "M1"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 164,
+                "y": 16
+              },
+              "toPos": {
+                "x": 152,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 152,
+                "y": 16
+              },
+              "toPos": {
+                "x": 140,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 140,
+                "y": 16
+              },
+              "toPos": {
+                "x": 128,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "USE_SLOT1 NONE",
+              "result": "NOP",
+              "reason": "COOLDOWN"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 128,
+                "y": 16
+              },
+              "toPos": {
+                "x": 116,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 116,
+                "y": 16
+              },
+              "toPos": {
+                "x": 104,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "MINE_DETONATE",
+              "mineId": "M1",
+              "ownerBotId": "BOT1",
+              "pos": {
+                "x": 16,
+                "y": 16
+              },
+              "centerSector": 1,
+              "damageCenter": 20,
+              "damageAdjacent": 12
+            },
+            {
+              "type": "DAMAGE",
+              "victimBotId": "BOT2",
+              "amount": 12,
+              "source": "MINE",
+              "sourceBotId": "BOT1",
+              "kind": "EXPLOSION",
+              "sourceRef": {
+                "type": "MINE",
+                "id": "M1"
+              }
+            },
+            {
+              "type": "MINE_DESPAWN",
+              "mineId": "M1",
+              "reason": "EXPLODED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "POWERUP_SPAWN",
+              "powerupId": "P1",
+              "powerupType": "AMMO",
+              "loc": {
+                "sector": 6,
+                "zone": 3
+              }
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "RESOURCE_DELTA",
+              "botId": "BOT1",
+              "ammoDelta": -5,
+              "energyDelta": 0,
+              "healthDelta": 0,
+              "cause": "PLACE_MINE"
+            },
+            {
+              "type": "MINE_PLACE",
+              "mineId": "M2",
+              "ownerBotId": "BOT1",
+              "pos": {
+                "x": 16,
+                "y": 16
+              },
+              "sector": 1,
+              "armTicks": 2
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "USE_SLOT1 NONE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "MINE_ARMED",
+              "mineId": "M2"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 104,
+                "y": 16
+              },
+              "toPos": {
+                "x": 92,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 92,
+                "y": 16
+              },
+              "toPos": {
+                "x": 80,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "POWERUP_SPAWN",
+              "powerupId": "P2",
+              "powerupType": "AMMO",
+              "loc": {
+                "sector": 9,
+                "zone": 1
+              }
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 80,
+                "y": 16
+              },
+              "toPos": {
+                "x": 68,
+                "y": 16
+              },
+              "dir": "LEFT"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 2,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "WAIT 10",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 2,
+              "pcAfter": 3,
+              "instrText": "IF_DO",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_MOVED",
+              "botId": "BOT2",
+              "fromPos": {
+                "x": 68,
+                "y": 16
+              },
+              "toPos": {
+                "x": 56,
+                "y": 16
+              },
+              "dir": "LEFT"
+            },
+            {
+              "type": "MINE_TRIGGER",
+              "mineId": "M2",
+              "triggerBotId": "BOT2"
+            },
+            {
+              "type": "MINE_DETONATE",
+              "mineId": "M2",
+              "ownerBotId": "BOT1",
+              "pos": {
+                "x": 16,
+                "y": 16
+              },
+              "centerSector": 1,
+              "damageCenter": 20,
+              "damageAdjacent": 12
+            },
+            {
+              "type": "DAMAGE",
+              "victimBotId": "BOT2",
+              "amount": 20,
+              "source": "MINE",
+              "sourceBotId": "BOT1",
+              "kind": "EXPLOSION",
+              "sourceRef": {
+                "type": "MINE",
+                "id": "M2"
+              }
+            },
+            {
+              "type": "MINE_DESPAWN",
+              "mineId": "M2",
+              "reason": "EXPLODED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 3,
+              "pcAfter": 1,
+              "instrText": "JUMP 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            }
+          ],
+          [
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT1",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "USE_SLOT1 NONE",
+              "result": "NOP",
+              "reason": "COOLDOWN"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT2",
+              "pcBefore": 1,
+              "pcAfter": 2,
+              "instrText": "SET_TARGET_MINE CLOSEST_MINE",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT3",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "BOT_EXEC",
+              "botId": "BOT4",
+              "pcBefore": 1,
+              "pcAfter": 1,
+              "instrText": "WAIT 1",
+              "result": "EXECUTED"
+            },
+            {
+              "type": "MATCH_END",
+              "endReason": "TICK_CAP"
+            }
+          ]
+        ]
+      },
+      "error": null,
+      "matchSeed": 456,
+      "tickCap": 40,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "Mine Layer",
+          "sourceTextSnapshot": ";@slot1 MINE\n;@slot2 EMPTY\n;@slot3 EMPTY\n\nLABEL LOOP\n  USE_SLOT1 NONE\n  WAIT 10\n  GOTO LOOP\n",
+          "sourceHash": "4f76d4b86ed1c0de497a8b35abf48cbb5e9c1c9ab39c116921721e911b2524e4",
+          "loadoutSnapshot": [
+            "MINE",
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "Mine Hunter",
+          "sourceTextSnapshot": "LABEL LOOP\n  TARGET_CLOSEST_MINE\n  IF (HAS_TARGET_MINE()) DO MOVE_TO_TARGET\n  GOTO LOOP\n",
+          "sourceHash": "32659c8a4832ebf6b01f0d0a22128cb04ca4fcf5ebded55a51df0dbc1c6a136e",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "Idle A",
+          "sourceTextSnapshot": "WAIT 1\n",
+          "sourceHash": "3cedbf4503f50200dfda7f29574578956ba654477274b0d7d033e80c74fc6238",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "Idle B",
+          "sourceTextSnapshot": "WAIT 1\n",
+          "sourceHash": "3cedbf4503f50200dfda7f29574578956ba654477274b0d7d033e80c74fc6238",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    }
+  ]
+}
