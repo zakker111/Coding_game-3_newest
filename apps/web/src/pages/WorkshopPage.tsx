@@ -830,6 +830,27 @@ export function WorkshopPage() {
     return out
   }, [alpha, playback.playing, playback.tick, replay])
 
+  const grenadeExplosionsForRender = React.useMemo(() => {
+    if (!replay) return []
+
+    const t = clamp(playback.tick, 0, replay.tickCap)
+    const explodeEvents = (replay.events[t] ?? []).filter(
+      (e): e is Extract<KnownReplayEvent, { type: 'GRENADE_EXPLODE' }> => isKnownReplayEventType(e, 'GRENADE_EXPLODE'),
+    )
+
+    if (!explodeEvents.length) return []
+
+    const pulse = playback.playing ? alpha : 0.35
+
+    return explodeEvents.map((e) => ({
+      explosionId: `${e.grenadeId}:${t}`,
+      ownerBotId: e.ownerBotId,
+      pos: e.pos,
+      radius: 8 + pulse * 10,
+      alpha: playback.playing ? 1 - pulse * 0.6 : 0.9,
+    }))
+  }, [alpha, playback.playing, playback.tick, replay])
+
   const powerupsForRender = React.useMemo(() => {
     if (!replay) return []
     const t = clamp(playback.tick, 0, replay.tickCap)
@@ -974,11 +995,12 @@ export function WorkshopPage() {
       })),
       bullets: bulletsForRender,
       grenades: grenadesForRender,
+      grenadeExplosions: grenadeExplosionsForRender,
       mines: minesForRender,
       drones: dronesForRender,
       powerups: powerupsForRender,
     }
-  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, dronesForRender, grenadesForRender, minesForRender, powerupsForRender, visibleReplaySlots])
+  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, dronesForRender, grenadeExplosionsForRender, grenadesForRender, minesForRender, powerupsForRender, visibleReplaySlots])
 
   const selectedBotState = React.useMemo(() => {
     if (!replay) return null

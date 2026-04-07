@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { runMatchToReplay } from '@coding-game/engine'
+import { REPAIR_DRONE_AMMO_COST, REPAIR_DRONE_HEAL_AMOUNT } from '../src/sim/constants.js'
 
 function flatEvents(replay) {
   return replay.events.flat().filter(Boolean)
@@ -28,9 +29,13 @@ test('runMatchToReplay: REPAIR_DRONE spawns, drains energy, and heals the owner'
   })
 
   const events = flatEvents(replay)
+  const spawnDelta = events.find((e) => e.type === 'RESOURCE_DELTA' && e.botId === 'BOT1' && e.cause === 'SPAWN_DRONE')
+  const heal = events.find((e) => e.type === 'DRONE_HEAL' && e.ownerBotId === 'BOT1')
 
   assert.ok(events.some((e) => e.type === 'DRONE_SPAWN' && e.ownerBotId === 'BOT1'), 'expected repair drone spawn')
-  assert.ok(events.some((e) => e.type === 'DRONE_HEAL' && e.ownerBotId === 'BOT1'), 'expected repair drone heal pulse')
+  assert.ok(heal, 'expected repair drone heal pulse')
+  assert.equal(heal?.amount, REPAIR_DRONE_HEAL_AMOUNT, 'expected tuned repair amount per pulse')
+  assert.equal(spawnDelta?.ammoDelta, -REPAIR_DRONE_AMMO_COST, 'expected tuned repair-drone ammo cost on spawn')
   assert.ok(
     events.some((e) => e.type === 'RESOURCE_DELTA' && e.botId === 'BOT1' && e.cause === 'DRONE_DRAIN' && e.energyDelta < 0),
     'expected repair drone energy drain',

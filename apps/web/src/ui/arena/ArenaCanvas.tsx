@@ -39,6 +39,14 @@ export type ArenaRenderGrenade = {
   alpha?: number
 }
 
+export type ArenaRenderGrenadeExplosion = {
+  explosionId: string
+  ownerBotId?: SlotId
+  pos: { x: number; y: number }
+  radius?: number
+  alpha?: number
+}
+
 export type ArenaRenderMine = {
   mineId: string
   ownerBotId?: SlotId
@@ -65,6 +73,7 @@ export type ArenaRenderState = {
   bots: ArenaRenderBot[]
   bullets?: ArenaRenderBullet[]
   grenades?: ArenaRenderGrenade[]
+  grenadeExplosions?: ArenaRenderGrenadeExplosion[]
   mines?: ArenaRenderMine[]
   drones?: ArenaRenderDrone[]
   powerups?: ArenaRenderPowerup[]
@@ -387,6 +396,37 @@ export function ArenaCanvas({
           ctx.fillText(String(Math.max(0, g.fuse)), x, y)
         }
 
+        ctx.restore()
+      }
+    }
+
+    if (renderState.grenadeExplosions?.length) {
+      for (const fx of renderState.grenadeExplosions) {
+        const x = worldToSnappedCssPx(fx.pos.x, s, dpr)
+        const y = worldToSnappedCssPx(fx.pos.y, s, dpr)
+        const ownerColor = fx.ownerBotId ? slotFallbackColor(fx.ownerBotId) : '#f97316'
+        const alpha = typeof fx.alpha === 'number' ? clamp(fx.alpha, 0, 1) : 0.85
+        const radiusPx = Math.max(8, Math.floor((fx.radius ?? 18) * s))
+
+        ctx.save()
+        ctx.globalAlpha = alpha * 0.28
+        ctx.beginPath()
+        ctx.arc(x, y, radiusPx, 0, Math.PI * 2)
+        ctx.fillStyle = '#fb923c'
+        ctx.fill()
+
+        ctx.globalAlpha = alpha * 0.7
+        ctx.beginPath()
+        ctx.arc(x, y, Math.max(3, Math.floor(radiusPx * 0.45)), 0, Math.PI * 2)
+        ctx.fillStyle = '#fde68a'
+        ctx.fill()
+
+        ctx.globalAlpha = alpha
+        ctx.beginPath()
+        ctx.arc(x, y, radiusPx, 0, Math.PI * 2)
+        ctx.strokeStyle = ownerColor
+        ctx.lineWidth = Math.max(1, Math.floor(0.35 * s))
+        ctx.stroke()
         ctx.restore()
       }
     }
