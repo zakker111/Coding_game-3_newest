@@ -1,0 +1,18 @@
+{
+  "name": "@nowt/server",
+  "private": true,
+  "version": "0.0.4",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "build": "node -e \"import('./src/app.js')\"",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@coding-game/engine": "workspace:*",
+    "@coding-game/replay": "workspace:*",
+    "@coding-game/ruleset": "workspace:*",
+    "fastify": "^5.8.4"
+  }
+}

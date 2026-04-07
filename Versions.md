@@ -23,6 +23,14 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
   - BOT2..BOT4 can be set to `None (inactive)` in the React Workshop for local inspection runs
   - randomize still fills opponent slots with real bots only
   - the inactive-slot affordance is local Workshop UX, not part of the server match contract
+- Phase 8A sandbox server runner:
+  - new `apps/server` workspace app
+  - `GET /api/ruleset`
+  - `POST /api/simulations`
+  - `GET /api/matches/:matchId`
+  - `GET /api/matches/:matchId/replay`
+  - in-memory match/replay storage for the MVP slice
+  - root convenience commands: `pnpm dev:server`, `pnpm start:server`, `pnpm test:server`
 
 ---
 

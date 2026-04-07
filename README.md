@@ -29,6 +29,31 @@ pnpm test          # apps/web
 pnpm -C packages/engine test
 ```
 
+## Running the server MVP (Phase 8A)
+
+The first server slice is a deterministic sandbox runner under `apps/server`.
+
+Start it locally:
+
+```bash
+pnpm install
+pnpm dev:server
+```
+
+Or run it directly:
+
+```bash
+pnpm start:server
+```
+
+Current scope:
+- `GET /api/ruleset`
+- `POST /api/simulations`
+- `GET /api/matches/:matchId`
+- `GET /api/matches/:matchId/replay`
+
+This Phase 8A slice accepts inline participant snapshots (`slot`, `displayName`, `sourceText`, `loadout`), runs the shared deterministic engine in-process, and stores matches/replays in memory. Auth, persistent bot storage, and daily scheduling are still follow-on server work.
+
 ## QA (Phase 1)
 
 Phase 1 QA is intended to be fully reproducible in CI and locally.

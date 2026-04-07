@@ -20,13 +20,13 @@ Recently completed (this merge set)
 - Replay contract and deploy Workshop static-contract tests now lock the current 0.2.0 schema/QA surface more explicitly.
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
-Next slice (non-server roadmap)
-- Start the smallest server runner slice now that the local-loop parity/sign-off work is in place.
+Next slice
+- Phase 8A is now the active slice: standalone sandbox server runner in `apps/server`.
 - Prioritize:
-  - deterministic headless match execution
-  - submission/version storage
-  - replay storage
-- Keep local-loop hardening additive; do not block Phase 8 on more speculative polish.
+  - deterministic headless match execution from submitted source snapshots
+  - match metadata + replay retrieval over HTTP
+  - workspace build/test integration
+- Keep auth, persistence, and daily scheduling explicitly deferred until the sandbox path is stable.
 
 ### Status board
 
@@ -43,7 +43,7 @@ Implemented now
   - actionable browser-runtime diagnostics for `qa:workshop`
 
 Still open
-- [ ] Phase 8 server runner MVP.
+- [ ] Phase 8A sandbox server runner.
 
 ### Near-term execution checklist
 
@@ -55,9 +55,9 @@ Do next
 Ready after audit
 - [ ] Start the smallest Phase 8 server slice:
   - deterministic headless runner
-  - submission storage/versioning
-  - replay storage
-  - auth/validation surface
+  - match/replay HTTP surface
+  - in-memory storage boundary
+  - workspace build/test integration
 
 ### Checklist (done vs. not done)
 
@@ -79,7 +79,7 @@ Next up
 - [x] Local-loop hardening: close the remaining deploy/workshop parity and release-sign-off guardrails.
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
-- [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
+- [ ] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
 
 ---
 
@@ -377,29 +377,42 @@ QA checklist
 
 ## Phase 8 — Server: daily runner + submissions
 
-Goal: run deterministic daily competitions and accept bot submissions.
+Goal: start with a narrow sandbox runner, then expand to persistent submissions and scheduled daily competition.
+
+### Phase 8A — sandbox runner MVP
 
 Concrete tasks
 - [ ] Headless deterministic match runner:
-  - accepts bot source + match config
-  - runs engine deterministically
+  - accepts inline bot source + explicit loadout snapshots
+  - runs the shared engine deterministically
   - outputs replay JSON + summary results
-- [ ] Storage + retrieval:
-  - store bot submissions with versioning
-  - store daily match results + replays
-- [ ] Submission API:
-  - auth
-  - validation (size limits, compile/parse limits, timeouts)
-  - rate limiting
-- [ ] Operations:
-  - scheduled daily runs
-  - admin tooling to re-run a day with the same seed
+- [ ] HTTP surface:
+  - `GET /api/ruleset`
+  - `POST /api/simulations`
+  - `GET /api/matches/:matchId`
+  - `GET /api/matches/:matchId/replay`
+- [ ] Storage boundary:
+  - in-memory match/replay store for the first slice
+  - explicit match lifecycle (`queued|running|complete|failed`)
+- [ ] Validation:
+  - source normalization + size limits
+  - compile errors surfaced as actionable `400` responses
+  - loadout normalization preserved in participant snapshots
 
 Acceptance criteria
 - Given a fixed seed and identical bot sources, the server produces the same replay as local engine execution.
-- Submissions are validated consistently and failures are explainable (actionable error messages).
+- Match metadata and replay retrieval work over HTTP.
+- Server validation failures are explainable (actionable error messages).
 
 QA checklist
-- Engine gates: `pnpm -C packages/engine test` + `pnpm golden:check`
-- End-to-end (once server exists):
-  - submit known bots, run match, fetch replay, compare to local replay (byte-identical or hash-identical)
+- `pnpm -C apps/server test`
+- `pnpm -C apps/server build`
+- `pnpm test:all`
+- `pnpm build:all`
+
+### Later in Phase 8
+
+- [ ] Persistent submissions/versioning.
+- [ ] Durable replay/match storage.
+- [ ] Auth + rate limiting.
+- [ ] Scheduled daily runs and admin tooling.

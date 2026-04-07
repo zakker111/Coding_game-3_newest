@@ -96,9 +96,10 @@ A match worker:
 ### 3.4 One-off (Workshop) simulations
 
 In addition to daily scheduled matches, the same runner supports ad-hoc “sandbox” matches launched from the Workshop UI:
-- `POST /api/simulations` creates a `Match` with `kind = sandbox` and enqueues it.
+- Phase 8A implementation: `POST /api/simulations` accepts inline participant snapshots, creates a `Match` with `kind = sandbox`, and executes it immediately in-process.
 - The runner executes it using the same determinism contract and replay schema as daily matches.
 - The client then loads the replay via `GET /api/matches/:matchId/replay`.
+- Even though Phase 8A runs synchronously, the stored match lifecycle should still use `queued -> running -> complete|failed` so later async workers can slot in without changing the HTTP contract.
 
 Important boundary:
 - the React Workshop may expose client-only conveniences such as marking BOT2..BOT4 as `None (inactive)` for purely local inspection runs

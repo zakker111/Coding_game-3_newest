@@ -54,7 +54,7 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: Phase 8 server runner MVP
+## 3) Next slice: Phase 8A sandbox server runner
 
 Why this is next:
 - The local deterministic loop is already guarded by:
@@ -69,12 +69,20 @@ Why this is next:
 
 Scope:
 - Start the smallest deterministic server runner that consumes the existing engine contract.
+- Use a new `apps/server` workspace app with:
+  - `GET /api/ruleset`
+  - `POST /api/simulations`
+  - `GET /api/matches/:matchId`
+  - `GET /api/matches/:matchId/replay`
+- Accept inline participant snapshots (`sourceText` + explicit `loadout`) rather than auth-backed saved bots.
+- Keep storage in-memory for this slice so the HTTP/API boundary is proven before DB/auth/scheduler work expands scope.
 - Keep replay/schema/ruleset semantics unchanged while the server path is wired up.
 - Reuse the local parity/sign-off workflow as the contract for server acceptance.
 
 Acceptance criteria:
 - The server can execute a deterministic headless match from submitted bot sources + explicit loadouts.
 - Stored/retrieved replay output matches the local engine contract.
+- `apps/server` participates in workspace build/test execution.
 - Local release verification stays green via `pnpm qa:release` (or `pnpm gate:phase1`).
 
 ---
@@ -92,8 +100,9 @@ Manual checks:
 
 ---
 
-## 5) After the server runner MVP starts
+## 5) After Phase 8A lands
 
 - Add persistent submissions/versioning.
-- Add replay storage and retrieval.
+- Replace the in-memory match store with durable storage.
 - Add auth/validation once the deterministic runner path is stable.
+- Add daily scheduling after the sandbox path is stable.
