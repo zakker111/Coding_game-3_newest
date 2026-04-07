@@ -1,322 +1,258 @@
 # Phase 1 Gate Log
-# started: 2026-04-06T17:41:54.734Z
+# started: 2026-04-07T07:39:48.899Z
 # cwd: /workspace
 
-===== 2026-04-06T17:41:54.735Z RUN: pnpm check:deploy =====
+===== 2026-04-07T07:39:48.899Z RUN: pnpm check:deploy =====
 
 > nowt@0.0.4 check:deploy /workspace
 > node scripts/sync-deploy.mjs --check
 
 
-===== 2026-04-06T17:41:55.293Z RUN: pnpm check:deploy:imports =====
+===== 2026-04-07T07:39:49.492Z RUN: pnpm check:deploy:imports =====
 
 > nowt@0.0.4 check:deploy:imports /workspace
 > node scripts/check-deploy-imports.mjs
 
-OK: 23 deploy JS modules have resolvable relative imports.
+OK: 26 deploy JS modules have resolvable relative imports.
 
-===== 2026-04-06T17:41:55.817Z RUN: pnpm -C packages/engine test =====
+===== 2026-04-07T07:39:50.025Z RUN: pnpm -C packages/engine test =====
 
 > @coding-game/engine@0.0.4 test /workspace/packages/engine
 > tsc -p tsconfig.json --noEmit && node --test
 
-✔ test/_util/sha256.js (57.391628ms)
-✔ test/_util/stableStringify.js (49.528249ms)
-✔ botVm: pc increments and wraps (len=2) (1.34037ms)
-✔ botVm: JUMP sets pc to targetPc (0.17258ms)
-✔ botVm: WAIT 2 blocks the next 2 ticks and advances pc when the wait completes (0.26836ms)
-✔ botVm: SET_TIMER decrements at start-of-step (0.20659ms)
-✔ botVm: timers decrement and TIMER_DONE(T1) is observable next tick (IF_DO + PING()) (2.19073ms)
-✔ botVm: IF_DO executes nested instruction when condition true (TIMER_ACTIVE) (1.34922ms)
-✔ botVm: IF_JUMP short-circuit (HEALTH < 10 || UNKNOWN()) does not call UNKNOWN() (0.52351ms)
-✔ botVm: IF_JUMP true jumps to targetPc (0.30112ms)
-✔ botVm: INVALID instruction resets pc to 1 (NOP + pc reset) (0.28438ms)
-✔ botVm: unknown instruction kind is treated as INVALID and resets pc to 1 (0.4722ms)
-✔ botVm: IF_DO does not execute nested control-flow (nested WAIT is ignored) (0.39745ms)
-✔ botVm: timers continue decrementing during WAIT stalls (0.18506ms)
-✔ botVm: bot/powerup targets are independent registers (0.19817ms)
-✔ botVm: integration smoke - compile bot0 and step 10 ticks without crashing (3.16686ms)
-✔ normalizeToLen: axis-aligned vectors normalize to exact speed (1.59674ms)
-✔ normalizeToLen: diagonal vector does not overspeed (0.22184ms)
-✔ normalizeToLen: 3-4-5 triangle scales correctly (0.20362ms)
-✖ compileBotSource compiles example bots (bot0..bot6) (18.91075ms)
-✔ compileBotSource normalizes aliases: FIRE_SLOT1 NEAREST_BOT -> USE_SLOT1 CLOSEST_BOT (0.396069ms)
-✔ compileBotSource emits a very small canonical core IR (3.4946ms)
-(node:22916) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/deploy/engine/src/index.js is not specified and it doesn't parse as CommonJS.
+✔ test/_util/sha256.js (52.659628ms)
+✔ test/_util/stableStringify.js (45.811608ms)
+✔ botVm: pc increments and wraps (len=2) (1.41257ms)
+✔ botVm: JUMP sets pc to targetPc (0.1623ms)
+✔ botVm: WAIT 2 blocks the next 2 ticks and advances pc when the wait completes (0.24653ms)
+✔ botVm: SET_TIMER decrements at start-of-step (0.17828ms)
+✔ botVm: timers decrement and TIMER_DONE(T1) is observable next tick (IF_DO + PING()) (1.64692ms)
+✔ botVm: IF_DO executes nested instruction when condition true (TIMER_ACTIVE) (0.93369ms)
+✔ botVm: IF_JUMP short-circuit (HEALTH < 10 || UNKNOWN()) does not call UNKNOWN() (0.3929ms)
+✔ botVm: IF_JUMP true jumps to targetPc (0.20628ms)
+✔ botVm: INVALID instruction resets pc to 1 (NOP + pc reset) (0.19321ms)
+✔ botVm: unknown instruction kind is treated as INVALID and resets pc to 1 (0.25316ms)
+✔ botVm: IF_DO does not execute nested control-flow (nested WAIT is ignored) (0.22438ms)
+✔ botVm: timers continue decrementing during WAIT stalls (0.15826ms)
+✔ botVm: bot/powerup targets are independent registers (0.30556ms)
+✔ botVm: register instructions clamp and are visible to expressions (0.29193ms)
+✔ botVm: integration smoke - compile bot0 and step 10 ticks without crashing (3.14021ms)
+✔ normalizeToLen: axis-aligned vectors normalize to exact speed (1.51971ms)
+✔ normalizeToLen: diagonal vector does not overspeed (0.28276ms)
+✔ normalizeToLen: 3-4-5 triangle scales correctly (0.21423ms)
+✔ compileBotSource compiles example bots (bot0..bot6) (15.117939ms)
+✔ compileBotSource normalizes aliases: FIRE_SLOT1 NEAREST_BOT -> USE_SLOT1 CLOSEST_BOT (0.42442ms)
+✔ compileBotSource emits a very small canonical core IR (3.96552ms)
+(node:25272) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///workspace/deploy/engine/src/index.js is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /workspace/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
-✔ deploy engine parity: idle baseline replay core matches authoritative engine (14.63725ms)
-✔ deploy engine parity: loadout normalization replay core matches authoritative engine (1.39018ms)
-✔ deploy engine parity: bullet-target replay core matches authoritative engine (8.15134ms)
-✔ deploy-time copies are in sync with authoritative sources (60.129368ms)
-✔ deploy sync target list covers mirrored replay, ruleset, and engine artifacts (3.10088ms)
-✔ parseDisplayNameFromScript: skips locked header directives (1.124129ms)
-✔ parseDisplayNameFromScript: only scans leading comment header (0.21682ms)
-✔ deploy workshop static files expose the QA contract surface (2.51537ms)
-✔ example bot0 aggressively chases the closest target and fires (14.614419ms)
-✔ example bot0 acquires a bullet target while dodging (4.36048ms)
-✔ example bot1 patrols its home sector in the documented zone loop (3.6064ms)
-✔ example bot2 starts on BOT1 and rotates targets with explicit cycling (3.82467ms)
-✔ example bot3 holds its corner when no threat or powerup detour is needed (2.61663ms)
-✖ example bot4 uses saw and shield bursts while rushing bullet bots (14.938159ms)
-✔ example bot5 takes up a center posture before engaging (2.07217ms)
-✔ example bot6 uses saw bursts and acquires bullet targets during aggressive skirmishing (11.32618ms)
-✔ evalExpr: smoke test (HEALTH < 45 && POWERUP_EXISTS(HEALTH)) (8.37572ms)
-✔ evalExpr: short-circuit (0 == 1 && UNKNOWN()) does not call UNKNOWN() (0.3199ms)
-✔ evalExpr: BOT_ALIVE + unary ! (0.32076ms)
-✔ evalExpr: TIMER semantics (TIMER_DONE && !TIMER_ACTIVE) (0.3266ms)
-✔ evalExpr: SLOT_READY(SLOT1) uses token args (0.4132ms)
-✔ evalExpr: DIST_TO_CLOSEST_BOT returns an int (0.341289ms)
-✔ evalExpr: extended built-ins (sector/zone/dist/powerups/bumps) (1.763609ms)
-✔ evalExpr: unknown identifier returns {ok:false} (does not throw) (0.503131ms)
-✔ parseExpression: operator precedence (&& binds tighter than ||) (2.22022ms)
-✔ parseExpression: parentheses override precedence (0.42726ms)
-✔ parseExpression: unary ! binds to the following expression (1.59638ms)
-✔ parseExpression: function calls with multiple args (1.27669ms)
-✔ parseExpression: errors on malformed input (0.79267ms)
-✔ test/golden/checkGoldens.mjs (50.458339ms)
-✔ test/golden/goldenHarnessUtil.js (50.612989ms)
-✖ golden: examples_smoke_seed123 (36.864829ms)
-✖ golden: examples_patrol_seed456 (14.11853ms)
-✖ golden: modules_powerups_seed999 (1.83751ms)
-✖ golden: modules_saw_rush_seed777 (1.98286ms)
-✔ runMatchToReplay: normalizes loadout (unknown modules => null) deterministically (5.344091ms)
-✔ runMatchToReplay: normalizes loadout (duplicates removed; keep earliest) (0.457069ms)
-✔ runMatchToReplay: normalizes loadout (multi-weapon removed; keep earliest) (0.26932ms)
-✔ runMatchToReplay: loadout normalization issues are stable and ordered deterministically (0.2518ms)
-✔ replay contract: header/state shape matches the documented 0.2.0 schema (6.75891ms)
-✔ runMatchToReplay: deterministic for same seed + bots (14.397ms)
-✔ runMatchToReplay: ARMOR reduces bullet damage (events + state) (17.66713ms)
-✖ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (5.13074ms)
-✔ runMatchToReplay: ARMOR reduces SAW damage (7.329489ms)
-✔ runMatchToReplay: ARMOR applies to wall bump damage source (even if mitigation is a no-op at current constants) (1.095809ms)
-✔ runMatchToReplay: ARMOR applies to bot bump damage source (even if mitigation is a no-op at current constants) (1.67726ms)
-✔ runMatchToReplay: ARMOR applies a deterministic movement speed penalty (2.25297ms)
-✔ runMatchToReplay: bot bumps are paired, deal damage, and alive bots never overlap (10.03594ms)
-✔ stepBullets: nearest bot collision wins when multiple bots overlap the segment (2.210591ms)
-✔ stepBullets: corner contact counts as a bot hit (0.342191ms)
-✔ stepBullets: exact tie between bot collisions resolves by slot order (0.34776ms)
-✔ stepBullets: exact wall and bot tie resolves to wall first (0.2645ms)
-✔ Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke) (9.733999ms)
-✔ Phase 3: TARGET_CLOSEST_BULLET tie-break stays numeric for bullet ids >= 10 (0.23708ms)
-✔ runMatchToReplay: bullets despawn and ammo only decreases via SHOOT (17.61114ms)
-✔ runMatchToReplay: BOT_EXEC reason vocabulary stays stable for common no-op cases (12.78467ms)
-✔ runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout defaults to empty (45.552109ms)
-✔ runMatchToReplay: inactive slots start dead and do not participate (4.47961ms)
-✔ runMatchToReplay: wall-bump death is credited to last damaging bot (27.1973ms)
-✔ runMatchToReplay: 4 idle bots ends early by STALEMATE (deterministic) (23.92262ms)
-✔ runMatchToReplay: bot can seek and pick up spawned powerups (17.38253ms)
-✔ runMatchToReplay: damaged bot can seek and benefit from a HEALTH powerup (19.170529ms)
-✔ runMatchToReplay: bullet bot can consume ammo and refill from an AMMO powerup (11.31521ms)
-✔ runMatchToReplay: energy-using bot can drain energy and refill from an ENERGY powerup (6.31446ms)
-✔ runMatchToReplay: powerups maxActive=6 and RULES TTL despawns when no pickups (13.001329ms)
-✔ runMatchToReplay: SAW drains energy and deals damage (hp decreases deterministically) (12.569989ms)
-✔ runMatchToReplay: SAW match is deterministic for same seed + bots (7.12984ms)
-✔ runMatchToReplay: non-saw bot still produces BULLET_SPAWN (1.54924ms)
-✔ runMatchToReplay: SHIELD reduces bullet damage and drains energy (11.94901ms)
-✖ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (8.59578ms)
-✔ runMatchToReplay: TARGET_CLOSEST is resolved at set time (does not change as bots move) (7.75929ms)
-✔ runMatchToReplay: wall bumps deal damage (9.146839ms)
-ℹ tests 94
+✔ deploy engine parity: idle baseline replay core matches authoritative engine (14.9472ms)
+✔ deploy engine parity: loadout normalization replay core matches authoritative engine (1.96916ms)
+✔ deploy engine parity: bullet-target replay core matches authoritative engine (7.34784ms)
+✔ deploy-time copies are in sync with authoritative sources (41.417149ms)
+✔ deploy sync target list covers mirrored replay, ruleset, and engine artifacts (2.15012ms)
+✔ parseDisplayNameFromScript: skips locked header directives (1.01602ms)
+✔ parseDisplayNameFromScript: only scans leading comment header (0.30657ms)
+✔ deploy workshop static files expose the QA contract surface (2.52579ms)
+✔ example bot0 aggressively chases the closest target and fires (18.69503ms)
+✔ example bot0 acquires a bullet target while dodging (4.28643ms)
+✔ example bot1 patrols its home sector in the documented zone loop (4.13387ms)
+✔ example bot2 starts on BOT1 and rotates targets with explicit cycling (4.39323ms)
+✔ example bot3 holds its corner and lays mines in the bunker lane (2.499109ms)
+✔ example bot4 uses saw and shield bursts while rushing bullet bots (15.514839ms)
+✔ example bot5 takes up a center posture and uses grenade/drone support (6.20523ms)
+✔ example bot6 uses saw bursts and acquires bullet targets during aggressive skirmishing (11.06989ms)
+✔ evalExpr: smoke test (HEALTH < 45 && POWERUP_EXISTS(HEALTH)) (2.98942ms)
+✔ evalExpr: short-circuit (0 == 1 && UNKNOWN()) does not call UNKNOWN() (0.283231ms)
+✔ evalExpr: BOT_ALIVE + unary ! (0.2528ms)
+✔ evalExpr: TIMER semantics (TIMER_DONE && !TIMER_ACTIVE) (0.31016ms)
+✔ evalExpr: SLOT_READY(SLOT1) uses token args (0.278651ms)
+✔ evalExpr: DIST_TO_CLOSEST_BOT returns an int (0.22428ms)
+✔ evalExpr: DRONE_COUNT returns an int (0.31738ms)
+✔ evalExpr: extended built-ins (sector/zone/dist/powerups/bumps) (1.670859ms)
+✔ evalExpr: invalid DIST_TO_CLOSEST_POWERUP token returns {ok:false} (0.29869ms)
+✔ evalExpr: unknown identifier returns {ok:false} (does not throw) (0.37535ms)
+✔ parseExpression: operator precedence (&& binds tighter than ||) (1.53203ms)
+✔ parseExpression: parentheses override precedence (0.30414ms)
+✔ parseExpression: unary ! binds to the following expression (1.53812ms)
+✔ parseExpression: function calls with multiple args (1.15939ms)
+✔ parseExpression: errors on malformed input (0.65774ms)
+✔ test/golden/checkGoldens.mjs (54.642388ms)
+✔ test/golden/goldenHarnessUtil.js (52.464749ms)
+✔ golden: examples_smoke_seed123 (27.659669ms)
+✔ golden: examples_patrol_seed456 (16.947189ms)
+✔ golden: modules_powerups_seed999 (32.356129ms)
+✔ golden: modules_saw_rush_seed777 (11.837239ms)
+✔ runMatchToReplay: normalizes loadout (unknown modules => null) deterministically (4.45694ms)
+✔ runMatchToReplay: normalizes loadout (duplicates removed; keep earliest) (0.54963ms)
+✔ runMatchToReplay: normalizes loadout (multi-weapon removed; keep earliest) (0.26684ms)
+✔ runMatchToReplay: loadout normalization issues are stable and ordered deterministically (0.25766ms)
+✔ replay contract: header/state shape matches the documented 0.2.0 schema (6.04229ms)
+✔ runMatchToReplay: deterministic for same seed + bots (13.90849ms)
+✔ runMatchToReplay: ARMOR reduces bullet damage (events + state) (11.74978ms)
+✔ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (3.33567ms)
+✔ runMatchToReplay: ARMOR reduces SAW damage (7.05056ms)
+✔ runMatchToReplay: ARMOR applies to wall bump damage source (even if mitigation is a no-op at current constants) (1.00933ms)
+✔ runMatchToReplay: ARMOR applies to bot bump damage source (even if mitigation is a no-op at current constants) (2.166639ms)
+✔ runMatchToReplay: ARMOR applies a deterministic movement speed penalty (2.83442ms)
+✔ runMatchToReplay: bot bumps are paired, deal damage, and alive bots never overlap (9.39155ms)
+✔ stepBullets: nearest bot collision wins when multiple bots overlap the segment (3.17836ms)
+✔ stepBullets: corner contact counts as a bot hit (0.31448ms)
+✔ stepBullets: exact tie between bot collisions resolves by slot order (0.35066ms)
+✔ stepBullets: exact wall and bot tie resolves to wall first (0.43618ms)
+✔ Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke) (7.83536ms)
+✔ Phase 3: TARGET_CLOSEST_BULLET tie-break stays numeric for bullet ids >= 10 (0.20898ms)
+✔ runMatchToReplay: bullets despawn and ammo only decreases via SHOOT (19.60896ms)
+✔ runMatchToReplay: BOT_EXEC reason vocabulary stays stable for common no-op cases (8.41439ms)
+✔ runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout defaults to empty (43.64701ms)
+✔ runMatchToReplay: GRENADE loadout fires through USE_SLOT and explodes after fuse expiry (6.8125ms)
+✔ runMatchToReplay: grenade explosion does not damage the owner (0.97238ms)
+✔ runMatchToReplay: GRENADE slot reports cooldown no-op reasons like other weapons (0.67744ms)
+✔ runMatchToReplay: inactive slots start dead and do not participate (4.541049ms)
+✔ runMatchToReplay: wall-bump death is credited to last damaging bot (27.60125ms)
+✔ runMatchToReplay: 4 idle bots ends early by STALEMATE (deterministic) (25.29166ms)
+✔ runMatchToReplay: MINE places, arms, triggers on enemy entry, and detonates (10.0654ms)
+✔ runMatchToReplay: mine detonation does not damage the owner (2.76431ms)
+✔ runMatchToReplay: MINE requires NONE target kind (0.68403ms)
+✔ runMatchToReplay: MINE follow-up use respects a longer cooldown before another placement (1.39372ms)
+✔ runMatchToReplay: MOVE_TO_TARGET_UNTIL_IN_RANGE sets a persistent goal that self-clears at range (6.40085ms)
+✔ runMatchToReplay: MOVE_AWAY_FROM_TARGET_UNTIL_RANGE no-ops when already far enough (0.67623ms)
+✔ runMatchToReplay: ORBIT_TARGET adds tangential movement around the current bot target (0.68673ms)
+✔ runMatchToReplay: bot can seek and pick up spawned powerups (15.0242ms)
+✔ runMatchToReplay: damaged bot can seek and benefit from a HEALTH powerup (13.76981ms)
+✔ runMatchToReplay: bullet bot can consume ammo and refill from an AMMO powerup (7.39891ms)
+✔ runMatchToReplay: energy-using bot can drain energy and refill from an ENERGY powerup (7.045ms)
+✔ runMatchToReplay: powerups maxActive=6 and RULES TTL despawns when no pickups (11.65066ms)
+✔ runMatchToReplay: REPAIR_DRONE spawns, drains energy, and heals the owner (10.4387ms)
+✔ runMatchToReplay: STOP_SLOT dismisses active repair drones (0.876669ms)
+✔ runMatchToReplay: repair drones vanish when owner energy reaches zero (5.255089ms)
+✔ runMatchToReplay: REPAIR_DRONE requires SELF target kind (0.6619ms)
+✔ runMatchToReplay: bullets can destroy repair drones (2.90684ms)
+✔ runMatchToReplay: SAW drains energy and deals damage (hp decreases deterministically) (13.105839ms)
+✔ runMatchToReplay: SAW match is deterministic for same seed + bots (7.03354ms)
+✔ runMatchToReplay: non-saw bot still produces BULLET_SPAWN (2.04307ms)
+✔ runMatchToReplay: SHIELD reduces bullet damage and drains energy (16.012399ms)
+✔ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (35.654979ms)
+✔ runMatchToReplay: TARGET_CLOSEST is resolved at set time (does not change as bots move) (6.971659ms)
+✔ runMatchToReplay: wall bumps deal damage (6.0014ms)
+ℹ tests 112
 ℹ suites 0
-ℹ pass 86
-ℹ fail 8
+ℹ pass 112
+ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 3559.372731
+ℹ duration_ms 3966.486465
 
-✖ failing tests:
+===== 2026-04-07T07:39:54.863Z RUN: pnpm -C packages/replay test =====
 
-test at test/compileExamples.test.js:194:1
-✖ compileBotSource compiles example bots (bot0..bot6) (18.91075ms)
-  AssertionError [ERR_ASSERTION]: expected no compile errors for bot5
-  + actual - expected
-  
-  + [
-  +   {
-  +     line: 36,
-  +     message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>'
-  +   }
-  + ]
-  - []
-  
-      at compileAndAssertOk (file:///workspace/packages/engine/test/compileExamples.test.js:168:10)
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/compileExamples.test.js:200:5)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.start (node:internal/test_runner/test:1015:17)
-      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
-    generatedMessage: false,
-    code: 'ERR_ASSERTION',
-    actual: [ { line: 36, message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>' } ],
-    expected: [],
-    operator: 'deepStrictEqual',
-    diff: 'simple'
-  }
+> @coding-game/replay@0.0.4 test /workspace/packages/replay
+> node --test
 
-test at test/exampleBotsIntent.test.js:161:1
-✖ example bot4 uses saw and shield bursts while rushing bullet bots (14.938159ms)
-  AssertionError [ERR_ASSERTION]: expected bot4 to activate SHIELD
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/exampleBotsIntent.test.js:172:10)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
-      at Test.postRun (node:internal/test_runner/test:1247:19)
-      at Test.run (node:internal/test_runner/test:1175:12)
-      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
-    generatedMessage: false,
-    code: 'ERR_ASSERTION',
-    actual: false,
-    expected: true,
-    operator: '==',
-    diff: 'simple'
-  }
+ℹ tests 0
+ℹ suites 0
+ℹ pass 0
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14.340819
 
-test at test/golden/goldenReplays.test.js:85:3
-✖ golden: examples_smoke_seed123 (36.864829ms)
-  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-  + actual - expected
-  
-  + '5bac31b5c22c88f7798b674f143ede8c4eed896366f6ecdd91a0a534ec69e2fd'
-  - '7e7ce2a1b8bde1cd1dddae637cebedce1257e1c1deb9c488f4d87261e94d8381'
-  
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/golden/goldenReplays.test.js:114:12)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.start (node:internal/test_runner/test:1015:17)
-      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
-    generatedMessage: true,
-    code: 'ERR_ASSERTION',
-    actual: '5bac31b5c22c88f7798b674f143ede8c4eed896366f6ecdd91a0a534ec69e2fd',
-    expected: '7e7ce2a1b8bde1cd1dddae637cebedce1257e1c1deb9c488f4d87261e94d8381',
-    operator: 'strictEqual',
-    diff: 'simple'
-  }
+===== 2026-04-07T07:39:55.420Z RUN: pnpm -C apps/web test =====
 
-test at test/golden/goldenReplays.test.js:85:3
-✖ golden: examples_patrol_seed456 (14.11853ms)
-  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-  + actual - expected
-  
-  + 'bd573cc2336df431877ca45fb8ee74738b581c4aa85e47cface694b31bae6143'
-  - '3eb6cc0b6c1e8bc3836224d9692e78d8074d5c9e11247cccb2bf5ed773e514f4'
-  
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/golden/goldenReplays.test.js:114:12)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
-      at Test.postRun (node:internal/test_runner/test:1247:19)
-      at Test.run (node:internal/test_runner/test:1175:12)
-      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
-    generatedMessage: true,
-    code: 'ERR_ASSERTION',
-    actual: 'bd573cc2336df431877ca45fb8ee74738b581c4aa85e47cface694b31bae6143',
-    expected: '3eb6cc0b6c1e8bc3836224d9692e78d8074d5c9e11247cccb2bf5ed773e514f4',
-    operator: 'strictEqual',
-    diff: 'simple'
-  }
+> @nowt/web@0.0.4 test /workspace/apps/web
+> vitest run
 
-test at test/golden/goldenReplays.test.js:85:3
-✖ golden: modules_powerups_seed999 (1.83751ms)
-  AssertionError [ERR_ASSERTION]: expected bot5 to compile
-  + actual - expected
-  
-  + [
-  +   {
-  +     line: 36,
-  +     message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>'
-  +   }
-  + ]
-  - []
-  
-      at runScenarioExampleBots (file:///workspace/packages/engine/test/golden/goldenReplays.test.js:63:12)
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/golden/goldenReplays.test.js:108:17)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
-      at Test.postRun (node:internal/test_runner/test:1247:19)
-      at Test.run (node:internal/test_runner/test:1175:12)
-      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
-    generatedMessage: false,
-    code: 'ERR_ASSERTION',
-    actual: [ { line: 36, message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>' } ],
-    expected: [],
-    operator: 'deepStrictEqual',
-    diff: 'simple'
-  }
 
-test at test/golden/goldenReplays.test.js:85:3
-✖ golden: modules_saw_rush_seed777 (1.98286ms)
-  AssertionError [ERR_ASSERTION]: expected bot5 to compile
-  + actual - expected
-  
-  + [
-  +   {
-  +     line: 36,
-  +     message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>'
-  +   }
-  + ]
-  - []
-  
-      at runScenarioExampleBots (file:///workspace/packages/engine/test/golden/goldenReplays.test.js:63:12)
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/golden/goldenReplays.test.js:108:17)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
-      at Test.postRun (node:internal/test_runner/test:1247:19)
-      at Test.run (node:internal/test_runner/test:1175:12)
-      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
-    generatedMessage: false,
-    code: 'ERR_ASSERTION',
-    actual: [ { line: 36, message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>' } ],
-    expected: [],
-    operator: 'deepStrictEqual',
-    diff: 'simple'
-  }
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90m/workspace/apps/web[39m
 
-test at test/simArmor.test.js:47:1
-✖ runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd rounding) (5.13074ms)
-  AssertionError [ERR_ASSERTION]: expected BULLET_HIT damage to be reduced from 10 to 4 with SHIELD+ARMOR
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/simArmor.test.js:76:10)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
-      at Test.postRun (node:internal/test_runner/test:1247:19)
-      at Test.run (node:internal/test_runner/test:1175:12)
-      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
-    generatedMessage: false,
-    code: 'ERR_ASSERTION',
-    actual: false,
-    expected: true,
-    operator: '==',
-    diff: 'simple'
-  }
+[90mstderr[2m | src/App.test.tsx[2m > [22m[2mrenders the landing page[22m[39m
+⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
 
-test at test/simSmoke.test.js:72:1
-✖ runMatchToReplay: end-to-end example match replay is deterministic, ends, and has no NaNs (8.59578ms)
-  AssertionError [ERR_ASSERTION]: expected bot5 to compile
-  + actual - expected
-  
-  + [
-  +   {
-  +     line: 36,
-  +     message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>'
-  +   }
-  + ]
-  - []
-  
-      at TestContext.<anonymous> (file:///workspace/packages/engine/test/simSmoke.test.js:78:12)
-      at Test.runInAsyncScope (node:async_hooks:228:14)
-      at Test.run (node:internal/test_runner/test:1118:25)
-      at Test.start (node:internal/test_runner/test:1015:17)
-      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
-    generatedMessage: false,
-    code: 'ERR_ASSERTION',
-    actual: [ { line: 36, message: 'SET_TIMER expects: SET_TIMER T1|T2|T3 <positiveInt>' } ],
-    expected: [],
-    operator: 'deepStrictEqual',
-    diff: 'simple'
-  }
- ELIFECYCLE  Test failed. See above for more details.
+ [32m✓[39m src/App.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 503[2mms[22m[39m
+ [32m✓[39m src/serverSimulation.test.ts [2m ([22m[2m5 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/exampleBots.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/localBots.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/botSourceDebug.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 4[2mms[22m[39m
+ [32m✓[39m src/opponents.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/worker/__tests__/runMatchLocal.smoke.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 31[2mms[22m[39m
+ [32m✓[39m src/worker/__tests__/messages.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/loadout.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/replay/__tests__/loadoutWarnings.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/replay/__tests__/interpolate.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/worker/__tests__/seed.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/ui/arena/__tests__/arenaMath.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/replay/__tests__/playbackReducer.test.ts [2m ([22m[2m1 test[22m[2m)[22m[90m 6[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m14 passed[39m[22m[90m (14)[39m
+[2m      Tests [22m [1m[32m47 passed[39m[22m[90m (47)[39m
+[2m   Start at [22m 07:39:56
+[2m   Duration [22m 10.27s[2m (transform 572ms, setup 1.11s, collect 1.12s, tests 606ms, environment 2.57s, prepare 1.54s)[22m
+
+
+===== 2026-04-07T07:40:06.741Z RUN: pnpm build =====
+
+> nowt@0.0.4 build /workspace
+> pnpm -C apps/web build
+
+
+> @nowt/web@0.0.4 build /workspace/apps/web
+> tsc -b && vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 85 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mworkshop/index.html                  [39m[1m[2m  0.39 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2mdist/[22m[32mdocs/index.html                      [39m[1m[2m  0.39 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2mdist/[22m[32mdocs/bot-instructions/index.html     [39m[1m[2m  0.39 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2mdist/[22m[32mindex.html                           [39m[1m[2m  1.29 kB[22m[1m[22m[2m │ gzip:   0.67 kB[22m
+[2mdist/[22m[2massets/[22m[32msimRunner.worker-DEw5JVoe.js  [39m[1m[2m 82.73 kB[22m[1m[22m
+[2mdist/[22m[2massets/[22m[35mmain-vokESq0E.css             [39m[1m[2m  6.26 kB[22m[1m[22m[2m │ gzip:   1.76 kB[22m
+[2mdist/[22m[2massets/[22m[36mmain-BxurSWo4.js              [39m[1m[2m347.93 kB[22m[1m[22m[2m │ gzip: 107.28 kB[22m
+[32m✓ built in 1.68s[39m
+
+===== 2026-04-07T07:40:09.884Z RUN: pnpm qa:workshop -- --serve --url http://127.0.0.1:8878 --app-url http://127.0.0.1:4273 =====
+
+> nowt@0.0.4 qa:workshop /workspace
+> node scripts/qa-workshop.mjs -- --serve --url http://127.0.0.1:8878 --app-url http://127.0.0.1:4273
+
+file:///workspace/scripts/qa-workshop.mjs:74
+      throw new Error(
+            ^
+
+Error: Playwright browser runtime is unavailable in this environment.
+Install the required browser system libraries, or run `pnpm qa:workshop` in a browser-capable release environment.
+
+browserType.launch: Target page, context or browser has been closed
+Browser logs:
+
+<launching> /root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument,OptimizationHints --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-lBf2AN --remote-debugging-pipe --no-startup-window
+<launched> pid=25895
+[pid=25895][err] /root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+Call log:
+  - <launching> /root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument,OptimizationHints --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/tmp/playwright_chromiumdev_profile-lBf2AN --remote-debugging-pipe --no-startup-window
+  - <launched> pid=25895
+  - [pid=25895][err] /root/.cache/ms-playwright/chromium_headless_shell-1208/chrome-headless-shell-linux64/chrome-headless-shell: error while loading shared libraries: libnspr4.so: cannot open shared object file: No such file or directory
+  - [pid=25895] <gracefully close start>
+  - [pid=25895] <kill>
+  - [pid=25895] <will force kill>
+  - [pid=25895] exception while trying to kill process: Error: kill ESRCH
+  - [pid=25895] <process did exit: exitCode=127, signal=null>
+  - [pid=25895] starting temporary directories cleanup
+  - [pid=25895] finished temporary directories cleanup
+  - [pid=25895] <gracefully close end>
+
+    at launchBrowser (/workspace/scripts/qa-workshop.mjs:69:27)
+    at runWorkshopQa (/workspace/scripts/qa-workshop.mjs:284:25)
+    at main (/workspace/scripts/qa-workshop.mjs:696:28)
+    at async file:///workspace/scripts/qa-workshop.mjs:730:1
+    at launchBrowser (file:///workspace/scripts/qa-workshop.mjs:74:13)
+    at async runWorkshopQa (file:///workspace/scripts/qa-workshop.mjs:284:19)
+    at async main (file:///workspace/scripts/qa-workshop.mjs:696:22)
+    at async file:///workspace/scripts/qa-workshop.mjs:730:1
+
+Node.js v24.14.1
+ ELIFECYCLE  Command failed with exit code 1.
