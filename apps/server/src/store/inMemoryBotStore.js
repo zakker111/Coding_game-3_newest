@@ -26,12 +26,13 @@ export function createInMemoryBotStore() {
   }
 
   return {
-    listBots({ ownerUsername, query } = {}) {
+    listBots({ ownerUsernames, query } = {}) {
+      const allowedOwners = Array.isArray(ownerUsernames) ? new Set(ownerUsernames) : null
       const normalizedQuery = typeof query === 'string' && query.trim() !== '' ? query.trim().toLowerCase() : null
 
       const results = []
       for (const bot of bots.values()) {
-        if (ownerUsername && bot.ownerUsername !== ownerUsername) continue
+        if (allowedOwners && !allowedOwners.has(bot.ownerUsername)) continue
         if (
           normalizedQuery &&
           !bot.botId.toLowerCase().includes(normalizedQuery) &&
@@ -54,6 +55,16 @@ export function createInMemoryBotStore() {
       })
 
       return cloneRecord(results)
+    },
+
+    countOwnedBots(ownerUsername) {
+      let count = 0
+      for (const bot of bots.values()) {
+        if (bot.ownerUsername === ownerUsername) {
+          count += 1
+        }
+      }
+      return count
     },
 
     getBot(ownerUsername, name) {

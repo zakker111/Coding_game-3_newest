@@ -53,7 +53,7 @@ function validateTickCap(tickCap, config) {
   return tickCap
 }
 
-function normalizeParticipants(input, config) {
+function normalizeParticipants(input, config, compileSource) {
   if (!Array.isArray(input) || input.length !== SLOT_IDS.length) {
     throw createHttpError(400, 'INVALID_REQUEST', 'participants must contain exactly four slot submissions', {
       field: 'participants',
@@ -90,7 +90,7 @@ function normalizeParticipants(input, config) {
     }
 
     const { sourceTextSnapshot, sourceHash } = createSourceSnapshot(participant.sourceText, config)
-    const compileResult = compileBotSource(sourceTextSnapshot)
+    const compileResult = compileSource(sourceTextSnapshot)
     if (compileResult.errors.length > 0) {
       throw createHttpError(400, 'COMPILE_ERROR', `participant ${participant.slot} failed to compile`, {
         slot: participant.slot,
@@ -153,7 +153,12 @@ function summarizeResult(replay) {
   }
 }
 
-export function createSimulationService({ store, config }) {
+export function createSimulationService({
+  store,
+  config,
+  compileSource = compileBotSource,
+  runMatch = runMatchToReplay,
+} = {}) {
   if (!store) {
     throw new Error('createSimulationService requires a store')
   }
@@ -174,7 +179,7 @@ export function createSimulationService({ store, config }) {
 
       const seed = validateSeed(input.seed)
       const tickCap = validateTickCap(input.tickCap, config)
-      const participants = normalizeParticipants(input.participants, config)
+      const participants = normalizeParticipants(input.participants, config, compileSource)
 
       const match = store.createMatch({
         matchSeed: seed,
@@ -185,7 +190,7 @@ export function createSimulationService({ store, config }) {
       store.markRunning(match.matchId)
 
       try {
-        const replay = runMatchToReplay({
+        const replay = runMatch({
           seed,
           tickCap,
           bots: participants.map((participant) => ({

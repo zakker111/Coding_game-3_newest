@@ -1,14 +1,17 @@
 import Fastify from 'fastify'
 
 import { getServerConfig } from './config.js'
+import { registerAuthRoutes } from './routes/auth.js'
 import { registerBotRoutes } from './routes/bots.js'
 import { registerMatchRoutes } from './routes/matches.js'
 import { registerRulesetRoutes } from './routes/ruleset.js'
+import { createAuthService } from './services/authService.js'
 import { registerSimulationRoutes } from './routes/simulations.js'
 import { createBotService } from './services/botService.js'
 import { createSimulationService } from './services/simulationService.js'
 import { createInMemoryBotStore } from './store/inMemoryBotStore.js'
 import { createInMemoryMatchStore } from './store/inMemoryMatchStore.js'
+import { createInMemoryUserStore } from './store/inMemoryUserStore.js'
 
 function formatErrorPayload(error) {
   return {
@@ -24,6 +27,7 @@ export async function buildApp({
   config = getServerConfig(),
   store = createInMemoryMatchStore(),
   botStore = createInMemoryBotStore(),
+  userStore = createInMemoryUserStore(),
 } = {}) {
   const app = Fastify({
     logger: false,
@@ -37,6 +41,13 @@ export async function buildApp({
   app.decorate('serverConfig', config)
   app.decorate('matchStore', store)
   app.decorate('botStore', botStore)
+  app.decorate('userStore', userStore)
+  app.decorate(
+    'authService',
+    createAuthService({
+      store: userStore,
+    })
+  )
   app.decorate(
     'simulationService',
     createSimulationService({
@@ -51,10 +62,17 @@ export async function buildApp({
       config,
     })
   )
+  app.decorateRequest('currentUser', null)
+
+  app.addHook('onRequest', async (request) => {
+    request.currentUser = app.authService.getCurrentUser(request.headers.cookie)
+  })
 
   app.addHook('onSend', async (request, reply, payload) => {
-    reply.header('access-control-allow-origin', '*')
-    reply.header('access-control-allow-methods', 'GET,POST,OPTIONS')
+    reply.header('access-control-allow-origin', request.headers.origin || '*')
+    reply.header('vary', 'origin')
+    reply.header('access-control-allow-credentials', 'true')
+    reply.header('access-control-allow-methods', 'GET,POST,PUT,OPTIONS')
     reply.header('access-control-allow-headers', 'content-type')
     return payload
   })
@@ -80,6 +98,7 @@ export async function buildApp({
     })
   })
 
+  await registerAuthRoutes(app)
   await registerRulesetRoutes(app)
   await registerBotRoutes(app)
   await registerSimulationRoutes(app)
