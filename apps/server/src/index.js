@@ -1,8 +1,17 @@
 import { buildApp } from './app.js'
 import { getServerConfig } from './config.js'
+import { createPersistentStoreBundle } from './store/persistentStoreBundle.js'
 
 const config = getServerConfig()
-const app = await buildApp({ config })
+const stores = createPersistentStoreBundle({
+  filePath: config.dataFilePath,
+})
+const app = await buildApp({
+  config,
+  store: stores.matchStore,
+  botStore: stores.botStore,
+  userStore: stores.userStore,
+})
 
 try {
   await app.listen({ host: config.host, port: config.port })

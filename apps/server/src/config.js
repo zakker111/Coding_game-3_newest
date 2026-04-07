@@ -2,6 +2,7 @@ const DEFAULT_MAX_TICK_CAP = 600
 const DEFAULT_MAX_SOURCE_CHARS = 12000
 const DEFAULT_MAX_SOURCE_LINES = 400
 const DEFAULT_BODY_LIMIT = 262144
+const DEFAULT_DATA_FILE = '.nowt/server-state.json'
 
 function parseIntEnv(value, fallback, name) {
   if (value == null || value === '') return fallback
@@ -28,6 +29,7 @@ export function getServerConfig(env = process.env) {
       'NOWT_SERVER_MAX_SOURCE_LINES'
     ),
     bodyLimit: parseIntEnv(env.NOWT_SERVER_BODY_LIMIT, DEFAULT_BODY_LIMIT, 'NOWT_SERVER_BODY_LIMIT'),
+    dataFilePath: env.NOWT_SERVER_DATA_FILE || DEFAULT_DATA_FILE,
   }
 
   return Object.freeze(config)
