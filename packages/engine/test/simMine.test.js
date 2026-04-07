@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { runMatchToReplay } from '@coding-game/engine'
+import { MINE_COOLDOWN_TICKS } from '../src/sim/constants.js'
 
 function flatEvents(replay) {
   return replay.events.flat().filter(Boolean)
@@ -62,4 +63,24 @@ test('runMatchToReplay: MINE requires NONE target kind', () => {
 
   const invalidTarget = flatEvents(replay).find((e) => e.type === 'BOT_EXEC' && e.botId === 'BOT1' && e.reason === 'INVALID_TARGET_KIND')
   assert.ok(invalidTarget, 'expected mine placement with bot target to no-op with INVALID_TARGET_KIND')
+})
+
+test('runMatchToReplay: MINE follow-up use respects a longer cooldown before another placement', () => {
+  const replay = runMatchToReplay({
+    seed: 1,
+    tickCap: MINE_COOLDOWN_TICKS + 6,
+    bots: [
+      { slotId: 'BOT1', sourceText: 'LABEL LOOP\nUSE_SLOT1 NONE\nGOTO LOOP\n', loadout: ['MINE', null, null] },
+      { slotId: 'BOT2', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+      { slotId: 'BOT3', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+      { slotId: 'BOT4', sourceText: 'WAIT 1\n', loadout: [null, null, null] },
+    ],
+  })
+
+  const events = flatEvents(replay)
+  const placements = events.filter((e) => e.type === 'MINE_PLACE' && e.ownerBotId === 'BOT1')
+  const cooldownExec = events.find((e) => e.type === 'BOT_EXEC' && e.botId === 'BOT1' && e.reason === 'COOLDOWN')
+
+  assert.ok(cooldownExec, 'expected follow-up mine use to hit cooldown before a second placement')
+  assert.ok(placements.length >= 2, 'expected a second mine placement once the cooldown expires')
 })

@@ -41,6 +41,7 @@ describe('built-in example bots', () => {
   it('bot3 teaches immediate-move bunker control with mines and bullet dodging', () => {
     const src = EXAMPLE_BOTS.bot3.sourceText
     expect(src).toContain('USE_SLOT1 NONE')
+    expect(src).toContain('SET_TIMER T1 6')
     expect(src).toContain('MOVE_TO_SECTOR 1 ZONE 1')
     expect(src).toContain('TARGET_CLOSEST_BULLET')
     expect(src).toContain('CLEAR_TARGET_BULLET')

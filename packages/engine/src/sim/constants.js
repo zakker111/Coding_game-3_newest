@@ -53,7 +53,7 @@ export const MINE_TTL_TICKS = 18
 export const MINE_DAMAGE_CENTER = 20
 export const MINE_DAMAGE_ADJACENT = 12
 export const MINE_AMMO_COST = 5
-export const MINE_COOLDOWN_TICKS = 10
+export const MINE_COOLDOWN_TICKS = 14
 
 export const REPAIR_DRONE_MAX_ACTIVE = 2
 export const REPAIR_DRONE_HIT_POINTS = 1
