@@ -9,5 +9,6 @@ try {
   console.log(`Server listening at http://${config.host}:${config.port}`)
 } catch (error) {
   app.log.error(error)
+  console.error(error)
   process.exitCode = 1
 }

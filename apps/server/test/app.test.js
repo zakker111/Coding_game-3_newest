@@ -33,6 +33,28 @@ test('GET /api/ruleset returns shared ruleset metadata', async (t) => {
   assert.equal(body.loadoutSlotCount, 3)
   assert.ok(Array.isArray(body.modules))
   assert.ok(body.modules.some((module) => module.id === 'BULLET'))
+  assert.equal(response.headers['access-control-allow-origin'], '*')
+})
+
+test('OPTIONS preflight returns CORS headers for browser-based Workshop access', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'OPTIONS',
+    url: '/api/simulations',
+    headers: {
+      origin: 'http://127.0.0.1:4173',
+      'access-control-request-method': 'POST',
+      'access-control-request-headers': 'content-type',
+    },
+  })
+
+  assert.equal(response.statusCode, 204)
+  assert.equal(response.headers['access-control-allow-origin'], '*')
+  assert.match(String(response.headers['access-control-allow-methods']), /POST/)
 })
 
 test('POST /api/simulations rejects duplicate participant slots', async (t) => {

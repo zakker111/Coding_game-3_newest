@@ -24,6 +24,16 @@ import { initialPlaybackState, playbackReducer } from '../replay/playbackReducer
 import { getAppearanceColorMap, getBotsForPlayback, SLOT_IDS } from '../replay/interpolate'
 import { formatReplayLoadoutIssue, getReplayHeaderBotsBySlot, getReplayLoadoutIssuesBySlot } from '../replay/loadoutWarnings'
 import { ArenaCanvas, type ArenaRenderState } from '../ui/arena'
+import {
+  createServerSimulation,
+  DEFAULT_SERVER_BASE_URL,
+  fetchServerMatch,
+  fetchServerReplay,
+  fetchServerRuleset,
+  normalizeServerBaseUrl,
+  type ServerMatchResponse,
+  type ServerRulesetResponse,
+} from '../serverSimulation'
 import { runLocalInWorker } from '../worker/runLocalInWorker'
 
 type LoadoutOptionValue = 'EMPTY' | ModuleId
@@ -43,12 +53,27 @@ function formatLoadoutOptionValue(mod: ModuleId | null): LoadoutOptionValue {
 
 const OPPONENT_NONCE_KEY = 'nowt:workshop:opponentNonce:v1'
 const OPPONENT_ASSIGNMENTS_KEY = 'nowt:workshop:opponents:v1'
+const SERVER_BASE_URL_KEY = 'nowt:workshop:serverBaseUrl:v1'
 const NONE_OPPONENT_ID = '__NONE__'
 
 type OpponentAssignments = {
   BOT2: string
   BOT3: string
   BOT4: string
+}
+
+type ReplaySource = 'local' | 'server' | null
+
+type ServerConnectionState =
+  | { kind: 'idle'; message: string }
+  | { kind: 'checking'; message: string }
+  | { kind: 'ready'; message: string; ruleset: ServerRulesetResponse }
+  | { kind: 'error'; message: string }
+
+type ServerActivity = {
+  id: number
+  tone: 'muted' | 'good' | 'bad'
+  text: string
 }
 
 type StoredOpponentAssignmentsV1 = {
@@ -150,6 +175,15 @@ function normalizeOpponentAssignments(prev: OpponentAssignments, poolIds: string
 
   if (next.BOT2 === prev.BOT2 && next.BOT3 === prev.BOT3 && next.BOT4 === prev.BOT4) return prev
   return next
+}
+
+function readServerBaseUrl(): string {
+  try {
+    const raw = localStorage.getItem(SERVER_BASE_URL_KEY)
+    return normalizeServerBaseUrl(raw ?? DEFAULT_SERVER_BASE_URL)
+  } catch {
+    return DEFAULT_SERVER_BASE_URL
+  }
 }
 
 function isRelevantEvent(e: ReplayEvent, botId: SlotId): boolean {
@@ -424,6 +458,18 @@ export function WorkshopPage() {
   const [running, setRunning] = React.useState(false)
   const [runError, setRunError] = React.useState<string | null>(null)
   const [appliedRun, setAppliedRun] = React.useState<AppliedRunInfo | null>(null)
+  const [replaySource, setReplaySource] = React.useState<ReplaySource>(null)
+
+  const [serverBaseUrl, setServerBaseUrl] = React.useState<string>(DEFAULT_SERVER_BASE_URL)
+  const [serverConnectionState, setServerConnectionState] = React.useState<ServerConnectionState>({
+    kind: 'idle',
+    message: 'Server not checked yet.',
+  })
+  const [serverRunning, setServerRunning] = React.useState(false)
+  const [serverMatch, setServerMatch] = React.useState<ServerMatchResponse | null>(null)
+  const [serverReplay, setServerReplay] = React.useState<Replay | null>(null)
+  const [serverRunError, setServerRunError] = React.useState<string | null>(null)
+  const [serverActivity, setServerActivity] = React.useState<ServerActivity[]>([])
 
   const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
@@ -436,6 +482,7 @@ export function WorkshopPage() {
   React.useEffect(() => {
     setMyBots(loadLocalBotLibrary(starterSourceText))
     setOpponents(readOpponentAssignments())
+    setServerBaseUrl(readServerBaseUrl())
     setLoaded(true)
   }, [starterSourceText])
 
@@ -454,6 +501,16 @@ export function WorkshopPage() {
       // ignore quota/unavailable
     }
   }, [loaded, opponents])
+
+  React.useEffect(() => {
+    if (!loaded) return
+
+    try {
+      localStorage.setItem(SERVER_BASE_URL_KEY, normalizeServerBaseUrl(serverBaseUrl))
+    } catch {
+      // ignore quota/unavailable
+    }
+  }, [loaded, serverBaseUrl])
 
   const selectedMyBot = React.useMemo(() => {
     return myBots.bots.find((b) => b.id === myBots.selectedBotId) ?? myBots.bots[0]
@@ -555,15 +612,19 @@ export function WorkshopPage() {
   }, [loadoutBySlot, opponents.BOT2, opponents.BOT3, opponents.BOT4, sourcesBySlot])
 
   const previewUpToDate = React.useMemo(() => {
-    if (!playback.replay || !appliedRun) return false
+    if (replaySource !== 'local' || !playback.replay || !appliedRun) return false
     if (appliedRun.seed !== seed) return false
     if (appliedRun.tickCap !== tickCap) return false
     if (appliedRun.bot1Id !== selectedMyBot.id) return false
 
     return SLOT_IDS.every((slotId) => appliedRun.botSpecHashBySlot[slotId] === currentBotSpecHashBySlot[slotId])
-  }, [appliedRun, currentBotSpecHashBySlot, playback.replay, seed, selectedMyBot.id, tickCap])
+  }, [appliedRun, currentBotSpecHashBySlot, playback.replay, replaySource, seed, selectedMyBot.id, tickCap])
 
-  const previewStatusText = !playback.replay ? 'Not run yet' : previewUpToDate ? 'Applied' : 'Out of date'
+  const previewStatusText = !playback.replay ? 'Not run yet' : replaySource === 'server' ? 'Server replay' : previewUpToDate ? 'Applied' : 'Out of date'
+
+  function pushServerActivity(tone: ServerActivity['tone'], text: string) {
+    setServerActivity((prev) => [{ id: Date.now() + prev.length, tone, text }, ...prev].slice(0, 8))
+  }
 
   React.useEffect(() => {
     const replay = playback.replay
@@ -1252,11 +1313,105 @@ export function WorkshopPage() {
         botSpecHashBySlot: currentBotSpecHashBySlot,
       })
 
+      setReplaySource('local')
       dispatch({ type: 'LOAD_REPLAY', replay: nextReplay })
     } catch (err) {
       setRunError(err instanceof Error ? err.message : String(err))
     } finally {
       setRunning(false)
+    }
+  }
+
+  async function handleCheckServer() {
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerConnectionState({ kind: 'checking', message: 'Checking server…' })
+    setServerRunError(null)
+
+    try {
+      const ruleset = await fetchServerRuleset(baseUrl)
+      setServerConnectionState({
+        kind: 'ready',
+        message: `Connected. rulesetVersion=${ruleset.rulesetVersion}, loadout slots=${ruleset.loadoutSlotCount}.`,
+        ruleset,
+      })
+      pushServerActivity('good', `Connected to ${baseUrl} (ruleset ${ruleset.rulesetVersion}).`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setServerConnectionState({ kind: 'error', message })
+      pushServerActivity('bad', `Server check failed: ${message}`)
+    }
+  }
+
+  const serverRunDisabledReason =
+    inactiveOpponentSlots.length > 0
+      ? 'Server runs require all four slots to be active. Replace any “None (inactive)” opponents first.'
+      : null
+
+  const serverFinalBotsBySlot = React.useMemo(() => {
+    if (!serverReplay) return null
+    const finalTick = Math.max(0, Math.min(serverReplay.tickCap, serverReplay.state.length - 1))
+    const finalBots = serverReplay.state[finalTick]?.bots ?? []
+    return Object.fromEntries(finalBots.map((bot) => [bot.botId, bot])) as Partial<
+      Record<
+        SlotId,
+        {
+          botId: SlotId
+          hp: number
+          ammo: number
+          energy: number
+          alive: boolean
+        }
+      >
+    >
+  }, [serverReplay])
+
+  async function handleRunOnServer() {
+    if (serverRunDisabledReason) {
+      setServerRunError(serverRunDisabledReason)
+      return
+    }
+
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const participants = SLOT_IDS.map((slot): { slot: SlotId; displayName: string; sourceText: string; loadout: Loadout } => ({
+      slot,
+      displayName: displayNameBySlot[slot],
+      sourceText: sourcesBySlot[slot],
+      loadout: loadoutBySlot[slot],
+    }))
+
+    setServerRunning(true)
+    setServerRunError(null)
+    setServerMatch(null)
+    setServerReplay(null)
+    pushServerActivity('muted', `Submitting server sandbox run to ${baseUrl}.`)
+
+    try {
+      const created = await createServerSimulation(baseUrl, {
+        seed,
+        tickCap,
+        participants,
+      })
+      pushServerActivity('muted', `Server created match ${created.matchId} (${created.status}).`)
+
+      const [match, replay] = await Promise.all([
+        fetchServerMatch(baseUrl, created.matchId),
+        fetchServerReplay(baseUrl, created.matchId),
+      ])
+
+      setServerMatch(match)
+      setServerReplay(replay)
+      setAppliedRun(null)
+      setReplaySource('server')
+      dispatch({ type: 'LOAD_REPLAY', replay })
+
+      const winnerText = match.result?.winnerSlot ? `winner ${match.result.winnerSlot}` : `end ${match.result?.endReason ?? 'unknown'}`
+      pushServerActivity('good', `Server match ${match.matchId} complete: ${winnerText}.`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setServerRunError(message)
+      pushServerActivity('bad', `Server run failed: ${message}`)
+    } finally {
+      setServerRunning(false)
     }
   }
 
@@ -1369,7 +1524,7 @@ export function WorkshopPage() {
         </div>
       ) : null}
 
-      {playback.replay && !previewUpToDate ? (
+      {replaySource === 'local' && playback.replay && !previewUpToDate ? (
         <div className="panel" style={{ marginTop: 16, borderColor: 'rgba(34, 197, 94, 0.22)' }}>
           <strong style={{ color: 'var(--text)' }}>Preview out of date</strong>
           <div className="muted" style={{ marginTop: 8 }}>
@@ -1441,6 +1596,213 @@ export function WorkshopPage() {
               )}
             </section>
           ))}
+        </div>
+      </section>
+
+      <section className="panel" style={{ marginTop: 16 }}>
+        <div className="panel-title">Server sandbox</div>
+        <div className="muted" style={{ marginTop: 6 }}>
+          Submit the current 4-slot setup to the Phase 8A server, inspect server-side match status/results, and load the returned replay into the existing viewer.
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(320px, 1fr)', gap: 16, marginTop: 14 }}>
+          <section
+            style={{
+              padding: 14,
+              borderRadius: 12,
+              border: '1px solid rgba(148, 163, 184, 0.16)',
+              background: 'rgba(15, 23, 42, 0.24)',
+            }}
+          >
+            <label className="mini-field">
+              <div className="mini-label">Server URL</div>
+              <input
+                aria-label="Server URL"
+                className="mini-input"
+                type="text"
+                value={serverBaseUrl}
+                onChange={(e) => setServerBaseUrl(e.target.value)}
+              />
+            </label>
+
+            <div className="controls" style={{ marginTop: 12 }}>
+              <button className="ui-button ui-button-secondary" type="button" onClick={handleCheckServer} disabled={serverConnectionState.kind === 'checking'}>
+                {serverConnectionState.kind === 'checking' ? 'Checking…' : 'Check server'}
+              </button>
+              <button
+                className="ui-button"
+                type="button"
+                onClick={handleRunOnServer}
+                disabled={serverRunning || Boolean(serverRunDisabledReason)}
+                title={serverRunDisabledReason ?? 'Run the current 4-slot setup on the server'}
+              >
+                {serverRunning ? 'Running on server…' : 'Run on server'}
+              </button>
+            </div>
+
+            <div
+              className="muted"
+              style={{
+                marginTop: 12,
+                color:
+                  serverConnectionState.kind === 'error'
+                    ? '#fecaca'
+                    : serverConnectionState.kind === 'ready'
+                      ? 'rgba(134, 239, 172, 0.95)'
+                      : undefined,
+              }}
+            >
+              {serverConnectionState.message}
+            </div>
+
+            {serverRunDisabledReason ? (
+              <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
+                {serverRunDisabledReason}
+              </div>
+            ) : null}
+
+            {serverRunError ? (
+              <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
+                {serverRunError}
+              </div>
+            ) : null}
+          </section>
+
+          <section
+            style={{
+              padding: 14,
+              borderRadius: 12,
+              border: '1px solid rgba(148, 163, 184, 0.16)',
+              background: 'rgba(15, 23, 42, 0.24)',
+            }}
+          >
+            <div className="panel-title">Latest server result</div>
+            <div className="muted" style={{ marginTop: 10, lineHeight: 1.55 }}>
+              {serverMatch ? (
+                <>
+                  <div>Match: <strong style={{ color: 'var(--text)' }}>{serverMatch.matchId}</strong></div>
+                  <div>Status: <strong style={{ color: 'var(--text)' }}>{serverMatch.status}</strong></div>
+                  <div>Seed: <strong style={{ color: 'var(--text)' }}>{String(serverMatch.matchSeed)}</strong></div>
+                  <div>Tick cap: <strong style={{ color: 'var(--text)' }}>{serverMatch.tickCap}</strong></div>
+                  <div>End reason: <strong style={{ color: 'var(--text)' }}>{serverMatch.result?.endReason ?? 'unknown'}</strong></div>
+                  <div>Winner: <strong style={{ color: 'var(--text)' }}>{serverMatch.result?.winnerSlot ?? 'none'}</strong></div>
+                  <div>Survivors: <strong style={{ color: 'var(--text)' }}>{serverMatch.result?.survivors.length ?? 0}</strong></div>
+                  <div style={{ marginTop: 8 }}>
+                    Viewer source:{' '}
+                    <strong style={{ color: 'var(--text)' }}>
+                      {replaySource === 'server' ? 'server replay loaded' : serverReplay ? 'server replay available' : 'none'}
+                    </strong>
+                  </div>
+                  {serverMatch.participants.length ? (
+                    <div style={{ marginTop: 14 }}>
+                      <div className="mini-label" style={{ marginBottom: 8 }}>Final bot states</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                        {serverMatch.participants.map((participant) => {
+                          const finalBot = serverFinalBotsBySlot?.[participant.slot]
+                          const loadoutIssues = participant.loadoutIssues.map((issue) => formatReplayLoadoutIssue(issue))
+
+                          return (
+                            <div
+                              key={participant.slot}
+                              style={{
+                                padding: 10,
+                                borderRadius: 10,
+                                border: '1px solid rgba(148, 163, 184, 0.16)',
+                                background:
+                                  serverMatch.result?.winnerSlot === participant.slot
+                                    ? 'rgba(20, 83, 45, 0.22)'
+                                    : 'rgba(15, 23, 42, 0.34)',
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                                <strong style={{ color: 'var(--text)' }}>{participant.slot}</strong>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: finalBot?.alive ? 'rgba(134, 239, 172, 0.95)' : '#fecaca',
+                                  }}
+                                >
+                                  {serverMatch.result?.winnerSlot === participant.slot
+                                    ? 'winner'
+                                    : finalBot?.alive
+                                      ? 'alive'
+                                      : 'down'}
+                                </span>
+                              </div>
+                              <div style={{ marginTop: 4, color: 'var(--text)' }}>{participant.displayName}</div>
+                              <div style={{ marginTop: 6 }}>HP: <strong style={{ color: 'var(--text)' }}>{finalBot?.hp ?? '—'}</strong></div>
+                              <div>Ammo: <strong style={{ color: 'var(--text)' }}>{finalBot?.ammo ?? '—'}</strong></div>
+                              <div>Energy: <strong style={{ color: 'var(--text)' }}>{finalBot?.energy ?? '—'}</strong></div>
+                              <div style={{ marginTop: 6, fontSize: 12 }}>
+                                Loadout:{' '}
+                                <strong style={{ color: 'var(--text)' }}>
+                                  {participant.loadoutSnapshot.map((mod) => formatLoadoutOptionValue(mod ?? null)).join(' · ')}
+                                </strong>
+                              </div>
+                              <div style={{ marginTop: 6, fontSize: 11 }}>
+                                Source hash:{' '}
+                                <span style={{ color: 'var(--text)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
+                                  {participant.sourceHash.slice(0, 12)}
+                                </span>
+                              </div>
+                              {loadoutIssues.length ? (
+                                <div style={{ marginTop: 8, color: '#fecaca', fontSize: 11, lineHeight: 1.45 }}>
+                                  {loadoutIssues.map((line) => (
+                                    <div key={`${participant.slot}-${line}`}>{line}</div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                'Run a server sandbox match to inspect server-side results here.'
+              )}
+            </div>
+          </section>
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <div className="panel-title">Server activity</div>
+          <div
+            style={{
+              marginTop: 8,
+              padding: 10,
+              borderRadius: 10,
+              background: 'rgba(0,0,0,0.35)',
+              overflow: 'auto',
+              maxHeight: 160,
+              fontFamily:
+                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+              fontSize: 12,
+              lineHeight: 1.55,
+            }}
+          >
+            {serverActivity.length ? (
+              serverActivity.map((entry) => (
+                <div
+                  key={entry.id}
+                  style={{
+                    marginBottom: 6,
+                    color:
+                      entry.tone === 'bad'
+                        ? '#fecaca'
+                        : entry.tone === 'good'
+                          ? 'rgba(134, 239, 172, 0.95)'
+                          : 'rgba(148, 163, 184, 0.95)',
+                  }}
+                >
+                  {entry.text}
+                </div>
+              ))
+            ) : (
+              <div className="muted">No server activity yet.</div>
+            )}
+          </div>
         </div>
       </section>
 

@@ -33,7 +33,11 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   const { container } = render(<RouterProvider router={router} />)
 
   expect(screen.getByText('Match setup')).toBeInTheDocument()
+  expect(screen.getByText('Server sandbox')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Randomize opponents' })).toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Server URL' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Check server' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Run on server' })).toBeInTheDocument()
   expect(screen.getAllByRole('option', { name: 'None (inactive)' })).toHaveLength(3)
   expect(screen.getByText(/Opponent slots can be set to None for Workshop-only local inspection/i)).toBeInTheDocument()
   expect(screen.getByText('Tick events')).toBeInTheDocument()

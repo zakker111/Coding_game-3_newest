@@ -37,6 +37,17 @@ export async function buildApp({ config = getServerConfig(), store = createInMem
     })
   )
 
+  app.addHook('onSend', async (request, reply, payload) => {
+    reply.header('access-control-allow-origin', '*')
+    reply.header('access-control-allow-methods', 'GET,POST,OPTIONS')
+    reply.header('access-control-allow-headers', 'content-type')
+    return payload
+  })
+
+  app.options('/*', async (request, reply) => {
+    reply.code(204).send()
+  })
+
   app.setErrorHandler((error, request, reply) => {
     const statusCode =
       typeof error?.statusCode === 'number' && error.statusCode >= 400 ? error.statusCode : 500
