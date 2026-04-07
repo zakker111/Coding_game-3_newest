@@ -209,7 +209,7 @@ GOTO LOOP
 ;@slot3 EMPTY
 ; bot3 — Immediate-Move Mine Bunker
 ; Loadout: SLOT1=MINE
-; Summary: hold a home corner with immediate movement; drop mines in the bunker lane; make one-tick HEALTH/AMMO detours; dodge bullets via the bullet target register.
+; Summary: hold a home corner with immediate movement; drop mines in the bunker lane on a short timer; make one-tick HEALTH/AMMO detours; dodge bullets via the bullet target register.
 
 LABEL LOOP
 
@@ -219,8 +219,9 @@ IF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS
 ; If we're about to collide, take a short step inward.
 IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
 
-; Keep a mine in our lane whenever the slot is ready.
-IF (SLOT_READY(SLOT1)) DO USE_SLOT1 NONE
+; Keep a mine in our lane, but wait a few ticks between placement attempts.
+IF (SLOT_READY(SLOT1) && TIMER_DONE(T1)) DO USE_SLOT1 NONE
+IF (SLOT_READY(SLOT1) && TIMER_DONE(T1)) DO SET_TIMER T1 6
 
 ; Make one-tick detours to the nearest useful powerup.
 ; (Thresholds are tuned so this behavior is visible in short Workshop runs.)
