@@ -37,6 +37,17 @@ import {
   type ServerMatchResponse,
   type ServerRulesetResponse,
 } from '../serverSimulation'
+import {
+  fetchServerBotSource,
+  fetchServerMe,
+  listServerBots,
+  loginServerUser,
+  logoutServerUser,
+  registerServerUser,
+  saveServerBot,
+  type ServerBotSummary,
+  type ServerUser,
+} from '../serverClient'
 import { runLocalInWorker } from '../worker/runLocalInWorker'
 
 type LoadoutOptionValue = 'EMPTY' | ModuleId
@@ -485,6 +496,17 @@ export function WorkshopPage() {
   const [serverReplay, setServerReplay] = React.useState<Replay | null>(null)
   const [serverRunError, setServerRunError] = React.useState<string | null>(null)
   const [serverActivity, setServerActivity] = React.useState<ServerActivity[]>([])
+  const [serverUser, setServerUser] = React.useState<ServerUser | null>(null)
+  const [serverAuthBusy, setServerAuthBusy] = React.useState(false)
+  const [serverAuthError, setServerAuthError] = React.useState<string | null>(null)
+  const [serverUsernameInput, setServerUsernameInput] = React.useState('')
+  const [serverPasswordInput, setServerPasswordInput] = React.useState('')
+  const [serverBotsLoading, setServerBotsLoading] = React.useState(false)
+  const [serverBots, setServerBots] = React.useState<ServerBotSummary[]>([])
+  const [selectedServerBotName, setSelectedServerBotName] = React.useState('bot1')
+  const [selectedServerBotSourceText, setSelectedServerBotSourceText] = React.useState<string | null>(null)
+  const [serverSaveBusy, setServerSaveBusy] = React.useState(false)
+  const [serverSaveNotice, setServerSaveNotice] = React.useState<{ tone: 'good' | 'bad'; text: string } | null>(null)
 
   const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
@@ -651,6 +673,83 @@ export function WorkshopPage() {
   function pushServerActivity(tone: ServerActivity['tone'], text: string) {
     setServerActivity((prev) => [{ id: Date.now() + prev.length, tone, text }, ...prev].slice(0, 8))
   }
+
+  const selectedServerBot = React.useMemo(() => {
+    if (!serverUser) return null
+    return serverBots.find((bot) => bot.ownerUsername === serverUser.username && bot.name === selectedServerBotName) ?? null
+  }, [selectedServerBotName, serverBots, serverUser])
+
+  const selectedServerBotLoadout = React.useMemo(() => {
+    return selectedServerBotSourceText ? deriveLoadoutFromScriptOrDefault(selectedServerBotSourceText) : null
+  }, [selectedServerBotSourceText])
+
+  const remoteBot1UsesSavedServerSource =
+    serverSandboxMode === 'remote-http' && serverUser && selectedServerBot && selectedServerBotSourceText != null
+
+  const serverBotDirty =
+    remoteBot1UsesSavedServerSource && selectedServerBotSourceText !== selectedMyBot.sourceText
+
+  async function refreshRemoteServerState(baseUrl: string) {
+    const ruleset = await fetchServerRuleset(baseUrl)
+    const me = await fetchServerMe(baseUrl)
+
+    let bots: ServerBotSummary[] = []
+    if (me.user) {
+      const listed = await listServerBots(baseUrl, { owner: me.user.username })
+      bots = listed.bots
+    }
+
+    setServerUser(me.user)
+    setServerBots(bots)
+    setSelectedServerBotName((prev) => (bots.some((bot) => bot.name === prev) ? prev : bots[0]?.name ?? 'bot1'))
+    if (!me.user) {
+      setSelectedServerBotSourceText(null)
+    }
+
+    setServerConnectionState({
+      kind: 'ready',
+      message: me.user
+        ? `Connected as ${me.user.username}. rulesetVersion=${ruleset.rulesetVersion}, loadout slots=${ruleset.loadoutSlotCount}.`
+        : `Connected. Sign in to use saved bots. rulesetVersion=${ruleset.rulesetVersion}, loadout slots=${ruleset.loadoutSlotCount}.`,
+      ruleset,
+    })
+
+    return { ruleset, user: me.user, bots }
+  }
+
+  React.useEffect(() => {
+    if (serverSandboxMode !== 'remote-http') return
+    if (serverConnectionState.kind !== 'ready') return
+    if (!serverUser) {
+      setSelectedServerBotSourceText(null)
+      return
+    }
+
+    let cancelled = false
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerBotsLoading(true)
+    setServerAuthError(null)
+
+    fetchServerBotSource(baseUrl, serverUser.username, selectedServerBotName)
+      .then((source) => {
+        if (cancelled) return
+        setSelectedServerBotSourceText(source.sourceText)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setSelectedServerBotSourceText(null)
+        setServerAuthError(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setServerBotsLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedServerBotName, serverBaseUrl, serverConnectionState.kind, serverSandboxMode, serverUser])
 
   React.useEffect(() => {
     const replay = playback.replay
@@ -1364,26 +1463,156 @@ export function WorkshopPage() {
     const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
     setServerConnectionState({ kind: 'checking', message: 'Checking server…' })
     setServerRunError(null)
+    setServerAuthError(null)
 
     try {
-      const ruleset = await fetchServerRuleset(baseUrl)
-      setServerConnectionState({
-        kind: 'ready',
-        message: `Connected. rulesetVersion=${ruleset.rulesetVersion}, loadout slots=${ruleset.loadoutSlotCount}.`,
-        ruleset,
-      })
-      pushServerActivity('good', `Connected to ${baseUrl} (ruleset ${ruleset.rulesetVersion}).`)
+      setServerBotsLoading(true)
+      const { ruleset, user } = await refreshRemoteServerState(baseUrl)
+      pushServerActivity(
+        'good',
+        user
+          ? `Connected to ${baseUrl} as ${user.username} (ruleset ${ruleset.rulesetVersion}).`
+          : `Connected to ${baseUrl} (ruleset ${ruleset.rulesetVersion}).`,
+      )
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
+      setServerUser(null)
+      setServerBots([])
+      setSelectedServerBotSourceText(null)
       setServerConnectionState({ kind: 'error', message })
       pushServerActivity('bad', `Server check failed: ${message}`)
+    } finally {
+      setServerBotsLoading(false)
+    }
+  }
+
+  async function handleServerAuth(mode: 'register' | 'login') {
+    if (serverSandboxMode !== 'remote-http') return
+
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerAuthBusy(true)
+    setServerAuthError(null)
+    setServerSaveNotice(null)
+
+    try {
+      if (mode === 'register') {
+        const result = await registerServerUser(baseUrl, {
+          username: serverUsernameInput,
+          password: serverPasswordInput,
+        })
+        pushServerActivity('good', `Registered ${result.user.username} on ${baseUrl}.`)
+      } else {
+        const result = await loginServerUser(baseUrl, {
+          username: serverUsernameInput,
+          password: serverPasswordInput,
+        })
+        pushServerActivity('good', `Signed in as ${result.user.username}.`)
+      }
+
+      setServerBotsLoading(true)
+      await refreshRemoteServerState(baseUrl)
+      setServerPasswordInput('')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setServerAuthError(message)
+      pushServerActivity('bad', `${mode === 'register' ? 'Register' : 'Sign in'} failed: ${message}`)
+    } finally {
+      setServerAuthBusy(false)
+      setServerBotsLoading(false)
+    }
+  }
+
+  async function handleServerLogout() {
+    if (serverSandboxMode !== 'remote-http') return
+
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerAuthBusy(true)
+    setServerAuthError(null)
+    setServerSaveNotice(null)
+
+    try {
+      await logoutServerUser(baseUrl)
+      setServerUser(null)
+      setServerBots([])
+      setSelectedServerBotSourceText(null)
+      setServerConnectionState((prev) =>
+        prev.kind === 'ready'
+          ? {
+              ...prev,
+              message: `Connected. Sign in to use saved bots. rulesetVersion=${prev.ruleset.rulesetVersion}, loadout slots=${prev.ruleset.loadoutSlotCount}.`,
+            }
+          : prev,
+      )
+      pushServerActivity('good', 'Signed out of the remote server session.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setServerAuthError(message)
+      pushServerActivity('bad', `Sign out failed: ${message}`)
+    } finally {
+      setServerAuthBusy(false)
+    }
+  }
+
+  async function handleSaveToServer() {
+    if (serverSandboxMode !== 'remote-http' || !serverUser) return
+
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerSaveBusy(true)
+    setServerAuthError(null)
+    setServerSaveNotice(null)
+
+    try {
+      const saved = await saveServerBot(baseUrl, serverUser.username, selectedServerBotName, {
+        sourceText: selectedMyBot.sourceText,
+        saveMessage: `Saved from ${selectedMyBot.name}`,
+      })
+
+      const listed = await listServerBots(baseUrl, { owner: serverUser.username })
+      setServerBots(listed.bots)
+      const source = await fetchServerBotSource(baseUrl, serverUser.username, selectedServerBotName)
+      setSelectedServerBotSourceText(source.sourceText)
+      setServerSaveNotice({
+        tone: 'good',
+        text: `Saved ${selectedMyBot.name} to ${saved.botId}.`,
+      })
+      pushServerActivity('good', `Saved ${selectedMyBot.name} to ${saved.botId}.`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setServerSaveNotice({
+        tone: 'bad',
+        text: message,
+      })
+      pushServerActivity('bad', `Save to server failed: ${message}`)
+    } finally {
+      setServerSaveBusy(false)
     }
   }
 
   const serverRunDisabledReason =
     inactiveOpponentSlots.length > 0
       ? 'Server runs require all four slots to be active. Replace any “None (inactive)” opponents first.'
+      : serverSandboxMode === 'remote-http' && serverConnectionState.kind !== 'ready'
+        ? 'Check the remote server before running.'
+        : serverSandboxMode === 'remote-http' && !serverUser
+          ? 'Sign in to the remote server before running.'
+          : serverSandboxMode === 'remote-http' && !selectedServerBot
+            ? 'Select a saved server bot for BOT1 before running.'
+            : serverSandboxMode === 'remote-http' && serverBotsLoading
+              ? 'Loading the selected server bot source…'
+              : serverSandboxMode === 'remote-http' && !selectedServerBotSourceText
+                ? 'Load the selected server bot source before running.'
       : null
+
+  const saveToServerDisabledReason =
+    serverSandboxMode !== 'remote-http'
+      ? 'Server save is available only in remote server mode.'
+      : serverConnectionState.kind !== 'ready'
+        ? 'Check the remote server first.'
+        : !serverUser
+          ? 'Sign in to the remote server before saving.'
+          : serverSaveBusy
+            ? 'Saving current BOT1 draft to the remote server…'
+            : null
 
   const serverFinalBotsBySlot = React.useMemo(() => {
     if (!serverReplay) return null
@@ -1409,12 +1638,23 @@ export function WorkshopPage() {
       return
     }
 
-    const participants = SLOT_IDS.map((slot): { slot: SlotId; displayName: string; sourceText: string; loadout: Loadout } => ({
-      slot,
-      displayName: displayNameBySlot[slot],
-      sourceText: sourcesBySlot[slot],
-      loadout: loadoutBySlot[slot],
-    }))
+    const participants = SLOT_IDS.map((slot): { slot: SlotId; displayName: string; sourceText: string; loadout: Loadout } => {
+      if (slot === 'BOT1' && serverSandboxMode === 'remote-http' && selectedServerBot && selectedServerBotSourceText) {
+        return {
+          slot,
+          displayName: selectedServerBot.name,
+          sourceText: selectedServerBotSourceText,
+          loadout: selectedServerBotLoadout ?? deriveLoadoutFromScriptOrDefault(selectedServerBotSourceText),
+        }
+      }
+
+      return {
+        slot,
+        displayName: displayNameBySlot[slot],
+        sourceText: sourcesBySlot[slot],
+        loadout: loadoutBySlot[slot],
+      }
+    })
 
     setServerRunning(true)
     setServerRunError(null)
@@ -1568,8 +1808,18 @@ export function WorkshopPage() {
           <button className="ui-button" onClick={handleRun} disabled={running}>
             {running ? 'Running…' : 'Run / Preview'}
           </button>
-          <button className="ui-button ui-button-secondary" disabled>
-            Save
+          <button
+            className="ui-button ui-button-secondary"
+            type="button"
+            onClick={handleSaveToServer}
+            disabled={Boolean(saveToServerDisabledReason) || serverSaveBusy}
+            title={saveToServerDisabledReason ?? 'Save the current BOT1 draft into the selected remote server bot'}
+          >
+            {serverSandboxMode === 'remote-http'
+              ? serverSaveBusy
+                ? 'Saving…'
+                : 'Save to server'
+              : 'Save'}
           </button>
         </div>
       </div>
@@ -1700,6 +1950,122 @@ export function WorkshopPage() {
                 Uses the same validation, source hashing, loadout normalization, deterministic replay generation, and match-summary shape as the server — but runs locally in the browser worker, so deployed users do not need localhost.
               </div>
             )}
+
+            {serverSandboxMode === 'remote-http' ? (
+              <div style={{ marginTop: 12, padding: 12, borderRadius: 10, border: '1px solid rgba(148, 163, 184, 0.16)', background: 'rgba(15, 23, 42, 0.32)' }}>
+                <div className="mini-label" style={{ marginBottom: 8 }}>Remote server session</div>
+
+                {serverUser ? (
+                  <>
+                    <div className="muted">
+                      Signed in as <strong style={{ color: 'var(--text)' }}>{serverUser.username}</strong>.
+                    </div>
+
+                    <div className="controls" style={{ marginTop: 10 }}>
+                      <button className="ui-button ui-button-secondary" type="button" onClick={handleCheckServer} disabled={serverConnectionState.kind === 'checking' || serverBotsLoading}>
+                        {serverBotsLoading ? 'Refreshing…' : 'Refresh server state'}
+                      </button>
+                      <button className="ui-button ui-button-secondary" type="button" onClick={handleServerLogout} disabled={serverAuthBusy}>
+                        {serverAuthBusy ? 'Signing out…' : 'Sign out'}
+                      </button>
+                    </div>
+
+                    <label className="mini-field" style={{ marginTop: 12 }}>
+                      <div className="mini-label">BOT1 server bot</div>
+                      <select
+                        aria-label="BOT1 server bot"
+                        className="mini-input workshop-select"
+                        value={selectedServerBotName}
+                        onChange={(e) => setSelectedServerBotName(e.target.value)}
+                        disabled={!serverBots.length || serverBotsLoading}
+                      >
+                        {serverBots.map((bot) => (
+                          <option key={bot.botId} value={bot.name}>
+                            {bot.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="muted" style={{ marginTop: 8 }}>
+                      {selectedServerBot ? (
+                        <>
+                          Remote BOT1 source comes from <strong style={{ color: 'var(--text)' }}>{selectedServerBot.botId}</strong>
+                          {selectedServerBot.updatedAt ? ` · updated ${new Date(selectedServerBot.updatedAt).toLocaleString()}` : ''}
+                        </>
+                      ) : serverBotsLoading ? (
+                        'Loading saved server bots…'
+                      ) : (
+                        'No saved server bots available for this user.'
+                      )}
+                    </div>
+
+                    {selectedServerBotSourceText && selectedServerBotLoadout ? (
+                      <div className="muted" style={{ marginTop: 8 }}>
+                        Saved loadout: <strong style={{ color: 'var(--text)' }}>{selectedServerBotLoadout.map((mod) => formatLoadoutOptionValue(mod ?? null)).join(' · ')}</strong>
+                      </div>
+                    ) : null}
+
+                    {serverBotDirty ? (
+                      <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
+                        Current BOT1 editor changes are not saved to the selected server bot. Remote server runs use the last saved server source until you click <strong style={{ color: 'var(--text)' }}>Save to server</strong>.
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <label className="mini-field">
+                      <div className="mini-label">Username</div>
+                      <input
+                        aria-label="Server username"
+                        className="mini-input"
+                        type="text"
+                        value={serverUsernameInput}
+                        onChange={(e) => setServerUsernameInput(e.target.value)}
+                      />
+                    </label>
+
+                    <label className="mini-field">
+                      <div className="mini-label">Password</div>
+                      <input
+                        aria-label="Server password"
+                        className="mini-input"
+                        type="password"
+                        value={serverPasswordInput}
+                        onChange={(e) => setServerPasswordInput(e.target.value)}
+                      />
+                    </label>
+
+                    <div className="controls" style={{ marginTop: 10 }}>
+                      <button className="ui-button ui-button-secondary" type="button" onClick={() => handleServerAuth('register')} disabled={serverAuthBusy}>
+                        {serverAuthBusy ? 'Working…' : 'Register'}
+                      </button>
+                      <button className="ui-button ui-button-secondary" type="button" onClick={() => handleServerAuth('login')} disabled={serverAuthBusy}>
+                        {serverAuthBusy ? 'Working…' : 'Sign in'}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {serverAuthError ? (
+                  <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
+                    {serverAuthError}
+                  </div>
+                ) : null}
+
+                {serverSaveNotice ? (
+                  <div
+                    className="muted"
+                    style={{
+                      marginTop: 8,
+                      color: serverSaveNotice.tone === 'bad' ? '#fecaca' : 'rgba(134, 239, 172, 0.95)',
+                    }}
+                  >
+                    {serverSaveNotice.text}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="controls" style={{ marginTop: 12 }}>
               <button className="ui-button ui-button-secondary" type="button" onClick={handleCheckServer} disabled={serverConnectionState.kind === 'checking'}>

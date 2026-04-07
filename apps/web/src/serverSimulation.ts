@@ -356,6 +356,7 @@ function buildApiUrl(baseUrl: string, path: string) {
 
 async function requestJson<T>(baseUrl: string, path: string, init?: RequestInit, fetchImpl: FetchLike = fetch): Promise<T> {
   const response = await fetchImpl(buildApiUrl(baseUrl, path), {
+    credentials: 'include',
     headers: {
       'content-type': 'application/json',
       ...(init?.headers ?? {}),

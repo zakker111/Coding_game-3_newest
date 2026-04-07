@@ -64,6 +64,10 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
     target: { value: 'remote-http' },
   })
   expect(screen.getByRole('textbox', { name: 'Server URL' })).toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: 'Server username' })).toBeInTheDocument()
+  expect(screen.getByLabelText('Server password')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Check server' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Run on server' })).toBeInTheDocument()
 
