@@ -19,7 +19,7 @@ This starter intentionally uses a few core v1 patterns:
 - `TARGET_CLOSEST` / `TARGET_POWERUP HEALTH`
 - `TARGET_CLOSEST_BULLET` / `MOVE_AWAY_FROM_TARGET`
 - `SET_MOVE_TO_TARGET` (keep moving while doing other work)
-- `FIRE_SLOT1 TARGET` (shoot your current target)
+- `USE_SLOT1 TARGET` (shoot your current target)
 - `WAIT` (brief commitment to a plan)
 
 ## Script
@@ -52,7 +52,7 @@ IF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 ; Otherwise pick a fight.
 TARGET_CLOSEST
 SET_MOVE_TO_TARGET
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO FIRE_SLOT1 TARGET
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
 GOTO LOOP
 
 LABEL BACKOFF

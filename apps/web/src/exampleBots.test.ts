@@ -5,7 +5,7 @@ describe('built-in example bots', () => {
     const src = EXAMPLE_BOTS.bot0.sourceText
     expect(src).toContain('TARGET_CLOSEST')
     expect(src).toMatch(/\bSET_MOVE_TO_TARGET\b/) 
-    expect(src).toMatch(/\bFIRE_SLOT1\b|\bUSE_SLOT1\b/) 
+    expect(src).toContain('USE_SLOT1 TARGET')
     expect(src).toMatch(/\bIF\b/) 
   })
 
@@ -56,7 +56,17 @@ describe('built-in example bots', () => {
     expect(src).toContain('USE_SLOT3')
     expect(src).toContain('DRONE_COUNT()')
     expect(src).toContain('MOVE_TO_TARGET')
-    expect(src).toMatch(/\bFIRE_SLOT1\b|\bUSE_SLOT1\b/)
+    expect(src).toContain('USE_SLOT1 TARGET')
+  })
+
+  it('built-in bots stick to the canonical instruction spellings', () => {
+    const allSource = Object.values(EXAMPLE_BOTS).map((bot) => bot.sourceText).join('\n')
+    expect(allSource).not.toMatch(/\bFIRE_SLOT[123]\b/)
+    expect(allSource).not.toMatch(/\bMOVE_TO_WALL\b/)
+    expect(allSource).not.toMatch(/\bRETREAT_TO_SECTOR\b/)
+    expect(allSource).not.toMatch(/\bHOLD_POSITION\b/)
+    expect(allSource).not.toMatch(/\bNEAREST_BOT\b/)
+    expect(allSource).not.toMatch(/\bWEAKEST_BOT\b/)
   })
 
   it('bot6 includes SAW logic and is powerup-aware with timers', () => {

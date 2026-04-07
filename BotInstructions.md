@@ -15,7 +15,7 @@
 - Branch (`GOTO`, `IF ... GOTO`, `IF ... DO ...`) and wait (`WAIT`, timers).
 - Select targets (bot targets, bullet targets, and powerup-type targets).
 - Move immediately (`MOVE`, `MOVE_TO_*`) or set a persistent navigation goal (`SET_MOVE_TO_*`).
-- Use equipped modules (module-type sugar like `FIRE_BULLET`, or slot-addressed `USE_SLOTn` / `STOP_SLOTn`).
+- Use equipped modules through canonical slot-addressed actions (`USE_SLOTn` / `STOP_SLOTn`) and toggles (`SAW`, `SHIELD`).
 
 ## What bots cannot do
 
@@ -82,14 +82,12 @@ Rules for these header directives (v1):
   - `SECTOR <SECTOR> ZONE <ZONE>` (zone center)
 
 - `<BOT_TARGET>` (subset of `<TARGET>`):
-  - `BOT1|BOT2|BOT3|BOT4|TARGET|CLOSEST_BOT|NEAREST_BOT|LOWEST_HEALTH_BOT|WEAKEST_BOT`
+  - `BOT1|BOT2|BOT3|BOT4|TARGET|CLOSEST_BOT|LOWEST_HEALTH_BOT`
 
 - `<TARGET>`:
   - `<BOT_TARGET> | <LOC> | SELF | NONE`
 
 Notes:
-- `NEAREST_BOT` is an alias of `CLOSEST_BOT`.
-- `WEAKEST_BOT` is an alias of `LOWEST_HEALTH_BOT`.
 - `TARGET` (as an argument token) means “use my current `targetBotId`”.
 - Inline selectors (`CLOSEST_BOT`, `LOWEST_HEALTH_BOT`, etc.) are resolved deterministically when the instruction executes; they **do not** write the target register.
 - A deferred aim-direction target form (`DIR ...`) is **not** part of stable v1 (see `BotLanguageDesign.md`).
@@ -114,11 +112,26 @@ Loadout notes (v1):
 
 ---
 
-## 1) Aliases & determinism (v1)
+## 1) Canonical spellings and legacy compatibility (v1)
 
-Aliases are for readability and are deterministic.
+The stable v1 language uses **one canonical spelling per behavior**.
+Write new bots with the canonical names below:
 
-### Compile-time name aliases (pure renames)
+- `TARGET_CLOSEST`
+- `TARGET_LOWEST_HEALTH`
+- `TARGET_POWERUP <TYPE>`
+- `MOVE_TO_POWERUP <TYPE>`
+- `MOVE_TO_CLOSEST_BOT`
+- `MOVE_TO_LOWEST_HEALTH_BOT`
+- `MOVE_TO_ARENA_EDGE <DIR>`
+- `CLEAR_MOVE`
+- `SET_MOVE_TO_SECTOR <SECTOR> [ZONE <ZONE>]`
+- `USE_SLOT1|USE_SLOT2|USE_SLOT3 <TARGET>`
+- target tokens: `CLOSEST_BOT`, `LOWEST_HEALTH_BOT`
+
+The compiler still accepts older spellings for compatibility, but they are **legacy aliases**, not separate instructions.
+
+### Legacy compatibility aliases (accepted, but not canonical)
 
 - `TARGET_NEAREST` → `TARGET_CLOSEST`
 - `TARGET_CLOSEST_BOT` → `TARGET_CLOSEST`
@@ -179,8 +192,8 @@ Tie-break rule for “closest” / “lowest health”: **lowest bot id wins**.
 | Instruction | Effect |
 |---|---|
 | `SET_TARGET <BOT>` | `targetBotId = <BOT>` |
-| `TARGET_CLOSEST` | Set `targetBotId` to closest alive bot. (Aliases: `TARGET_NEAREST`, `TARGET_CLOSEST_BOT`) |
-| `TARGET_LOWEST_HEALTH` | Set `targetBotId` to alive bot with lowest health. (Alias: `TARGET_WEAKEST`) |
+| `TARGET_CLOSEST` | Set `targetBotId` to closest alive bot. |
+| `TARGET_LOWEST_HEALTH` | Set `targetBotId` to alive bot with lowest health. |
 | `TARGET_NEXT` | Advance target to next bot (details in engine/rules). |
 | `TARGET_NEXT_IF_DEAD` | Like `TARGET_NEXT`, but only if current target is dead/invalid. |
 
@@ -201,7 +214,6 @@ Bots have global knowledge of powerup locations.
 | Instruction | Effect |
 |---|---|
 | `TARGET_POWERUP <TYPE>` | `targetPowerupType = <TYPE>` |
-| `TARGET_CLOSEST_POWERUP <TYPE>` | Alias of `TARGET_POWERUP <TYPE>` (kept for readability). |
 
 Powerup target invalidation:
 - `targetPowerupType` is a **type preference**, not an instance.
@@ -240,11 +252,9 @@ General rules:
 | `MOVE_TO_ZONE <ZONE>` | Deterministic sugar: uses `SECTOR()` at execution time (see §1). |
 | `MOVE_TO_BOT <BOT>` | Move toward that bot’s current position; if dead, no-op. |
 | `MOVE_TO_POWERUP <TYPE>` | Move toward closest currently-existing powerup of that type (tie-break rules below). |
-| `MOVE_TO_CLOSEST_POWERUP <TYPE>` | Alias of `MOVE_TO_POWERUP <TYPE>`. |
-| `MOVE_TO_CLOSEST_BOT` | Move toward closest alive bot (ties: lowest bot id). Alias: `MOVE_TO_NEAREST_BOT`. |
-| `MOVE_TO_LOWEST_HEALTH_BOT` | Move toward lowest-health alive bot (ties: lowest bot id). Alias: `MOVE_TO_WEAKEST_BOT`. |
+| `MOVE_TO_CLOSEST_BOT` | Move toward closest alive bot (ties: lowest bot id). |
+| `MOVE_TO_LOWEST_HEALTH_BOT` | Move toward lowest-health alive bot (ties: lowest bot id). |
 | `MOVE_TO_ARENA_EDGE UP|DOWN|LEFT|RIGHT` | Move toward outer boundary in that direction; if already touching, no-op. |
-| `MOVE_TO_WALL UP|DOWN|LEFT|RIGHT` | Alias of `MOVE_TO_ARENA_EDGE ...`. |
 | `MOVE_TO_TARGET` | If valid `targetBotId`: like `MOVE_TO_BOT <targetBotId>`; else if valid `targetBulletId`: move away/toward uses bullet position; else if valid `targetPowerupType`: like `MOVE_TO_POWERUP <type>`; else no-op. |
 | `MOVE_AWAY_FROM_TARGET` | Move away from the currently selected target. Resolution priority: `targetBotId` (alive) > `targetBulletId` (exists) > `targetPowerupType` (exists). |
 | `MOVE_TO_TARGET_UNTIL_IN_RANGE <N>` | Set a persistent movement goal using `MOVE_TO_TARGET` resolution each tick, and auto-clear it once the resolved target is within Manhattan distance `<= N`. If no valid target resolves, the goal clears and no movement occurs. |
@@ -292,14 +302,12 @@ When a goal is set, the bot attempts to move toward it every tick (unless an imm
 | `SET_MOVE_TO_SECTOR <SECTOR>` | Set point goal: sector center. |
 | `SET_MOVE_TO_SECTOR <SECTOR> ZONE <ZONE>` | Set point goal: zone center. |
 | `SET_MOVE_TO_ZONE <ZONE>` | Deterministic sugar: uses `SECTOR()` at execution time (see §1). |
-| `SET_MOVE_TO_BOT <BOT_TARGET>` | Follow a bot. If `<BOT_TARGET>` is `CLOSEST_BOT/NEAREST_BOT/LOWEST_HEALTH_BOT/WEAKEST_BOT`, it re-resolves each tick. If `TARGET`, follows `targetBotId`. If `BOT1..BOT4`, follows that bot until it dies. |
+| `SET_MOVE_TO_BOT <BOT_TARGET>` | Follow a bot. If `<BOT_TARGET>` is `CLOSEST_BOT` or `LOWEST_HEALTH_BOT`, it re-resolves each tick. If `TARGET`, follows `targetBotId`. If `BOT1..BOT4`, follows that bot until it dies. |
 | `SET_MOVE_TO_POWERUP <TYPE>` | Re-resolves each tick to closest powerup of that type; clears when picked up; clears if none exist. |
 | `SET_MOVE_TO_TARGET` | Follow `MOVE_TO_TARGET` resolution every tick. |
 | `ORBIT_TARGET` | Set a persistent orbit goal around the current bot target. Current first version: clockwise orbit with a fixed default radius band; if no valid bot target exists, the goal clears and no movement occurs. |
-| `RETREAT_TO_SECTOR <SECTOR>` | Alias of `SET_MOVE_TO_SECTOR <SECTOR>`. |
-| `RETREAT_TO_SECTOR <SECTOR> ZONE <ZONE>` | Alias of `SET_MOVE_TO_SECTOR <SECTOR> ZONE <ZONE>`. |
 | `CLEAR_MOVE` | Clear current movement goal. |
-| `HOLD_POSITION` | Alias of `CLEAR_MOVE`. Clears any active movement goal and leaves the bot stationary unless a later move instruction or goal is set. |
+`CLEAR_MOVE` clears any active movement goal and leaves the bot stationary unless a later move instruction or goal is set.
 
 Resolution order each tick (recommended):
 1) if the executed instruction is an immediate movement instruction (§4.1), use it
@@ -327,9 +335,11 @@ Collisions:
 
 | Instruction | Resource | Notes |
 |---|---:|---|
-| `FIRE_BULLET <BOT_TARGET>` | ammo | If `AMMO==0`, no-op. Bullets are continuous projectiles and may hit any bot they collide with (16×16 bot hitbox), not only the chosen target. |
 | `SAW ON` / `SAW OFF` | energy | When ON, drains energy per tick; auto-OFF at `ENERGY==0`. |
 | `SHIELD ON` / `SHIELD OFF` | energy | When ON, drains energy per tick; auto-OFF at `ENERGY==0`. Current engine (`rulesetVersion = 0.2.0`): mitigates bullet damage by **50%**. |
+
+Legacy note:
+- `FIRE_BULLET <BOT_TARGET>` is still accepted as a compatibility alias for `USE_SLOT1 <BOT_TARGET>`.
 
 Armor note:
 - `ARMOR` is a passive module (no active use).
@@ -358,7 +368,7 @@ Future-proofing note:
 | `STOP_SLOT3` | Same for `SLOT3`. |
 
 Target kinds accepted by `USE_SLOTn`:
-- bot targets: `BOT1..BOT4`, `TARGET`, `CLOSEST_BOT/NEAREST_BOT`, `LOWEST_HEALTH_BOT/WEAKEST_BOT`
+- bot targets: `BOT1..BOT4`, `TARGET`, `CLOSEST_BOT`, `LOWEST_HEALTH_BOT`
 - location targets: `SECTOR <SECTOR>`, `SECTOR <SECTOR> ZONE <ZONE>`
 - `SELF`, `NONE`
 
@@ -371,11 +381,6 @@ Wrong target kind:
 - Passive or instant modules: deterministic no-op.
   - Example: `ARMOR` has no active state to stop (`SLOT_ACTIVE(<SLOT>)` is always `false`), and `STOP_SLOTn` is a no-op even when `SLOT_READY(<SLOT>)` is `true` due to being equipped.
 - Future modules: module defines what “stop” means; call must remain deterministic and should emit a replay/debug reason if it had no effect.
-
-Compatibility aliases (v1):
-- `FIRE_SLOT1 <TARGET>` (alias of `USE_SLOT1 <TARGET>`)
-- `FIRE_SLOT2 <TARGET>` (alias of `USE_SLOT2 <TARGET>`)
-- `FIRE_SLOT3 <TARGET>` (alias of `USE_SLOT3 <TARGET>`)
 
 Current engine module behavior when used via `USE_SLOTn` / `FIRE_SLOTn`:
 - **BULLET**: fires only at bot targets (`<BOT_TARGET>`); non-bot targets are `INVALID_TARGET_KIND` no-ops.
@@ -522,7 +527,7 @@ For longer built-in examples, see `examples/bot0.md` … `examples/bot6.md`.
 SET_MOVE_TO_BOT CLOSEST_BOT
 
 LABEL LOOP
-IF (SLOT_READY(SLOT1)) DO USE_SLOT1 NEAREST_BOT
+IF (SLOT_READY(SLOT1)) DO USE_SLOT1 CLOSEST_BOT
 GOTO LOOP
 ```
 
@@ -551,11 +556,11 @@ GOTO LOOP
 
 ```text
 ; Assumes BULLET in SLOT1
-MOVE_TO_WALL LEFT
-MOVE_TO_WALL UP
+MOVE_TO_ARENA_EDGE LEFT
+MOVE_TO_ARENA_EDGE UP
 
 LABEL LOOP
-IF (SLOT_READY(SLOT1)) DO FIRE_SLOT1 CLOSEST_BOT
+IF (SLOT_READY(SLOT1)) DO USE_SLOT1 CLOSEST_BOT
 GOTO LOOP
 ```
 
@@ -568,7 +573,7 @@ IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 2
 IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 4
 IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 3
 IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 1
-IF (SLOT_READY(SLOT1)) DO USE_SLOT1 WEAKEST_BOT
+IF (SLOT_READY(SLOT1)) DO USE_SLOT1 LOWEST_HEALTH_BOT
 GOTO LOOP
 ```
 
@@ -578,7 +583,7 @@ GOTO LOOP
 LABEL LOOP
 TARGET_CLOSEST
 MOVE_TO_TARGET_UNTIL_IN_RANGE 96
-IF (SLOT_READY(SLOT1)) DO FIRE_SLOT1 TARGET
+IF (SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
 GOTO LOOP
 ```
 
@@ -588,7 +593,7 @@ GOTO LOOP
 LABEL LOOP
 IF (HEALTH < 30) DO SET R1 1
 IF (HEALTH >= 30) DO SET R1 0
-IF (R1 == 1 && POWERUP_EXISTS(HEALTH)) DO RETREAT_TO_SECTOR 9
+IF (R1 == 1 && POWERUP_EXISTS(HEALTH)) DO SET_MOVE_TO_SECTOR 9
 IF (R1 == 0) DO MOVE_TO_CLOSEST_BOT
 GOTO LOOP
 ```
@@ -599,6 +604,6 @@ GOTO LOOP
 LABEL LOOP
 SET_TARGET BOT3
 ORBIT_TARGET
-IF (SLOT_READY(SLOT1) && LOWEST_HEALTH_ENEMY_IN_RANGE(96) <= 25) DO FIRE_SLOT1 TARGET
+IF (SLOT_READY(SLOT1) && LOWEST_HEALTH_ENEMY_IN_RANGE(96) <= 25) DO USE_SLOT1 TARGET
 GOTO LOOP
 ```

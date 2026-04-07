@@ -454,7 +454,7 @@ IF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 ; Otherwise pick a fight.
 TARGET_CLOSEST
 SET_MOVE_TO_TARGET
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO FIRE_SLOT1 TARGET
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
 GOTO LOOP
 
 LABEL BACKOFF
@@ -582,7 +582,7 @@ GOTO LOOP
 ;@slot3 EMPTY
 ; bot3 — Corner Bunker
 ; Loadout: SLOT1=BULLET
-; Summary: hold a home corner; avoid bump-lock; dodge bullets; run to powerups when low (with a short WAIT); shoot NEAREST_BOT when close.
+; Summary: hold a home corner; avoid bump-lock; dodge bullets; run to powerups when low (with a short WAIT); shoot the closest bot when close.
 
 SET_MOVE_TO_SECTOR 1 ZONE 1
 
@@ -607,7 +607,7 @@ IF ((HEALTH < 70 && POWERUP_EXISTS(HEALTH)) || (AMMO < 80 && POWERUP_EXISTS(AMMO
 IF (HEALTH >= 70 && AMMO >= 80) DO SET_MOVE_TO_SECTOR 1 ZONE 1
 
 ; Only shoot when something is fairly close (helps conserve ammo).
-IF (SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 120) DO FIRE_SLOT1 NEAREST_BOT
+IF (SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 120) DO USE_SLOT1 CLOSEST_BOT
 
 GOTO LOOP
 

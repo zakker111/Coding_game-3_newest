@@ -71,7 +71,9 @@ import { parseExpression } from './expr.js'
  * @typedef {Exclude<BotInstruction, { kind: 'GOTO' } | { kind: 'IF_GOTO' }>} BotRuntimeInstruction
  */
 
-const OPCODE_ALIASES = new Map([
+// Legacy spellings are still accepted for compatibility, but the canonical v1
+// vocabulary lives in BotInstructions.md and should prefer one name per behavior.
+const LEGACY_OPCODE_ALIASES = new Map([
   ['TARGET_NEAREST', 'TARGET_CLOSEST'],
   ['TARGET_CLOSEST_BOT', 'TARGET_CLOSEST'],
   ['TARGET_WEAKEST', 'TARGET_LOWEST_HEALTH'],
@@ -87,7 +89,7 @@ const OPCODE_ALIASES = new Map([
   ['FIRE_BULLET', 'USE_SLOT1'],
 ])
 
-const TARGET_TOKEN_ALIASES = new Map([
+const LEGACY_TARGET_TOKEN_ALIASES = new Map([
   ['NEAREST_BOT', 'CLOSEST_BOT'],
   ['WEAKEST_BOT', 'LOWEST_HEALTH_BOT'],
 ])
@@ -195,7 +197,7 @@ function normalizeOpcodeToken(token) {
   const fireSlot = upper.match(/^FIRE_SLOT([123])$/)
   if (fireSlot) return `USE_SLOT${fireSlot[1]}`
 
-  return OPCODE_ALIASES.get(upper) ?? upper
+  return LEGACY_OPCODE_ALIASES.get(upper) ?? upper
 }
 
 /**
@@ -203,7 +205,7 @@ function normalizeOpcodeToken(token) {
  */
 function normalizeTargetToken(token) {
   const upper = token.toUpperCase()
-  return TARGET_TOKEN_ALIASES.get(upper) ?? upper
+  return LEGACY_TARGET_TOKEN_ALIASES.get(upper) ?? upper
 }
 
 /**

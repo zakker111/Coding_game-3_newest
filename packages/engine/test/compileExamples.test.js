@@ -201,7 +201,7 @@ test('compileBotSource compiles example bots (bot0..bot6)', () => {
   }
 })
 
-test('compileBotSource normalizes aliases: FIRE_SLOT1 NEAREST_BOT -> USE_SLOT1 CLOSEST_BOT', () => {
+test('compileBotSource still normalizes legacy aliases for compatibility', () => {
   const { executable } = compileAndAssertOk('alias normalization', 'FIRE_SLOT1 NEAREST_BOT\n')
 
   const instr0 = executable[0]
