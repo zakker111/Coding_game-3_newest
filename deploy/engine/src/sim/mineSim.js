@@ -6,13 +6,14 @@ import {
   MINE_TTL_TICKS,
   SLOT_IDS,
 } from './constants.js'
-import { sectorFromPos } from './arenaMath.js'
+import { clonePos, sectorFromPos } from './arenaMath.js'
 
-export function createMine(ownerBotId, sector) {
+export function createMine(ownerBotId, pos) {
   return {
     mineId: '',
     ownerBotId,
-    sector,
+    pos: clonePos(pos),
+    sector: sectorFromPos(pos),
     armRemaining: MINE_ARM_TICKS,
     fuseRemaining: MINE_FUSE_TICKS,
     ttlRemaining: MINE_TTL_TICKS,
@@ -83,6 +84,8 @@ function detonateMine(mine, bots, tickEvents) {
   tickEvents.push({
     type: 'MINE_DETONATE',
     mineId: mine.mineId,
+    ownerBotId: mine.ownerBotId,
+    pos: clonePos(mine.pos),
     centerSector: mine.sector,
     damageCenter: MINE_DAMAGE_CENTER,
     damageAdjacent: MINE_DAMAGE_ADJACENT,

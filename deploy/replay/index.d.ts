@@ -65,6 +65,7 @@ export type ReplayGrenadeState = {
 export type ReplayMineState = {
   mineId: string
   ownerBotId: SlotId
+  pos: Pos
   sector: number
   armRemaining: number
   fuseRemaining: number
@@ -254,6 +255,7 @@ export type MinePlaceEvent = {
   type: 'MINE_PLACE'
   mineId: string
   ownerBotId: SlotId
+  pos: Pos
   sector: number
   armTicks: number
 }
@@ -272,6 +274,8 @@ export type MineTriggerEvent = {
 export type MineDetonateEvent = {
   type: 'MINE_DETONATE'
   mineId: string
+  ownerBotId: SlotId
+  pos: Pos
   centerSector: number
   damageCenter: number
   damageAdjacent: number
