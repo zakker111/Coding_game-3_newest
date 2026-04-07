@@ -45,6 +45,7 @@ export type ReplayBotState = {
   alive: boolean
   pc: number
   targetBulletId?: string | null
+  targetMineId?: string | null
 }
 
 export type ReplayBulletState = {

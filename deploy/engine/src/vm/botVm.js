@@ -22,6 +22,7 @@ const KNOWN_KINDS = new Set([
   // targeting
   'SET_TARGET_BOT',
   'SET_TARGET_BULLET',
+  'SET_TARGET_MINE',
   'SET_TARGET_POWERUP',
   'CLEAR_TARGET',
 
@@ -50,7 +51,7 @@ export function initBotVm(program) {
     waitRemaining: 0,
     timers: { 1: 0, 2: 0, 3: 0 },
     vars: { R1: 0, R2: 0, R3: 0, R4: 0 },
-    target: { botSelector: null, bulletId: null, powerupType: null },
+    target: { botSelector: null, bulletId: null, mineId: null, powerupType: null },
     moveGoal: null,
   }
 }
@@ -209,6 +210,11 @@ function evalCond(expr, vm, observation) {
       observation && typeof observation === 'object' && observation.hasTargetBullet != null
         ? observation.hasTargetBullet
         : vm?.target?.bulletId != null,
+
+    hasTargetMine:
+      observation && typeof observation === 'object' && observation.hasTargetMine != null
+        ? observation.hasTargetMine
+        : vm?.target?.mineId != null,
   }
 
   const r = evalExpr(expr, ctx)
@@ -279,6 +285,11 @@ function execInstr(instr, vm, effects) {
     return
   }
 
+  if (kind === 'SET_TARGET_MINE') {
+    vm.target.mineId = instr.selector ?? null
+    return
+  }
+
   if (kind === 'SET_TARGET_POWERUP') {
     vm.target.powerupType = instr.type ?? null
     return
@@ -288,6 +299,7 @@ function execInstr(instr, vm, effects) {
     const which = instr.which ?? 'ALL'
     if (which === 'BOT' || which === 'ALL') vm.target.botSelector = null
     if (which === 'BULLET' || which === 'ALL') vm.target.bulletId = null
+    if (which === 'MINE' || which === 'ALL') vm.target.mineId = null
     if (which === 'POWERUP' || which === 'ALL') vm.target.powerupType = null
     return
   }

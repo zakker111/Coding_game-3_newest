@@ -220,17 +220,18 @@ export function runMatchToReplay(params) {
     for (const bot of bots) {
       if (!bot.alive) continue
 
-      const observation = buildObservation(bot, bots, bullets, powerupState, drones)
+      const observation = buildObservation(bot, bots, bullets, mines, powerupState, drones)
 
       const vmBefore = bot.vm
       const instrBefore = vmBefore?.program?.instructions?.[vmBefore.pc - 1] ?? { kind: 'INVALID' }
       const prevTargetSelector = vmBefore?.target?.botSelector ?? null
       const prevTargetBullet = vmBefore?.target?.bulletId ?? null
+      const prevTargetMine = vmBefore?.target?.mineId ?? null
 
       const { vm: vmAfter, effects, debug } = stepBotVm(vmBefore, observation)
       bot.vm = vmAfter
 
-      normalizeTargetRegister(bot, bots, prevTargetSelector, prevTargetBullet, bullets)
+      normalizeTargetRegister(bot, bots, prevTargetSelector, prevTargetBullet, prevTargetMine, bullets, mines)
 
       // Track whether a USE_SLOT succeeded for BOT_EXEC reporting.
       let botExecResult = debug.executedKind === 'INVALID' ? 'NOP' : 'EXECUTED'
@@ -462,7 +463,7 @@ export function runMatchToReplay(params) {
     stepToggleDrains(bots, tickEvents)
 
     // 3) Movement + collision resolution
-    resolveMovement(bots, bullets, powerupState, tickEvents)
+    resolveMovement(bots, bullets, mines, powerupState, tickEvents)
 
     // 4) SAW melee damage
     stepSawDamage(bots, tickEvents)
@@ -587,6 +588,7 @@ function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) 
       alive: b.alive,
       pc: b.vm?.pc ?? 1,
       targetBulletId: typeof b.vm?.target?.bulletId === 'string' ? b.vm.target.bulletId : null,
+      targetMineId: typeof b.vm?.target?.mineId === 'string' ? b.vm.target.mineId : null,
     })),
     bullets: bullets.map((b) => ({
       bulletId: b.bulletId,
@@ -673,7 +675,7 @@ function normalizeHeaderBots(botsInput) {
   })
 }
 
-function buildObservation(bot, bots, bullets, powerupState, drones) {
+function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
   const zone = zoneFromPos(bot.pos)
   const sector = sectorFromPos(bot.pos)
   const closestBotDist = distToClosestBot(bot, bots)
@@ -696,6 +698,8 @@ function buildObservation(bot, bots, bullets, powerupState, drones) {
 
   const targetBulletId = bot.vm?.target?.bulletId
   const targetBullet = typeof targetBulletId === 'string' ? bullets.find((b) => b?.bulletId === targetBulletId) : null
+  const targetMineId = bot.vm?.target?.mineId
+  const targetMine = typeof targetMineId === 'string' ? mines.find((m) => m?.mineId === targetMineId) : null
 
   const timers = bot.vm?.timers ?? { 1: 0, 2: 0, 3: 0 }
 
@@ -739,6 +743,10 @@ function buildObservation(bot, bots, bullets, powerupState, drones) {
     },
     distToTargetBullet: () => {
       if (targetBullet) return manhattan(bot.pos, targetBullet.pos)
+      return 999
+    },
+    distToTargetMine: () => {
+      if (targetMine) return manhattan(bot.pos, targetMine.pos)
       return 999
     },
     distToSector: (s) => {
@@ -810,6 +818,7 @@ function buildObservation(bot, bots, bullets, powerupState, drones) {
     // Exposed for HAS_TARGET_BOT() / HAS_TARGET_BULLET() (see botVm.js).
     hasTargetBot: () => Boolean(targetBot && targetBot.alive),
     hasTargetBullet: () => Boolean(targetBullet),
+    hasTargetMine: () => Boolean(targetMine),
 
     // Slots
     hasModule: (slot) => {
@@ -947,6 +956,26 @@ export function findClosestEnemyBullet(selfBotId, selfPos, bullets) {
   return best?.b ?? null
 }
 
+export function findClosestEnemyMine(selfBotId, selfPos, mines) {
+  /** @type {{ m: any, d: number } | null} */
+  let best = null
+
+  for (const m of mines) {
+    if (!m) continue
+    if (m.ownerBotId === selfBotId) continue
+
+    const d = manhattan(selfPos, m.pos)
+    const thisIdN = parseMineIdNumber(m.mineId)
+    const bestIdN = best ? parseMineIdNumber(best.m.mineId) : null
+
+    if (!best || d < best.d || (d === best.d && thisIdN != null && bestIdN != null && thisIdN < bestIdN)) {
+      best = { m, d }
+    }
+  }
+
+  return best?.m ?? null
+}
+
 function parseBulletIdNumber(bulletId) {
   if (typeof bulletId !== 'string') return null
   const m = bulletId.match(/\d+/)
@@ -955,12 +984,29 @@ function parseBulletIdNumber(bulletId) {
   return Number.isFinite(n) ? n : null
 }
 
+function parseMineIdNumber(mineId) {
+  if (typeof mineId !== 'string') return null
+  const m = mineId.match(/\d+/)
+  if (!m) return null
+  const n = Number(m[0])
+  return Number.isFinite(n) ? n : null
+}
+
 /**
  * Normalize the bot target registers after a bot executes a target-selection instruction.
  */
-function normalizeTargetRegister(bot, bots, prevTargetSelector = null, prevBulletSelector = null, bullets = []) {
+function normalizeTargetRegister(
+  bot,
+  bots,
+  prevTargetSelector = null,
+  prevBulletSelector = null,
+  prevMineSelector = null,
+  bullets = [],
+  mines = [],
+) {
   const selector = bot?.vm?.target?.botSelector
   const bulletSelector = bot?.vm?.target?.bulletId
+  const mineSelector = bot?.vm?.target?.mineId
 
   if (bulletSelector != null && bulletSelector !== prevBulletSelector) {
     if (bulletSelector === 'CLOSEST_BULLET') {
@@ -969,6 +1015,16 @@ function normalizeTargetRegister(bot, bots, prevTargetSelector = null, prevBulle
     } else {
       const exists = bullets.some((b) => b && b.bulletId === bulletSelector)
       if (!exists) bot.vm.target.bulletId = null
+    }
+  }
+
+  if (mineSelector != null && mineSelector !== prevMineSelector) {
+    if (mineSelector === 'CLOSEST_MINE') {
+      const m = findClosestEnemyMine(bot.botId, bot.pos, mines)
+      bot.vm.target.mineId = m ? m.mineId : null
+    } else {
+      const exists = mines.some((m) => m && m.mineId === mineSelector)
+      if (!exists) bot.vm.target.mineId = null
     }
   }
 
@@ -1018,7 +1074,7 @@ function nextTargetId(selfId, currentTargetId) {
   return order[(idx + 1) % order.length]
 }
 
-function resolveMovement(bots, bullets, powerupState, tickEvents) {
+function resolveMovement(bots, bullets, mines, powerupState, tickEvents) {
   // Apply at most one bump-damage instance per bot-pair per tick.
   const bumpDamagePairs = new Set()
 
@@ -1032,11 +1088,11 @@ function resolveMovement(bots, bullets, powerupState, tickEvents) {
     let requestFromGoal = false
 
     if (move) {
-      request = resolveMoveEffect(bot, move, bots, bullets, powerupState)
+      request = resolveMoveEffect(bot, move, bots, bullets, mines, powerupState)
     } else if (bot.vm?.moveGoal) {
       requestFromGoal = true
       const speed = computeBotSpeedUnitsPerTick(bot)
-      request = resolveMoveTarget(bot, bot.vm.moveGoal, bots, bullets, powerupState, true, speed)
+      request = resolveMoveTarget(bot, bot.vm.moveGoal, bots, bullets, mines, powerupState, true, speed)
     }
 
     if (!request) continue
@@ -1138,7 +1194,7 @@ function resolveMovement(bots, bullets, powerupState, tickEvents) {
     }
 
     // Goal completion.
-    if (requestFromGoal && bot.vm?.moveGoal && isMoveGoalSatisfied(bot, bot.vm.moveGoal, bots, bullets, powerupState)) {
+    if (requestFromGoal && bot.vm?.moveGoal && isMoveGoalSatisfied(bot, bot.vm.moveGoal, bots, bullets, mines, powerupState)) {
       bot.vm.moveGoal = null
     }
   }
@@ -1232,7 +1288,7 @@ function applyBotBumpDamage(botA, botB, tickEvents, pairKey) {
   }
 }
 
-function resolveMoveEffect(bot, move, bots, bullets, powerupState) {
+function resolveMoveEffect(bot, move, bots, bullets, mines, powerupState) {
   const speed = computeBotSpeedUnitsPerTick(bot)
 
   if (move.kind === 'MOVE_DIR') {
@@ -1242,17 +1298,17 @@ function resolveMoveEffect(bot, move, bots, bullets, powerupState) {
 
   if (move.kind === 'MOVE') {
     const target = normalizeMoveTargetAtSetTime(move.target, bot.pos)
-    return resolveMoveTarget(bot, target, bots, bullets, powerupState, false, speed)
+    return resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, false, speed)
   }
 
   return null
 }
 
-function resolveMoveTarget(bot, target, bots, bullets, powerupState, clearGoalOnInvalid, speed) {
+function resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, clearGoalOnInvalid, speed) {
   if (!target || typeof target !== 'object') return null
 
   if (target.kind === 'TARGET' || target.kind === 'TARGET_AWAY') {
-    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState)
+    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, mines, powerupState)
 
     if (goalPos) {
       const distance = manhattan(bot.pos, goalPos)
@@ -1375,7 +1431,7 @@ function resolvePointGoalPos(target) {
   return locToWorld({ sector, zone })
 }
 
-function isMoveGoalSatisfied(bot, target, bots, bullets, powerupState) {
+function isMoveGoalSatisfied(bot, target, bots, bullets, mines, powerupState) {
   if (!target || typeof target !== 'object') return false
 
   if (target.kind === 'SECTOR') {
@@ -1384,7 +1440,7 @@ function isMoveGoalSatisfied(bot, target, bots, bullets, powerupState) {
   }
 
   if ((target.kind === 'TARGET' || target.kind === 'TARGET_AWAY') && Number.isInteger(target.untilRange)) {
-    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState)
+    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, mines, powerupState)
     if (!goalPos) return true
     const distance = manhattan(bot.pos, goalPos)
     return target.kind === 'TARGET' ? distance <= target.untilRange : distance >= target.untilRange
@@ -1393,7 +1449,7 @@ function isMoveGoalSatisfied(bot, target, bots, bullets, powerupState) {
   return false
 }
 
-function resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState) {
+function resolveCurrentTargetGoalPos(bot, bots, bullets, mines, powerupState) {
   const botTargetId = bot.vm?.target?.botSelector
   const botTarget =
     botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
@@ -1406,6 +1462,12 @@ function resolveCurrentTargetGoalPos(bot, bots, bullets, powerupState) {
   if (typeof bulletTargetId === 'string') {
     const bulletTarget = bullets.find((b) => b && b.bulletId === bulletTargetId)
     if (bulletTarget) return bulletTarget.pos
+  }
+
+  const mineTargetId = bot.vm?.target?.mineId
+  if (typeof mineTargetId === 'string') {
+    const mineTarget = mines.find((m) => m && m.mineId === mineTargetId)
+    if (mineTarget) return mineTarget.pos
   }
 
   const type = bot.vm?.target?.powerupType
@@ -1693,6 +1755,7 @@ function formatInstr(instr) {
 
   if (kind === 'SET_TARGET_BOT') return `SET_TARGET ${instr.selector}`
   if (kind === 'SET_TARGET_BULLET') return `SET_TARGET_BULLET ${instr.selector}`
+  if (kind === 'SET_TARGET_MINE') return `SET_TARGET_MINE ${instr.selector}`
   if (kind === 'SET_TARGET_POWERUP') return `TARGET_POWERUP ${instr.type}`
   if (kind === 'CLEAR_TARGET') return `CLEAR_TARGET ${instr.which ?? 'ALL'}`
 

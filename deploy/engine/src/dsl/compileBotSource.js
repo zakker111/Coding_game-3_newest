@@ -50,11 +50,13 @@ function normalizeInstruction(instr) {
   if (instr.kind === 'TARGET_NEXT') return { kind: 'SET_TARGET_BOT', selector: 'NEXT' }
   if (instr.kind === 'TARGET_NEXT_IF_DEAD') return { kind: 'SET_TARGET_BOT', selector: 'NEXT_IF_DEAD' }
   if (instr.kind === 'TARGET_CLOSEST_BULLET') return { kind: 'SET_TARGET_BULLET', selector: 'CLOSEST_BULLET' }
+  if (instr.kind === 'TARGET_CLOSEST_MINE') return { kind: 'SET_TARGET_MINE', selector: 'CLOSEST_MINE' }
   if (instr.kind === 'TARGET_POWERUP') return { kind: 'SET_TARGET_POWERUP', type: instr.type }
 
   if (instr.kind === 'CLEAR_TARGET_BOT') return { kind: 'CLEAR_TARGET', which: 'BOT' }
   if (instr.kind === 'CLEAR_TARGET_POWERUP') return { kind: 'CLEAR_TARGET', which: 'POWERUP' }
   if (instr.kind === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET', which: 'BULLET' }
+  if (instr.kind === 'CLEAR_TARGET_MINE') return { kind: 'CLEAR_TARGET', which: 'MINE' }
   if (instr.kind === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET', which: 'ALL' }
 
   // Persistent movement goal writes.
