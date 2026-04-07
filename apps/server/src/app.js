@@ -1,10 +1,13 @@
 import Fastify from 'fastify'
 
 import { getServerConfig } from './config.js'
+import { registerBotRoutes } from './routes/bots.js'
 import { registerMatchRoutes } from './routes/matches.js'
 import { registerRulesetRoutes } from './routes/ruleset.js'
 import { registerSimulationRoutes } from './routes/simulations.js'
+import { createBotService } from './services/botService.js'
 import { createSimulationService } from './services/simulationService.js'
+import { createInMemoryBotStore } from './store/inMemoryBotStore.js'
 import { createInMemoryMatchStore } from './store/inMemoryMatchStore.js'
 
 function formatErrorPayload(error) {
@@ -17,7 +20,11 @@ function formatErrorPayload(error) {
   }
 }
 
-export async function buildApp({ config = getServerConfig(), store = createInMemoryMatchStore() } = {}) {
+export async function buildApp({
+  config = getServerConfig(),
+  store = createInMemoryMatchStore(),
+  botStore = createInMemoryBotStore(),
+} = {}) {
   const app = Fastify({
     logger: false,
     bodyLimit: config.bodyLimit,
@@ -29,10 +36,18 @@ export async function buildApp({ config = getServerConfig(), store = createInMem
 
   app.decorate('serverConfig', config)
   app.decorate('matchStore', store)
+  app.decorate('botStore', botStore)
   app.decorate(
     'simulationService',
     createSimulationService({
       store,
+      config,
+    })
+  )
+  app.decorate(
+    'botService',
+    createBotService({
+      store: botStore,
       config,
     })
   )
@@ -66,6 +81,7 @@ export async function buildApp({ config = getServerConfig(), store = createInMem
   })
 
   await registerRulesetRoutes(app)
+  await registerBotRoutes(app)
   await registerSimulationRoutes(app)
   await registerMatchRoutes(app)
   await app.ready()

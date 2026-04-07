@@ -36,6 +36,156 @@ test('GET /api/ruleset returns shared ruleset metadata', async (t) => {
   assert.equal(response.headers['access-control-allow-origin'], '*')
 })
 
+test('GET /api/bots lists builtin bots', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/bots',
+  })
+
+  assert.equal(response.statusCode, 200)
+  const body = response.json()
+  assert.ok(Array.isArray(body.bots))
+  assert.ok(body.bots.some((bot) => bot.botId === 'builtin/bot0'))
+  assert.ok(body.bots.some((bot) => bot.botId === 'builtin/bot6'))
+})
+
+test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const saveResponse = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/alice/skirmisher',
+    payload: {
+      sourceText: 'WAIT 1\r\n',
+      saveMessage: 'first save',
+    },
+  })
+
+  assert.equal(saveResponse.statusCode, 200)
+  const saved = saveResponse.json()
+  assert.equal(saved.botId, 'alice/skirmisher')
+  assert.ok(typeof saved.sourceHash === 'string')
+
+  const metadataResponse = await app.inject({
+    method: 'GET',
+    url: '/api/bots/alice/skirmisher',
+  })
+  assert.equal(metadataResponse.statusCode, 200)
+  assert.equal(metadataResponse.json().sourceHash, saved.sourceHash)
+
+  const sourceResponse = await app.inject({
+    method: 'GET',
+    url: '/api/bots/alice/skirmisher/source',
+  })
+  assert.equal(sourceResponse.statusCode, 200)
+  assert.deepEqual(sourceResponse.json(), {
+    botId: 'alice/skirmisher',
+    sourceText: 'WAIT 1\n',
+  })
+
+  const versionsResponse = await app.inject({
+    method: 'GET',
+    url: '/api/bots/alice/skirmisher/versions',
+  })
+  assert.equal(versionsResponse.statusCode, 200)
+  const versionsBody = versionsResponse.json()
+  assert.equal(versionsBody.botId, 'alice/skirmisher')
+  assert.equal(versionsBody.versions.length, 1)
+  assert.equal(versionsBody.versions[0].sourceHash, saved.sourceHash)
+  assert.equal(versionsBody.versions[0].saveMessage, 'first save')
+
+  const versionSourceResponse = await app.inject({
+    method: 'GET',
+    url: `/api/bots/alice/skirmisher/versions/${saved.sourceHash}/source`,
+  })
+  assert.equal(versionSourceResponse.statusCode, 200)
+  assert.deepEqual(versionSourceResponse.json(), {
+    botId: 'alice/skirmisher',
+    sourceHash: saved.sourceHash,
+    sourceText: 'WAIT 1\n',
+  })
+})
+
+test('saving the same bot source dedupes version history by source hash', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const firstSave = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/alice/skirmisher',
+    payload: {
+      sourceText: 'WAIT 1\n',
+      saveMessage: 'first',
+    },
+  })
+
+  const secondSave = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/alice/skirmisher',
+    payload: {
+      sourceText: 'WAIT 1\n',
+      saveMessage: 'second',
+    },
+  })
+
+  assert.equal(firstSave.statusCode, 200)
+  assert.equal(secondSave.statusCode, 200)
+  assert.equal(firstSave.json().sourceHash, secondSave.json().sourceHash)
+
+  const versionsResponse = await app.inject({
+    method: 'GET',
+    url: '/api/bots/alice/skirmisher/versions',
+  })
+
+  assert.equal(versionsResponse.statusCode, 200)
+  const versionsBody = versionsResponse.json()
+  assert.equal(versionsBody.versions.length, 1)
+  assert.equal(versionsBody.versions[0].saveMessage, 'first')
+})
+
+test('PUT /api/bots forbids writes to builtin bots', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/builtin/bot0',
+    payload: {
+      sourceText: 'WAIT 1\n',
+    },
+  })
+
+  assert.equal(response.statusCode, 403)
+  assert.equal(response.json().error.code, 'FORBIDDEN')
+})
+
+test('GET /api/bots/:owner/:name returns 404 for unknown bots', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/bots/alice/missing',
+  })
+
+  assert.equal(response.statusCode, 404)
+  assert.equal(response.json().error.code, 'BOT_NOT_FOUND')
+})
+
 test('OPTIONS preflight returns CORS headers for browser-based Workshop access', async (t) => {
   const app = await buildApp()
   t.after(async () => {
