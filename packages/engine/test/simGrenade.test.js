@@ -27,8 +27,13 @@ test('runMatchToReplay: GRENADE loadout fires through USE_SLOT and explodes afte
     ],
   })
 
-  assert.equal(grenadeSpawnEvents(replay).length, 1, 'expected one grenade spawn before cooldown')
-  assert.equal(grenadeExplodeEvents(replay).length, 1, 'expected the grenade to explode after its fuse')
+  const spawns = grenadeSpawnEvents(replay)
+  const explodes = grenadeExplodeEvents(replay)
+
+  assert.equal(spawns.length, 1, 'expected one grenade spawn before cooldown')
+  assert.equal(explodes.length, 1, 'expected the grenade to explode after its fuse')
+  assert.ok(explodes[0].pos, 'expected grenade explosion to record its exact world position')
+  assert.ok(explodes[0].sector >= 1 && explodes[0].sector <= 9, 'expected grenade explosion to record its impact sector')
 
   const bot2Damage = damageEventsFor(replay, 'BOT2').filter((e) => e.source === 'GRENADE')
   assert.ok(bot2Damage.length > 0, 'expected BOT2 to take grenade damage')

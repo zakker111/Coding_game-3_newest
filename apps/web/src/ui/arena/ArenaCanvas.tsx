@@ -39,11 +39,13 @@ export type ArenaRenderGrenade = {
   alpha?: number
 }
 
-export type ArenaRenderGrenadeExplosion = {
+export type ArenaRenderExplosion = {
   explosionId: string
+  kind?: 'grenade' | 'mine'
   ownerBotId?: SlotId
   pos: { x: number; y: number }
-  radius?: number
+  innerRadius?: number
+  outerRadius?: number
   alpha?: number
 }
 
@@ -73,7 +75,7 @@ export type ArenaRenderState = {
   bots: ArenaRenderBot[]
   bullets?: ArenaRenderBullet[]
   grenades?: ArenaRenderGrenade[]
-  grenadeExplosions?: ArenaRenderGrenadeExplosion[]
+  explosions?: ArenaRenderExplosion[]
   mines?: ArenaRenderMine[]
   drones?: ArenaRenderDrone[]
   powerups?: ArenaRenderPowerup[]
@@ -400,30 +402,40 @@ export function ArenaCanvas({
       }
     }
 
-    if (renderState.grenadeExplosions?.length) {
-      for (const fx of renderState.grenadeExplosions) {
+    if (renderState.explosions?.length) {
+      for (const fx of renderState.explosions) {
         const x = worldToSnappedCssPx(fx.pos.x, s, dpr)
         const y = worldToSnappedCssPx(fx.pos.y, s, dpr)
         const ownerColor = fx.ownerBotId ? slotFallbackColor(fx.ownerBotId) : '#f97316'
         const alpha = typeof fx.alpha === 'number' ? clamp(fx.alpha, 0, 1) : 0.85
-        const radiusPx = Math.max(8, Math.floor((fx.radius ?? 18) * s))
+        const outerRadiusPx = Math.max(8, Math.floor((fx.outerRadius ?? SECTOR_SIZE_WORLD) * s))
+        const innerRadiusPx = Math.max(4, Math.floor((fx.innerRadius ?? SECTOR_SIZE_WORLD / 2) * s))
+        const outerFill = fx.kind === 'mine' ? '#fca5a5' : '#fb923c'
+        const innerFill = fx.kind === 'mine' ? '#fee2e2' : '#fde68a'
 
         ctx.save()
-        ctx.globalAlpha = alpha * 0.28
+        ctx.globalAlpha = alpha * 0.16
         ctx.beginPath()
-        ctx.arc(x, y, radiusPx, 0, Math.PI * 2)
-        ctx.fillStyle = '#fb923c'
+        ctx.arc(x, y, outerRadiusPx, 0, Math.PI * 2)
+        ctx.fillStyle = outerFill
+        ctx.fill()
+
+        ctx.globalAlpha = alpha * 0.26
+        ctx.beginPath()
+        ctx.arc(x, y, innerRadiusPx, 0, Math.PI * 2)
+        ctx.fillStyle = innerFill
         ctx.fill()
 
         ctx.globalAlpha = alpha * 0.7
         ctx.beginPath()
-        ctx.arc(x, y, Math.max(3, Math.floor(radiusPx * 0.45)), 0, Math.PI * 2)
-        ctx.fillStyle = '#fde68a'
-        ctx.fill()
+        ctx.arc(x, y, outerRadiusPx, 0, Math.PI * 2)
+        ctx.strokeStyle = ownerColor
+        ctx.lineWidth = Math.max(1, Math.floor(0.35 * s))
+        ctx.stroke()
 
         ctx.globalAlpha = alpha
         ctx.beginPath()
-        ctx.arc(x, y, radiusPx, 0, Math.PI * 2)
+        ctx.arc(x, y, innerRadiusPx, 0, Math.PI * 2)
         ctx.strokeStyle = ownerColor
         ctx.lineWidth = Math.max(1, Math.floor(0.35 * s))
         ctx.stroke()

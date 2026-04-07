@@ -25,12 +25,19 @@ test('runMatchToReplay: MINE places, arms, triggers on enemy entry, and detonate
   })
 
   const events = flatEvents(replay)
+  const placement = events.find((e) => e.type === 'MINE_PLACE')
+  const detonation = events.find((e) => e.type === 'MINE_DETONATE')
+  const placedMine = replay.state.flatMap((s) => s.mines ?? []).find((m) => m.mineId === placement?.mineId)
 
   assert.ok(events.some((e) => e.type === 'MINE_PLACE'), 'expected mine placement event')
   assert.ok(events.some((e) => e.type === 'MINE_ARMED'), 'expected mine armed event')
   assert.ok(events.some((e) => e.type === 'MINE_TRIGGER' && e.triggerBotId === 'BOT2'), 'expected enemy trigger event')
   assert.ok(events.some((e) => e.type === 'MINE_DETONATE'), 'expected mine detonation event')
   assert.ok(events.some((e) => e.type === 'DAMAGE' && e.source === 'MINE' && e.victimBotId === 'BOT2'), 'expected mine damage on BOT2')
+  assert.ok(placement && placement.pos, 'expected mine placement event to record an exact world position')
+  assert.ok(detonation && detonation.pos, 'expected mine detonation event to record an exact world position')
+  assert.ok(placedMine && placedMine.pos, 'expected mine state to preserve an exact world position')
+  assert.deepEqual(placement.pos, placedMine.pos, 'expected placed mine state to match the placement event position')
 })
 
 test('runMatchToReplay: mine detonation does not damage the owner', () => {

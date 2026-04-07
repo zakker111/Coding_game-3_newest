@@ -610,6 +610,7 @@ function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) 
           mines: mines.map((m) => ({
             mineId: m.mineId,
             ownerBotId: m.ownerBotId,
+            pos: clonePos(m.pos),
             sector: m.sector,
             armRemaining: m.armRemaining,
             fuseRemaining: m.fuseRemaining,
@@ -1601,7 +1602,7 @@ function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEven
   if (bot.ammo < MINE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
   if (targetToken !== 'NONE') return { ok: false, reason: 'INVALID_TARGET_KIND' }
 
-  const mine = createMine(bot.botId, sectorFromPos(bot.pos))
+  const mine = createMine(bot.botId, bot.pos)
   const mineId = `M${nextMineId}`
   mine.mineId = mineId
 
@@ -1620,6 +1621,7 @@ function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEven
     type: 'MINE_PLACE',
     mineId,
     ownerBotId: bot.botId,
+    pos: clonePos(mine.pos),
     sector: mine.sector,
     armTicks: mine.armRemaining,
   })
