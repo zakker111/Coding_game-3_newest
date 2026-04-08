@@ -18,6 +18,13 @@ const normalizedBasePath = basePath.endsWith('/') ? basePath : `${basePath}/`
 export default defineConfig({
   base: normalizedBasePath,
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@coding-game/engine': path.resolve(repoRoot, 'packages/engine/src/index.js'),
+      '@coding-game/replay': path.resolve(repoRoot, 'packages/replay/src/index.js'),
+      '@coding-game/ruleset': path.resolve(repoRoot, 'packages/ruleset/src/index.js'),
+    },
+  },
   build: {
     rollupOptions: {
       input: {
