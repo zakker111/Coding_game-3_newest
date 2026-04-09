@@ -17,10 +17,13 @@ function createInitialState() {
     version: 1,
     nextUserId: 1,
     nextMatchId: 1,
+    nextRunId: 1,
     users: [],
     sessions: [],
     bots: [],
     matches: [],
+    seasons: [],
+    dailyRuns: [],
   }
 }
 
@@ -31,10 +34,13 @@ function normalizeState(raw) {
     version: raw.version === 1 ? 1 : 1,
     nextUserId: Number.isInteger(raw.nextUserId) && raw.nextUserId > 0 ? raw.nextUserId : 1,
     nextMatchId: Number.isInteger(raw.nextMatchId) && raw.nextMatchId > 0 ? raw.nextMatchId : 1,
+    nextRunId: Number.isInteger(raw.nextRunId) && raw.nextRunId > 0 ? raw.nextRunId : 1,
     users: Array.isArray(raw.users) ? raw.users : [],
     sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
     bots: Array.isArray(raw.bots) ? raw.bots : [],
     matches: Array.isArray(raw.matches) ? raw.matches : [],
+    seasons: Array.isArray(raw.seasons) ? raw.seasons : [],
+    dailyRuns: Array.isArray(raw.dailyRuns) ? raw.dailyRuns : [],
   }
 }
 
@@ -331,9 +337,239 @@ export function createPersistentStoreBundle({ filePath }) {
     },
   }
 
+  const dailyRunStore = {
+    ensureSeason(meta) {
+      const existing = state.seasons.find((season) => season.seasonId === meta.seasonId)
+      if (existing) return cloneRecord(existing)
+
+      const createdAt = new Date().toISOString()
+      const season = {
+        createdAt,
+        updatedAt: createdAt,
+        standings: [],
+        ...meta,
+      }
+      state.seasons.push(season)
+      persist()
+      return cloneRecord(season)
+    },
+
+    getSeason(seasonId) {
+      return cloneRecord(state.seasons.find((season) => season.seasonId === seasonId) ?? null)
+    },
+
+    listStandings(seasonId) {
+      const season = state.seasons.find((entry) => entry.seasonId === seasonId)
+      if (!season) return []
+
+      const standings = [...season.standings].sort((a, b) => {
+        if (a.seasonPoints !== b.seasonPoints) return b.seasonPoints - a.seasonPoints
+        if (a.activeForNextRun !== b.activeForNextRun) return Number(b.activeForNextRun) - Number(a.activeForNextRun)
+        return a.botId.localeCompare(b.botId)
+      })
+
+      return cloneRecord(standings)
+    },
+
+    upsertSeasonBots(seasonId, bots, { initialPoints = 0 } = {}) {
+      const season = state.seasons.find((entry) => entry.seasonId === seasonId)
+      if (!season) {
+        throw new Error(`Unknown season: ${seasonId}`)
+      }
+
+      let touched = false
+
+      for (const bot of bots) {
+        let entry = season.standings.find((standing) => standing.botId === bot.botId)
+        if (!entry) {
+          const timestamp = new Date().toISOString()
+          season.standings.push({
+            botId: bot.botId,
+            ownerUsername: bot.ownerUsername,
+            name: bot.name,
+            seasonPoints: initialPoints,
+            activeForNextRun: true,
+            lastActiveRunDate: null,
+            lastSourceHash: bot.sourceHash ?? null,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          })
+          touched = true
+          continue
+        }
+
+        if (entry.lastSourceHash !== (bot.sourceHash ?? null)) {
+          entry.lastSourceHash = bot.sourceHash ?? null
+          entry.updatedAt = new Date().toISOString()
+          touched = true
+        }
+      }
+
+      if (touched) {
+        season.updatedAt = new Date().toISOString()
+        persist()
+      }
+
+      return this.listStandings(seasonId)
+    },
+
+    applyPoints(seasonId, { runDate, pointsByBotId, botSnapshots }) {
+      const season = state.seasons.find((entry) => entry.seasonId === seasonId)
+      if (!season) {
+        throw new Error(`Unknown season: ${seasonId}`)
+      }
+
+      const timestamp = new Date().toISOString()
+
+      for (const bot of botSnapshots) {
+        let entry = season.standings.find((standing) => standing.botId === bot.botId)
+        if (!entry) {
+          entry = {
+            botId: bot.botId,
+            ownerUsername: bot.ownerUsername,
+            name: bot.name,
+            seasonPoints: season.rejoinPointsFloor,
+            activeForNextRun: true,
+            lastActiveRunDate: null,
+            lastSourceHash: bot.sourceHash ?? null,
+            createdAt: timestamp,
+            updatedAt: timestamp,
+          }
+          season.standings.push(entry)
+        }
+
+        entry.seasonPoints += pointsByBotId[bot.botId] ?? 0
+        entry.lastActiveRunDate = runDate
+        entry.lastSourceHash = bot.sourceHash ?? null
+        entry.activeForNextRun = entry.seasonPoints >= season.eligiblePointsThreshold
+        entry.updatedAt = timestamp
+      }
+
+      season.updatedAt = timestamp
+      persist()
+      return this.listStandings(seasonId)
+    },
+
+    reenableBot(seasonId, bot) {
+      const season = state.seasons.find((entry) => entry.seasonId === seasonId)
+      if (!season) {
+        throw new Error(`Unknown season: ${seasonId}`)
+      }
+
+      const timestamp = new Date().toISOString()
+      let entry = season.standings.find((standing) => standing.botId === bot.botId)
+
+      if (!entry) {
+        entry = {
+          botId: bot.botId,
+          ownerUsername: bot.ownerUsername,
+          name: bot.name,
+          seasonPoints: season.rejoinPointsFloor,
+          activeForNextRun: true,
+          lastActiveRunDate: null,
+          lastSourceHash: bot.sourceHash ?? null,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+          reenabledAt: timestamp,
+        }
+        season.standings.push(entry)
+      } else {
+        entry.activeForNextRun = true
+        entry.seasonPoints = Math.max(entry.seasonPoints, season.rejoinPointsFloor)
+        entry.lastSourceHash = bot.sourceHash ?? null
+        entry.reenabledAt = timestamp
+        entry.updatedAt = timestamp
+      }
+
+      season.updatedAt = timestamp
+      persist()
+      return cloneRecord(entry)
+    },
+
+    createRun(meta) {
+      const runId = `dr_${String(state.nextRunId).padStart(6, '0')}`
+      state.nextRunId += 1
+
+      const createdAt = new Date().toISOString()
+      const run = {
+        runId,
+        status: 'planned',
+        matchIds: [],
+        rounds: [],
+        leaderboardSnapshot: [],
+        error: null,
+        createdAt,
+        updatedAt: createdAt,
+        ...meta,
+      }
+
+      state.dailyRuns.push(run)
+      persist()
+      return cloneRecord(run)
+    },
+
+    listRuns() {
+      const runs = [...state.dailyRuns].sort((a, b) => b.runId.localeCompare(a.runId))
+      return cloneRecord(runs)
+    },
+
+    getRun(runId) {
+      return cloneRecord(state.dailyRuns.find((run) => run.runId === runId) ?? null)
+    },
+
+    markRunRunning(runId) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'running'
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    appendRunMatch(runId, matchId) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.matchIds.push(matchId)
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    markRunComplete(runId, payload) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'complete'
+      run.rounds = payload.rounds
+      run.leaderboardSnapshot = payload.leaderboardSnapshot
+      run.stopReason = payload.stopReason
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    markRunFailed(runId, error) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'failed'
+      run.error = error
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+  }
+
   return {
     userStore,
     botStore,
     matchStore,
+    dailyRunStore,
   }
 }

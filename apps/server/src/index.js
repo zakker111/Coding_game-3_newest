@@ -10,6 +10,7 @@ const app = await buildApp({
   config,
   store: stores.matchStore,
   botStore: stores.botStore,
+  dailyRunStore: stores.dailyRunStore,
   userStore: stores.userStore,
 })
 

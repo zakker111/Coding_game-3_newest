@@ -41,6 +41,7 @@ test('createSimulation is deterministic for the same seed and participants', () 
   assert.deepStrictEqual(matchA.replay, matchB.replay)
   assert.deepStrictEqual(matchA.result, matchB.result)
   assert.equal(matchA.participants[0].sourceTextSnapshot, 'WAIT 1\n')
+  assert.ok(Array.isArray(matchA.result.placements))
 })
 
 test('createSimulation normalizes loadouts and preserves issues on participant snapshots', () => {

@@ -1,6 +1,7 @@
 import { compileBotSource, runMatchToReplay } from '@coding-game/engine'
 import { LOADOUT_SLOT_COUNT, MODULE_DEFINITIONS, MODULE_IDS, normalizeLoadout, RULESET_VERSION } from '@coding-game/ruleset'
 
+import { runStoredMatch } from './matchRunner.js'
 import { createSourceSnapshot } from './sourceText.js'
 
 const SLOT_IDS = ['BOT1', 'BOT2', 'BOT3', 'BOT4']
@@ -122,37 +123,6 @@ function normalizeParticipants(input, config, compileSource) {
   return SLOT_IDS.map((slot) => bySlot.get(slot))
 }
 
-function summarizeResult(replay) {
-  const finalState = replay.state[replay.tickCap] ?? replay.state[replay.state.length - 1] ?? { bots: [] }
-  const survivors = finalState.bots
-    .filter((bot) => bot.alive)
-    .map((bot) => ({
-      slot: bot.botId,
-      hp: bot.hp,
-      ammo: bot.ammo,
-      energy: bot.energy,
-      alive: bot.alive,
-    }))
-
-  let endReason = null
-  for (let tick = replay.events.length - 1; tick >= 0 && endReason == null; tick--) {
-    const matchEnd = replay.events[tick]?.find((event) => event?.type === 'MATCH_END')
-    if (matchEnd && typeof matchEnd.endReason === 'string') {
-      endReason = matchEnd.endReason
-    }
-  }
-
-  if (endReason == null) {
-    endReason = replay.tickCap >= 0 ? 'TICK_CAP' : null
-  }
-
-  return {
-    endReason,
-    winnerSlot: survivors.length === 1 ? survivors[0].slot : null,
-    survivors,
-  }
-}
-
 export function createSimulationService({
   store,
   config,
@@ -187,32 +157,14 @@ export function createSimulationService({
         participants,
       })
 
-      store.markRunning(match.matchId)
-
-      try {
-        const replay = runMatch({
-          seed,
-          tickCap,
-          bots: participants.map((participant) => ({
-            slotId: participant.slot,
-            sourceText: participant.sourceTextSnapshot,
-            loadout: participant.loadoutSnapshot,
-          })),
-        })
-
-        const result = summarizeResult(replay)
-
-        return store.markComplete(match.matchId, {
-          result,
-          replay,
-        })
-      } catch (error) {
-        store.markFailed(match.matchId, {
-          code: error?.code ?? 'SIMULATION_FAILED',
-          message: error instanceof Error ? error.message : String(error),
-        })
-        throw error
-      }
+      return runStoredMatch({
+        store,
+        matchId: match.matchId,
+        matchSeed: seed,
+        tickCap,
+        participants,
+        runMatch,
+      })
     },
   }
 }
