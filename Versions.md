@@ -19,7 +19,16 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ## Unreleased
 
-- No unreleased changes tracked yet.
+### Added
+- `apps/server` workspace package for the Phase 8 server MVP.
+- Postgres migration tooling and built-in bot seeding from `examples/*.md`.
+- Cookie-backed auth plus user-bot persistence/version history.
+- Queued sandbox simulations, manual daily-run creation, replay persistence, and replay retrieval.
+- In-memory Postgres-backed server integration tests plus direct engine parity coverage.
+
+### Changed
+- Root workspace scripts now include `server:dev`, `server:start`, `server:test`, `server:migrate`, and `server:seed:builtins`.
+- Root README and planning docs now reflect that the first server-backed deterministic runner slice exists.
 
 ---
 

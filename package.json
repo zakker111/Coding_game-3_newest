@@ -5,6 +5,11 @@
   "packageManager": "pnpm@10.30.3",
   "scripts": {
     "dev": "pnpm -C apps/web dev",
+    "server:dev": "pnpm -C apps/server dev",
+    "server:start": "pnpm -C apps/server start",
+    "server:test": "pnpm -C apps/server test",
+    "server:migrate": "pnpm -C apps/server migrate",
+    "server:seed:builtins": "pnpm -C apps/server seed:builtins",
     "build": "pnpm -C apps/web build",
     "preview": "pnpm -C apps/web preview",
     "test": "pnpm -C apps/web test",

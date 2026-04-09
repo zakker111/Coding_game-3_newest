@@ -95,9 +95,19 @@ Status: ✅ done
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: ⏳ deferred until after the local-loop hardening/polish track
+Status: 🚧 in progress
 
-Key items:
-- Server planning docs now assume the same explicit per-bot loadout contract as the local engine.
-- Headless deterministic match runner (scheduling + storage + replay output)
-- Auth + bot submissions + versioning + validation
+Implemented in the current MVP slice:
+- `apps/server` workspace package with Fastify runtime + Postgres migration tooling.
+- Username/password auth with cookie-backed sessions.
+- Built-in bot seeding from `examples/*.md`.
+- Starter user-bot provisioning (3 bots/user).
+- Bot save/version persistence with canonicalized `source_text`, `source_hash`, and explicit `loadout`.
+- Queued sandbox simulations with replay persistence/retrieval.
+- Manual daily-run creation that snapshots participants and queues a deterministic daily match.
+- Server-vs-engine replay parity coverage in the server test suite.
+
+Still to harden after the MVP:
+- scheduling/automation for daily runs
+- rate limiting / broader submission-operability work
+- admin tooling beyond the manual run endpoint
