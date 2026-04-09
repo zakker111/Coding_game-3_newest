@@ -7,13 +7,12 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: Phase 8A sandbox server runner
+## Next slice: broader Phase 8 productization after the sandbox runner
 
 Goals:
-- Start the smallest server-side slice now that the local deterministic loop and deploy parity guardrails are in place.
-- Keep engine semantics locked while the server consumes the already-tested local replay contract.
-- Treat further local-loop work as additive hardening, not as a reason to delay Phase 8 again. Workshop-only inactive opponent slots remain a local UI affordance and are not part of the server-side match surface.
-- Start with inline participant snapshots and in-memory storage before auth, persistence, or daily scheduling widen scope.
+- Treat the deterministic sandbox runner as landed in-repo and keep the engine/replay contract locked while the broader server product surface catches up.
+- Build from the existing server baseline instead of reopening local-loop work. Workshop-only inactive opponent slots remain a local UI affordance and are not part of the server-side match surface.
+- Focus the next server work on the pieces still explicitly deferred inside Phase 8: competition scheduling, standings, and hardening around longer-lived submission/storage flows.
 
 ---
 
@@ -97,15 +96,19 @@ Status: ✅ done
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: 🚧 started via Phase 8A sandbox runner
+Status: 🚧 in progress beyond a completed Phase 8A sandbox runner
 
-Phase 8A now in scope:
+Phase 8A implemented in-repo:
 - New `apps/server` workspace app.
 - Deterministic sandbox match execution from submitted bot source snapshots + explicit loadouts.
 - Match metadata + replay retrieval over HTTP.
-- In-memory storage only for the initial slice.
+- Workspace build/test integration (`pnpm dev:server`, `pnpm start:server`, `pnpm test:server`).
+
+The current repo state also includes a broader baseline server surface than the original 8A cut:
+- Starter auth/session endpoints.
+- Bot save/load/version routes.
+- File-backed persistence in the default server entrypoint.
 
 Still deferred inside Phase 8:
-- Auth + bot submissions + versioning + validation.
-- Persistent replay/match storage.
 - Daily run scheduling and standings.
+- Broader product hardening around multi-user submissions, validation/rate limiting, and operational concerns.

@@ -21,12 +21,12 @@ Recently completed (this merge set)
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
 Next slice
-- Phase 8A is now the active slice: standalone sandbox server runner in `apps/server`.
+- Phase 8 is now beyond the sandbox-runner baseline that already exists in `apps/server`.
 - Prioritize:
-  - deterministic headless match execution from submitted source snapshots
-  - match metadata + replay retrieval over HTTP
-  - workspace build/test integration
-- Keep auth, persistence, and daily scheduling explicitly deferred until the sandbox path is stable.
+  - productizing the server surface that already exists
+  - hardening saved-bot/version flows and validation
+  - daily scheduling + standings
+- Keep replay/ruleset semantics locked while the broader server product flow catches up.
 
 ### Status board
 
@@ -41,9 +41,15 @@ Implemented now
   - canonical local release gate (`pnpm qa:release`)
   - deploy/app Workshop parity smoke in the gate
   - actionable browser-runtime diagnostics for `qa:workshop`
+- [x] Phase 8A sandbox server runner is implemented in-repo:
+  - deterministic headless match execution from submitted source snapshots
+  - match metadata + replay retrieval over HTTP
+  - workspace build/test/start integration
 
 Still open
-- [ ] Phase 8A sandbox server runner.
+- [ ] Broader Phase 8 product work:
+  - daily scheduling + standings
+  - operational hardening for longer-lived auth/submission/storage flows
 
 ### Near-term execution checklist
 
@@ -53,11 +59,10 @@ Do next
 - [x] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
 
 Ready after audit
-- [ ] Start the smallest Phase 8 server slice:
-  - deterministic headless runner
-  - match/replay HTTP surface
-  - in-memory storage boundary
-  - workspace build/test integration
+- [ ] Close the remaining Phase 8 follow-on work:
+  - turn the existing server baseline into the intended competition product surface
+  - add standings/scheduling
+  - tighten validation/operational behavior where needed
 
 ### Checklist (done vs. not done)
 
@@ -79,7 +84,8 @@ Next up
 - [x] Local-loop hardening: close the remaining deploy/workshop parity and release-sign-off guardrails.
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
-- [ ] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
+- [x] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
+- [ ] Phase 8 follow-on: daily runner/standings + broader backend product hardening.
 
 ---
 
@@ -409,6 +415,10 @@ QA checklist
 - `pnpm -C apps/server build`
 - `pnpm test:all`
 - `pnpm build:all`
+
+Status note
+- The current `apps/server` implementation satisfies this Phase 8A slice in-repo.
+- The default server entrypoint already goes beyond the original MVP by wiring in file-backed persistence plus auth/bot routes, so the open work has moved to the broader Phase 8 product surface rather than the sandbox runner itself.
 
 ### Later in Phase 8
 

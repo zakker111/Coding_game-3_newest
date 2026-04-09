@@ -51,10 +51,19 @@ Determinism guardrail:
   - canonical local release gate (`pnpm qa:release`)
   - deploy/app Workshop parity smoke included in the gate
   - actionable browser-runtime diagnostics in `qa:workshop`
+- Phase 8A sandbox server runner is implemented in-repo:
+  - `apps/server` workspace app
+  - `GET /api/ruleset`
+  - `POST /api/simulations`
+  - `GET /api/matches/:matchId`
+  - `GET /api/matches/:matchId/replay`
+  - deterministic headless execution from inline source/loadout snapshots
+  - workspace build/test/start commands
+  - the default server entrypoint also persists users/bots/matches to `.nowt/server-state.json`
 
 ---
 
-## 3) Next slice: Phase 8A sandbox server runner
+## 3) Next slice: Phase 8 beyond the sandbox runner
 
 Why this is next:
 - The local deterministic loop is already guarded by:
@@ -65,24 +74,21 @@ Why this is next:
   - app build + deploy/app Workshop parity smoke in the release gate
 - The server-side loadout contract is already aligned with the shipped engine/docs.
 - Workshop-only inactive opponent slots are explicitly local UX and do not change the server runner contract.
-- The remaining local-loop risk is operational, not architectural: run the browser-capable release gate where appropriate and fix any surfaced regressions in context.
+- The sandbox server boundary already exists in-repo, so the remaining risk is not “can we run a deterministic match over HTTP?” but “can we turn that into the intended product flow without destabilizing the contract?”
 
 Scope:
-- Start the smallest deterministic server runner that consumes the existing engine contract.
-- Use a new `apps/server` workspace app with:
-  - `GET /api/ruleset`
-  - `POST /api/simulations`
-  - `GET /api/matches/:matchId`
-  - `GET /api/matches/:matchId/replay`
-- Accept inline participant snapshots (`sourceText` + explicit `loadout`) rather than auth-backed saved bots.
-- Keep storage in-memory for this slice so the HTTP/API boundary is proven before DB/auth/scheduler work expands scope.
-- Keep replay/schema/ruleset semantics unchanged while the server path is wired up.
-- Reuse the local parity/sign-off workflow as the contract for server acceptance.
+- Keep the sandbox runner semantics unchanged while broadening the product surface around it.
+- Treat the existing auth/bot/persistence baseline as implementation detail that still needs roadmap closure and hardening.
+- Focus follow-on Phase 8 work on:
+  - durable submission/version flows as a first-class product surface
+  - validation/rate-limiting/hardening for multi-user access
+  - daily scheduling and standings
+  - operational confidence around longer-lived persisted state
 
 Acceptance criteria:
-- The server can execute a deterministic headless match from submitted bot sources + explicit loadouts.
-- Stored/retrieved replay output matches the local engine contract.
-- `apps/server` participates in workspace build/test execution.
+- The existing sandbox runner contract remains stable while follow-on server features are added.
+- Daily-run/product work builds on stored bot snapshots rather than ad hoc inline-only flows.
+- Replay/match persistence semantics are explicit and tested.
 - Local release verification stays green via `pnpm qa:release` (or `pnpm gate:phase1`).
 
 ---
@@ -100,9 +106,8 @@ Manual checks:
 
 ---
 
-## 5) After Phase 8A lands
+## 5) Remaining Phase 8 work after the sandbox runner
 
-- Add persistent submissions/versioning.
-- Replace the in-memory match store with durable storage.
-- Add auth/validation once the deterministic runner path is stable.
-- Add daily scheduling after the sandbox path is stable.
+- Harden and document the saved-bot/version flow that now exists in the server.
+- Tighten validation and operational guardrails for the server surface.
+- Add daily scheduling and standings after the sandbox path is stable.
