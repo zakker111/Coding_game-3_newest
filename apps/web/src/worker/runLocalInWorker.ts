@@ -1,9 +1,16 @@
 import type { Loadout, Replay, SlotId } from '@coding-game/replay'
-import type { RunLocalMessage } from './messages'
-import { isRunResultMessage } from './messages'
+import type { BotSpec, RunLocalMessage, RunServerMirrorMessage } from './messages'
+import { isRunResultMessage, isRunServerMirrorResultMessage } from './messages'
 
 export type RunLocalParams = {
   seed: number
+  tickCap: number
+  bots: Array<{ slotId: SlotId; sourceText: string; loadout: Loadout }>
+  inactiveSlots?: SlotId[]
+}
+
+export type RunServerMirrorParams = {
+  seed: number | string
   tickCap: number
   bots: Array<{ slotId: SlotId; sourceText: string; loadout: Loadout }>
 }
@@ -26,6 +33,7 @@ export async function runLocalInWorker(params: RunLocalParams): Promise<Replay> 
     seed: params.seed,
     tickCap: params.tickCap,
     bots: params.bots,
+    inactiveSlots: params.inactiveSlots,
   }
 
   return await new Promise<Replay>((resolve, reject) => {
@@ -36,6 +44,43 @@ export async function runLocalInWorker(params: RunLocalParams): Promise<Replay> 
 
     worker.addEventListener('message', (event: MessageEvent<unknown>) => {
       if (!isRunResultMessage(event.data)) return
+      if (event.data.requestId !== requestId) return
+
+      window.clearTimeout(timeout)
+      worker.terminate()
+      resolve(event.data.replay)
+    })
+
+    worker.addEventListener('error', (err) => {
+      window.clearTimeout(timeout)
+      worker.terminate()
+      reject(err)
+    })
+
+    worker.postMessage(msg)
+  })
+}
+
+export async function runServerMirrorInWorker(params: RunServerMirrorParams): Promise<Replay> {
+  const worker = createWorker()
+  const requestId = nextRequestId++
+
+  const msg: RunServerMirrorMessage = {
+    type: 'RUN_SERVER_MIRROR',
+    requestId,
+    seed: params.seed,
+    tickCap: params.tickCap,
+    bots: params.bots as BotSpec[],
+  }
+
+  return await new Promise<Replay>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      worker.terminate()
+      reject(new Error('Worker timed out'))
+    }, 10_000)
+
+    worker.addEventListener('message', (event: MessageEvent<unknown>) => {
+      if (!isRunServerMirrorResultMessage(event.data)) return
       if (event.data.requestId !== requestId) return
 
       window.clearTimeout(timeout)

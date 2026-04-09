@@ -11,6 +11,13 @@ import {
   BOT_HALF_SIZE,
   BULLET_AMMO_COST,
   BULLET_COOLDOWN_TICKS,
+  GRENADE_AMMO_COST,
+  GRENADE_COOLDOWN_TICKS,
+  MINE_AMMO_COST,
+  MINE_COOLDOWN_TICKS,
+  REPAIR_DRONE_AMMO_COST,
+  REPAIR_DRONE_COOLDOWN_TICKS,
+  REPAIR_DRONE_MAX_ACTIVE,
   SLOT_IDS,
   WALL_BUMP_DAMAGE,
   BOT_BUMP_DAMAGE,
@@ -27,6 +34,15 @@ import {
   zoneFromPos,
 } from './arenaMath.js'
 import { createBullet, stepBullets } from './bulletSim.js'
+import {
+  countRepairDrones,
+  createRepairDrone,
+  despawnRepairDrones,
+  nextRepairDroneOrbitIndex,
+  stepRepairDrones,
+} from './droneSim.js'
+import { createGrenade, stepGrenades } from './grenadeSim.js'
+import { createMine, stepMines } from './mineSim.js'
 import { bresenhamPoints } from './bresenham.js'
 import { createRng } from './prng.js'
 import {
@@ -69,13 +85,13 @@ const ARMOR_DAMAGE_DIV = 3
 const STALEMATE_GRACE_TICKS = 120
 const STALEMATE_COUNTDOWN_TICKS = 30
 
-// Stable v1 SAW numbers (match `packages/replay/src/generateSampleReplay.js`).
+// Stable v1 SAW numbers.
 const SAW_DAMAGE = 6
-const SAW_ENERGY_DRAIN = 1
+const SAW_ENERGY_DRAIN = 2
 const SAW_ATTACK_RANGE = BOT_HALF_SIZE * 2 + 2
 const SAW_ATTACK_RANGE2 = SAW_ATTACK_RANGE * SAW_ATTACK_RANGE
 
-const SHIELD_ENERGY_DRAIN = 1
+const SHIELD_ENERGY_DRAIN = 2
 
 function applyArmorMitigation(amount) {
   return amount - Math.floor(amount / ARMOR_DAMAGE_DIV)
@@ -94,12 +110,13 @@ function findSlotIndex(loadout, moduleId) {
 }
 
 /**
- * @param {{ seed: number|string, tickCap: number, bots: Array<{slotId: 'BOT1'|'BOT2'|'BOT3'|'BOT4', sourceText: string, loadout?: any}> }} params
+ * @param {{ seed: number|string, tickCap: number, bots: Array<{slotId: 'BOT1'|'BOT2'|'BOT3'|'BOT4', sourceText: string, loadout?: any}>, inactiveSlots?: Array<'BOT1'|'BOT2'|'BOT3'|'BOT4'> }} params
  */
 export function runMatchToReplay(params) {
   const tickCapLimit = params.tickCap
   let tickCap = tickCapLimit
   const rng = createRng(params.seed)
+  const inactiveSlots = new Set(Array.isArray(params.inactiveSlots) ? params.inactiveSlots.filter(isSlotId) : [])
 
   const headerBots = normalizeHeaderBots(params.bots)
 
@@ -120,14 +137,15 @@ export function runMatchToReplay(params) {
     const sawSlotIndex = findSlotIndex(loadout, 'SAW')
     const shieldSlotIndex = findSlotIndex(loadout, 'SHIELD')
     const armorEquipped = findSlotIndex(loadout, 'ARMOR') !== -1
+    const inactive = inactiveSlots.has(botId)
 
     return {
       botId,
       pos: clonePos(SPAWN_POS_BY_ID[botId]),
-      hp: 100,
-      ammo: 100,
-      energy: 100,
-      alive: true,
+      hp: inactive ? 0 : 100,
+      ammo: inactive ? 0 : 100,
+      energy: inactive ? 0 : 100,
+      alive: !inactive,
       lastDamageByBotId: null,
       vm: initBotVm(compiled.program),
       slotCooldowns: [0, 0, 0],
@@ -161,13 +179,22 @@ export function runMatchToReplay(params) {
   /** @type {Array<{bulletId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', pos:{x:number,y:number}, vel:{x:number,y:number}, ttl:number}>} */
   let bullets = []
   let bulletCounter = 0
+  /** @type {Array<{grenadeId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', pos:{x:number,y:number}, vel:{x:number,y:number}, fuse:number, ttl:number}>} */
+  let grenades = []
+  let grenadeCounter = 0
+  /** @type {Array<{mineId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', sector:number, armRemaining:number, fuseRemaining:number, ttlRemaining:number}>} */
+  let mines = []
+  let mineCounter = 0
+  /** @type {Array<{droneId:string, ownerBotId:'BOT1'|'BOT2'|'BOT3'|'BOT4', slotIndex:0|1|2, orbitIndex:number, hp:number, pos:{x:number,y:number}}>} */
+  let drones = []
+  let droneCounter = 0
 
   const powerupState = initPowerupState(rng)
 
   const state = []
   const events = []
 
-  state.push(snapshotState(0, bots, bullets, powerupState))
+  state.push(snapshotState(0, bots, bullets, grenades, mines, drones, powerupState))
   events.push([])
 
   // Stalemate tracking (Ruleset.md §0.1.1).
@@ -193,17 +220,18 @@ export function runMatchToReplay(params) {
     for (const bot of bots) {
       if (!bot.alive) continue
 
-      const observation = buildObservation(bot, bots, bullets, powerupState)
+      const observation = buildObservation(bot, bots, bullets, mines, powerupState, drones)
 
       const vmBefore = bot.vm
       const instrBefore = vmBefore?.program?.instructions?.[vmBefore.pc - 1] ?? { kind: 'INVALID' }
       const prevTargetSelector = vmBefore?.target?.botSelector ?? null
       const prevTargetBullet = vmBefore?.target?.bulletId ?? null
+      const prevTargetMine = vmBefore?.target?.mineId ?? null
 
       const { vm: vmAfter, effects, debug } = stepBotVm(vmBefore, observation)
       bot.vm = vmAfter
 
-      normalizeTargetRegister(bot, bots, prevTargetSelector, prevTargetBullet, bullets)
+      normalizeTargetRegister(bot, bots, prevTargetSelector, prevTargetBullet, prevTargetMine, bullets, mines)
 
       // Track whether a USE_SLOT succeeded for BOT_EXEC reporting.
       let botExecResult = debug.executedKind === 'INVALID' ? 'NOP' : 'EXECUTED'
@@ -290,6 +318,16 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (mod === 'REPAIR_DRONE') {
+            const r = despawnRepairDrones(drones, bot.botId, slotIndex, 'STOP', tickEvents)
+            drones = r.drones
+            if (r.removed === 0) {
+              botExecResult = 'NOP'
+              botExecReason = 'NO_EFFECT'
+            }
+            continue
+          }
+
           botExecResult = 'NOP'
           botExecReason = 'NO_MODULE'
           continue
@@ -335,6 +373,54 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (mod === 'GRENADE') {
+            const r = attemptUseGrenade(bot, slotIndex, eff.target, bots, grenades, ++grenadeCounter, tickEvents)
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              grenadeCounter--
+            } else {
+              grenades = r.grenades
+              bot.slotCooldowns[slotIndex] = GRENADE_COOLDOWN_TICKS
+              grenadeCounter = r.grenadeCounter
+            }
+
+            continue
+          }
+
+          if (mod === 'MINE') {
+            const r = attemptUseMine(bot, slotIndex, eff.target, mines, ++mineCounter, tickEvents)
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              mineCounter--
+            } else {
+              mines = r.mines
+              bot.slotCooldowns[slotIndex] = MINE_COOLDOWN_TICKS
+              mineCounter = r.mineCounter
+            }
+
+            continue
+          }
+
+          if (mod === 'REPAIR_DRONE') {
+            const r = attemptUseRepairDrone(bot, slotIndex, eff.target, drones, ++droneCounter, tickEvents)
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              droneCounter--
+            } else {
+              drones = r.drones
+              bot.slotCooldowns[slotIndex] = REPAIR_DRONE_COOLDOWN_TICKS
+              droneCounter = r.droneCounter
+            }
+
+            continue
+          }
+
           if (mod !== 'BULLET') {
             botExecResult = 'NOP'
             botExecReason = 'NO_MODULE'
@@ -377,18 +463,31 @@ export function runMatchToReplay(params) {
     stepToggleDrains(bots, tickEvents)
 
     // 3) Movement + collision resolution
-    resolveMovement(bots, bullets, powerupState, tickEvents)
+    resolveMovement(bots, bullets, mines, powerupState, tickEvents)
 
     // 4) SAW melee damage
     stepSawDamage(bots, tickEvents)
 
-    // 5) Projectile updates (bullets)
-    bullets = stepBullets(bullets, bots, tickEvents)
+    // 5) Helper drones
+    drones = stepRepairDrones(t, drones, bots, tickEvents)
 
-    // 6) Pickups
+    // 6) Projectile updates (bullets)
+    {
+      const stepped = stepBullets(bullets, bots, drones, tickEvents)
+      bullets = stepped.bullets
+      drones = stepped.drones
+    }
+
+    // 7) Timed explosive projectiles (grenades)
+    grenades = stepGrenades(grenades, bots, tickEvents)
+
+    // 8) Deployables (mines)
+    mines = stepMines(mines, bots, tickEvents)
+
+    // 9) Pickups
     stepPowerupPickups(powerupState, bots, tickEvents)
 
-    // 8) End-of-tick maintenance
+    // 10) End-of-tick maintenance
     for (const bot of bots) {
       bot.pendingMove = null
       for (let i = 0; i < bot.slotCooldowns.length; i++) {
@@ -456,7 +555,7 @@ export function runMatchToReplay(params) {
       tickEvents.push({ type: 'MATCH_END', endReason })
     }
 
-    state.push(snapshotState(t, bots, bullets, powerupState))
+    state.push(snapshotState(t, bots, bullets, grenades, mines, drones, powerupState))
     events.push(tickEvents)
 
     if (endReason) {
@@ -477,7 +576,7 @@ export function runMatchToReplay(params) {
   }
 }
 
-function snapshotState(t, bots, bullets, powerupState) {
+function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) {
   return {
     t,
     bots: bots.map((b) => ({
@@ -489,6 +588,7 @@ function snapshotState(t, bots, bullets, powerupState) {
       alive: b.alive,
       pc: b.vm?.pc ?? 1,
       targetBulletId: typeof b.vm?.target?.bulletId === 'string' ? b.vm.target.bulletId : null,
+      targetMineId: typeof b.vm?.target?.mineId === 'string' ? b.vm.target.mineId : null,
     })),
     bullets: bullets.map((b) => ({
       bulletId: b.bulletId,
@@ -496,6 +596,41 @@ function snapshotState(t, bots, bullets, powerupState) {
       pos: clonePos(b.pos),
       vel: clonePos(b.vel),
     })),
+    ...(grenades.length
+      ? {
+          grenades: grenades.map((g) => ({
+            grenadeId: g.grenadeId,
+            ownerBotId: g.ownerBotId,
+            pos: clonePos(g.pos),
+            vel: clonePos(g.vel),
+            fuse: g.fuse,
+          })),
+        }
+      : {}),
+    ...(mines.length
+      ? {
+          mines: mines.map((m) => ({
+            mineId: m.mineId,
+            ownerBotId: m.ownerBotId,
+            pos: clonePos(m.pos),
+            sector: m.sector,
+            armRemaining: m.armRemaining,
+            fuseRemaining: m.fuseRemaining,
+          })),
+        }
+      : {}),
+    ...(drones.length
+      ? {
+          drones: drones.map((d) => ({
+            droneId: d.droneId,
+            ownerBotId: d.ownerBotId,
+            slotIndex: d.slotIndex,
+            orbitIndex: d.orbitIndex,
+            hp: d.hp,
+            pos: clonePos(d.pos),
+          })),
+        }
+      : {}),
     powerups: powerupState.powerups.map((p) => ({
       powerupId: p.powerupId,
       type: p.type,
@@ -512,6 +647,10 @@ function defaultHeaderBot(slotId) {
     sourceText: '',
     loadout: DEFAULT_LOADOUT,
   }
+}
+
+function isSlotId(v) {
+  return v === 'BOT1' || v === 'BOT2' || v === 'BOT3' || v === 'BOT4'
 }
 
 function normalizeHeaderBots(botsInput) {
@@ -536,10 +675,11 @@ function normalizeHeaderBots(botsInput) {
   })
 }
 
-function buildObservation(bot, bots, bullets, powerupState) {
+function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
   const zone = zoneFromPos(bot.pos)
   const sector = sectorFromPos(bot.pos)
   const closestBotDist = distToClosestBot(bot, bots)
+  const aliveEnemies = bots.reduce((count, other) => count + (other.alive && other.botId !== bot.botId ? 1 : 0), 0)
 
   const bulletThreat = computeBulletThreat(bot.botId, sector, bullets)
 
@@ -558,6 +698,8 @@ function buildObservation(bot, bots, bullets, powerupState) {
 
   const targetBulletId = bot.vm?.target?.bulletId
   const targetBullet = typeof targetBulletId === 'string' ? bullets.find((b) => b?.bulletId === targetBulletId) : null
+  const targetMineId = bot.vm?.target?.mineId
+  const targetMine = typeof targetMineId === 'string' ? mines.find((m) => m?.mineId === targetMineId) : null
 
   const timers = bot.vm?.timers ?? { 1: 0, 2: 0, 3: 0 }
 
@@ -603,6 +745,10 @@ function buildObservation(bot, bots, bullets, powerupState) {
       if (targetBullet) return manhattan(bot.pos, targetBullet.pos)
       return 999
     },
+    distToTargetMine: () => {
+      if (targetMine) return manhattan(bot.pos, targetMine.pos)
+      return 999
+    },
     distToSector: (s) => {
       const pos = locToWorld({ sector: Math.floor(s), zone: 0 })
       return manhattan(bot.pos, pos)
@@ -614,9 +760,31 @@ function buildObservation(bot, bots, bullets, powerupState) {
 
     // Powerups
     distToClosestPowerup: (type) => {
-      const loc = findClosestPowerupLoc(powerupState, bot.pos, type)
+      const loc = findClosestPowerupLoc(powerupState, bot.pos, type === 'ANY' ? null : type)
       if (!loc) return 999
       return manhattan(bot.pos, locToWorld(loc))
+    },
+    countAliveEnemies: () => aliveEnemies,
+    enemiesInRange: (range) => {
+      const limit = Math.max(0, Math.floor(range))
+      let count = 0
+      for (const other of bots) {
+        if (!other.alive) continue
+        if (other.botId === bot.botId) continue
+        if (manhattan(bot.pos, other.pos) <= limit) count++
+      }
+      return count
+    },
+    lowestHealthEnemyInRange: (range) => {
+      const limit = Math.max(0, Math.floor(range))
+      let bestHp = null
+      for (const other of bots) {
+        if (!other.alive) continue
+        if (other.botId === bot.botId) continue
+        if (manhattan(bot.pos, other.pos) > limit) continue
+        if (bestHp == null || other.hp < bestHp) bestHp = other.hp
+      }
+      return bestHp ?? 0
     },
     hasTargetPowerup: () => Boolean(targetPowerupType && powerupExists(powerupState, targetPowerupType)),
     powerupInSector: (type, s, zOrNull) => {
@@ -650,6 +818,7 @@ function buildObservation(bot, bots, bullets, powerupState) {
     // Exposed for HAS_TARGET_BOT() / HAS_TARGET_BULLET() (see botVm.js).
     hasTargetBot: () => Boolean(targetBot && targetBot.alive),
     hasTargetBullet: () => Boolean(targetBullet),
+    hasTargetMine: () => Boolean(targetMine),
 
     // Slots
     hasModule: (slot) => {
@@ -671,6 +840,19 @@ function buildObservation(bot, bots, bullets, powerupState) {
       if (mod === 'ARMOR') return true
       if (mod === 'SHIELD') return bot.energy > 0
       if (mod === 'SAW') return bot.energy > 0
+      if (mod === 'GRENADE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= GRENADE_AMMO_COST
+      }
+      if (mod === 'MINE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= MINE_AMMO_COST
+      }
+      if (mod === 'REPAIR_DRONE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        if (bot.ammo < REPAIR_DRONE_AMMO_COST) return false
+        return countRepairDrones(drones, bot.botId) < REPAIR_DRONE_MAX_ACTIVE
+      }
 
       if (mod !== 'BULLET') return false
       if (bot.slotCooldowns[idx] > 0) return false
@@ -682,8 +864,10 @@ function buildObservation(bot, bots, bullets, powerupState) {
       const mod = bot.loadout[idx]
       if (mod === 'SHIELD' && idx === bot.shieldSlotIndex) return bot.shieldActive
       if (mod === 'SAW' && idx === bot.sawSlotIndex) return bot.sawActive
+      if (mod === 'REPAIR_DRONE') return countRepairDrones(drones, bot.botId, idx) > 0
       return false
     },
+    droneCount: () => countRepairDrones(drones, bot.botId),
 
     // Bumps (visible from last tick)
     bumpedBot: bot.bumpedBotLastTick,
@@ -772,6 +956,26 @@ export function findClosestEnemyBullet(selfBotId, selfPos, bullets) {
   return best?.b ?? null
 }
 
+export function findClosestEnemyMine(selfBotId, selfPos, mines) {
+  /** @type {{ m: any, d: number } | null} */
+  let best = null
+
+  for (const m of mines) {
+    if (!m) continue
+    if (m.ownerBotId === selfBotId) continue
+
+    const d = manhattan(selfPos, m.pos)
+    const thisIdN = parseMineIdNumber(m.mineId)
+    const bestIdN = best ? parseMineIdNumber(best.m.mineId) : null
+
+    if (!best || d < best.d || (d === best.d && thisIdN != null && bestIdN != null && thisIdN < bestIdN)) {
+      best = { m, d }
+    }
+  }
+
+  return best?.m ?? null
+}
+
 function parseBulletIdNumber(bulletId) {
   if (typeof bulletId !== 'string') return null
   const m = bulletId.match(/\d+/)
@@ -780,12 +984,29 @@ function parseBulletIdNumber(bulletId) {
   return Number.isFinite(n) ? n : null
 }
 
+function parseMineIdNumber(mineId) {
+  if (typeof mineId !== 'string') return null
+  const m = mineId.match(/\d+/)
+  if (!m) return null
+  const n = Number(m[0])
+  return Number.isFinite(n) ? n : null
+}
+
 /**
  * Normalize the bot target registers after a bot executes a target-selection instruction.
  */
-function normalizeTargetRegister(bot, bots, prevTargetSelector = null, prevBulletSelector = null, bullets = []) {
+function normalizeTargetRegister(
+  bot,
+  bots,
+  prevTargetSelector = null,
+  prevBulletSelector = null,
+  prevMineSelector = null,
+  bullets = [],
+  mines = [],
+) {
   const selector = bot?.vm?.target?.botSelector
   const bulletSelector = bot?.vm?.target?.bulletId
+  const mineSelector = bot?.vm?.target?.mineId
 
   if (bulletSelector != null && bulletSelector !== prevBulletSelector) {
     if (bulletSelector === 'CLOSEST_BULLET') {
@@ -794,6 +1015,16 @@ function normalizeTargetRegister(bot, bots, prevTargetSelector = null, prevBulle
     } else {
       const exists = bullets.some((b) => b && b.bulletId === bulletSelector)
       if (!exists) bot.vm.target.bulletId = null
+    }
+  }
+
+  if (mineSelector != null && mineSelector !== prevMineSelector) {
+    if (mineSelector === 'CLOSEST_MINE') {
+      const m = findClosestEnemyMine(bot.botId, bot.pos, mines)
+      bot.vm.target.mineId = m ? m.mineId : null
+    } else {
+      const exists = mines.some((m) => m && m.mineId === mineSelector)
+      if (!exists) bot.vm.target.mineId = null
     }
   }
 
@@ -843,7 +1074,7 @@ function nextTargetId(selfId, currentTargetId) {
   return order[(idx + 1) % order.length]
 }
 
-function resolveMovement(bots, bullets, powerupState, tickEvents) {
+function resolveMovement(bots, bullets, mines, powerupState, tickEvents) {
   // Apply at most one bump-damage instance per bot-pair per tick.
   const bumpDamagePairs = new Set()
 
@@ -857,11 +1088,11 @@ function resolveMovement(bots, bullets, powerupState, tickEvents) {
     let requestFromGoal = false
 
     if (move) {
-      request = resolveMoveEffect(bot, move, bots, bullets, powerupState)
+      request = resolveMoveEffect(bot, move, bots, bullets, mines, powerupState)
     } else if (bot.vm?.moveGoal) {
       requestFromGoal = true
       const speed = computeBotSpeedUnitsPerTick(bot)
-      request = resolveMoveTarget(bot, bot.vm.moveGoal, bots, bullets, powerupState, true, speed)
+      request = resolveMoveTarget(bot, bot.vm.moveGoal, bots, bullets, mines, powerupState, true, speed)
     }
 
     if (!request) continue
@@ -963,11 +1194,8 @@ function resolveMovement(bots, bullets, powerupState, tickEvents) {
     }
 
     // Goal completion.
-    if (requestFromGoal && bot.vm?.moveGoal && bot.vm.moveGoal.kind === 'SECTOR') {
-      const goalPos = resolvePointGoalPos(bot.vm.moveGoal)
-      if (goalPos && bot.pos.x === goalPos.x && bot.pos.y === goalPos.y) {
-        bot.vm.moveGoal = null
-      }
+    if (requestFromGoal && bot.vm?.moveGoal && isMoveGoalSatisfied(bot, bot.vm.moveGoal, bots, bullets, mines, powerupState)) {
+      bot.vm.moveGoal = null
     }
   }
 }
@@ -1060,7 +1288,7 @@ function applyBotBumpDamage(botA, botB, tickEvents, pairKey) {
   }
 }
 
-function resolveMoveEffect(bot, move, bots, bullets, powerupState) {
+function resolveMoveEffect(bot, move, bots, bullets, mines, powerupState) {
   const speed = computeBotSpeedUnitsPerTick(bot)
 
   if (move.kind === 'MOVE_DIR') {
@@ -1070,40 +1298,28 @@ function resolveMoveEffect(bot, move, bots, bullets, powerupState) {
 
   if (move.kind === 'MOVE') {
     const target = normalizeMoveTargetAtSetTime(move.target, bot.pos)
-    return resolveMoveTarget(bot, target, bots, bullets, powerupState, false, speed)
+    return resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, false, speed)
   }
 
   return null
 }
 
-function resolveMoveTarget(bot, target, bots, bullets, powerupState, clearGoalOnInvalid, speed) {
+function resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, clearGoalOnInvalid, speed) {
   if (!target || typeof target !== 'object') return null
 
   if (target.kind === 'TARGET' || target.kind === 'TARGET_AWAY') {
-    const botTargetId = bot.vm?.target?.botSelector
-    const botTarget =
-      botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
-        ? botsById(bots, botTargetId)
-        : null
-
-    /** @type {{x:number,y:number} | null} */
-    let goalPos = null
-
-    if (botTarget && botTarget.alive) goalPos = botTarget.pos
-
-    const bulletTargetId = bot.vm?.target?.bulletId
-    const bulletTarget =
-      !goalPos && typeof bulletTargetId === 'string' ? bullets.find((b) => b && b.bulletId === bulletTargetId) : null
-
-    if (!goalPos && bulletTarget) goalPos = bulletTarget.pos
-
-    const type = bot.vm?.target?.powerupType
-    if (!goalPos && type) {
-      const loc = findClosestPowerupLoc(powerupState, bot.pos, type)
-      if (loc) goalPos = locToWorld(loc)
-    }
+    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, mines, powerupState)
 
     if (goalPos) {
+      const distance = manhattan(bot.pos, goalPos)
+      if (Number.isInteger(target.untilRange)) {
+        const satisfied = target.kind === 'TARGET' ? distance <= target.untilRange : distance >= target.untilRange
+        if (satisfied) {
+          if (clearGoalOnInvalid) bot.vm.moveGoal = null
+          return null
+        }
+      }
+
       const dx = target.kind === 'TARGET' ? goalPos.x - bot.pos.x : bot.pos.x - goalPos.x
       const dy = target.kind === 'TARGET' ? goalPos.y - bot.pos.y : bot.pos.y - goalPos.y
       const scaled = scaleDeltaToMaxLen(dx, dy, speed)
@@ -1112,6 +1328,45 @@ function resolveMoveTarget(bot, target, bots, bullets, powerupState, clearGoalOn
 
     if (clearGoalOnInvalid) bot.vm.moveGoal = null
     return null
+  }
+
+  if (target.kind === 'TARGET_ORBIT') {
+    const botTargetId = bot.vm?.target?.botSelector
+    const botTarget =
+      botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
+        ? botsById(bots, botTargetId)
+        : null
+
+    if (!botTarget || !botTarget.alive) {
+      if (clearGoalOnInvalid) bot.vm.moveGoal = null
+      return null
+    }
+
+    const ORBIT_RADIUS = 96
+    const ORBIT_BAND = 12
+
+    const dxToTarget = botTarget.pos.x - bot.pos.x
+    const dyToTarget = botTarget.pos.y - bot.pos.y
+    const distance = manhattan(bot.pos, botTarget.pos)
+
+    let dx = dyToTarget
+    let dy = -dxToTarget
+
+    if (dx === 0 && dy === 0) {
+      dx = speed
+      dy = 0
+    }
+
+    if (distance > ORBIT_RADIUS + ORBIT_BAND) {
+      dx += dxToTarget
+      dy += dyToTarget
+    } else if (distance < ORBIT_RADIUS - ORBIT_BAND) {
+      dx -= dxToTarget
+      dy -= dyToTarget
+    }
+
+    const scaled = scaleDeltaToMaxLen(dx, dy, speed)
+    return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
   }
 
   if (target.kind === 'BOT') {
@@ -1174,6 +1429,54 @@ function resolvePointGoalPos(target) {
   const sector = Math.max(1, Math.min(9, Math.floor(target.sector)))
   const zone = target.zone ? Math.max(1, Math.min(4, Math.floor(target.zone))) : 0
   return locToWorld({ sector, zone })
+}
+
+function isMoveGoalSatisfied(bot, target, bots, bullets, mines, powerupState) {
+  if (!target || typeof target !== 'object') return false
+
+  if (target.kind === 'SECTOR') {
+    const goalPos = resolvePointGoalPos(target)
+    return Boolean(goalPos && bot.pos.x === goalPos.x && bot.pos.y === goalPos.y)
+  }
+
+  if ((target.kind === 'TARGET' || target.kind === 'TARGET_AWAY') && Number.isInteger(target.untilRange)) {
+    const goalPos = resolveCurrentTargetGoalPos(bot, bots, bullets, mines, powerupState)
+    if (!goalPos) return true
+    const distance = manhattan(bot.pos, goalPos)
+    return target.kind === 'TARGET' ? distance <= target.untilRange : distance >= target.untilRange
+  }
+
+  return false
+}
+
+function resolveCurrentTargetGoalPos(bot, bots, bullets, mines, powerupState) {
+  const botTargetId = bot.vm?.target?.botSelector
+  const botTarget =
+    botTargetId === 'BOT1' || botTargetId === 'BOT2' || botTargetId === 'BOT3' || botTargetId === 'BOT4'
+      ? botsById(bots, botTargetId)
+      : null
+
+  if (botTarget && botTarget.alive) return botTarget.pos
+
+  const bulletTargetId = bot.vm?.target?.bulletId
+  if (typeof bulletTargetId === 'string') {
+    const bulletTarget = bullets.find((b) => b && b.bulletId === bulletTargetId)
+    if (bulletTarget) return bulletTarget.pos
+  }
+
+  const mineTargetId = bot.vm?.target?.mineId
+  if (typeof mineTargetId === 'string') {
+    const mineTarget = mines.find((m) => m && m.mineId === mineTargetId)
+    if (mineTarget) return mineTarget.pos
+  }
+
+  const type = bot.vm?.target?.powerupType
+  if (type) {
+    const loc = findClosestPowerupLoc(powerupState, bot.pos, type)
+    if (loc) return locToWorld(loc)
+  }
+
+  return null
 }
 
 function deltaForMoveDir(dir, speed) {
@@ -1301,6 +1604,140 @@ function attemptUseBullet(bot, slotIndex, targetToken, bots, bullets, nextBullet
   }
 }
 
+function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGrenadeId, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'GRENADE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < GRENADE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+
+  const isBotKind =
+    targetToken === 'TARGET' ||
+    targetToken === 'CLOSEST_BOT' ||
+    targetToken === 'LOWEST_HEALTH_BOT' ||
+    targetToken === 'BOT1' ||
+    targetToken === 'BOT2' ||
+    targetToken === 'BOT3' ||
+    targetToken === 'BOT4'
+
+  if (!isBotKind) return { ok: false, reason: 'INVALID_TARGET_KIND' }
+
+  const targetBot = resolveBotTargetToken(bot, targetToken, bots)
+  if (!targetBot || !targetBot.alive) return { ok: false, reason: 'INVALID_TARGET' }
+
+  const grenade = createGrenade(bot, targetBot)
+  const grenadeId = `G${nextGrenadeId}`
+  grenade.grenadeId = grenadeId
+
+  bot.ammo -= GRENADE_AMMO_COST
+
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -GRENADE_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'THROW_GRENADE',
+  })
+
+  tickEvents.push({
+    type: 'GRENADE_SPAWN',
+    grenadeId,
+    ownerBotId: bot.botId,
+    pos: clonePos(grenade.pos),
+    vel: clonePos(grenade.vel),
+    fuse: grenade.fuse,
+    targetBotId: targetBot.botId,
+    targetPos: clonePos(targetBot.pos),
+  })
+
+  return {
+    ok: true,
+    grenades: [...grenades, grenade],
+    grenadeCounter: nextGrenadeId,
+  }
+}
+
+function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'MINE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < MINE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+  if (targetToken !== 'NONE') return { ok: false, reason: 'INVALID_TARGET_KIND' }
+
+  const mine = createMine(bot.botId, bot.pos)
+  const mineId = `M${nextMineId}`
+  mine.mineId = mineId
+
+  bot.ammo -= MINE_AMMO_COST
+
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -MINE_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'PLACE_MINE',
+  })
+
+  tickEvents.push({
+    type: 'MINE_PLACE',
+    mineId,
+    ownerBotId: bot.botId,
+    pos: clonePos(mine.pos),
+    sector: mine.sector,
+    armTicks: mine.armRemaining,
+  })
+
+  return {
+    ok: true,
+    mines: [...mines, mine],
+    mineCounter: nextMineId,
+  }
+}
+
+function attemptUseRepairDrone(bot, slotIndex, targetToken, drones, nextDroneId, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'REPAIR_DRONE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < REPAIR_DRONE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+  if (targetToken !== 'SELF') return { ok: false, reason: 'INVALID_TARGET_KIND' }
+  if (countRepairDrones(drones, bot.botId) >= REPAIR_DRONE_MAX_ACTIVE) return { ok: false, reason: 'NO_EFFECT' }
+
+  const orbitIndex = nextRepairDroneOrbitIndex(drones, bot.botId)
+  if (orbitIndex < 0) return { ok: false, reason: 'NO_EFFECT' }
+
+  const drone = createRepairDrone(bot.botId, slotIndex, orbitIndex)
+  const droneId = `D${nextDroneId}`
+  drone.droneId = droneId
+  drone.pos = clonePos(bot.pos)
+
+  bot.ammo -= REPAIR_DRONE_AMMO_COST
+
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -REPAIR_DRONE_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'SPAWN_DRONE',
+  })
+
+  tickEvents.push({
+    type: 'DRONE_SPAWN',
+    droneId,
+    ownerBotId: bot.botId,
+    slotIndex,
+    orbitIndex,
+    pos: clonePos(drone.pos),
+  })
+
+  return {
+    ok: true,
+    drones: [...drones, drone],
+    droneCounter: nextDroneId,
+  }
+}
+
 function formatInstr(instr) {
   const kind = instr?.kind ?? 'INVALID'
 
@@ -1308,9 +1745,17 @@ function formatInstr(instr) {
   if (kind === 'SET_MOVE') return `SET_MOVE ${formatMoveTarget(instr.target)}`
   if (kind === 'MOVE') return `MOVE ${formatMoveTarget(instr.target)}`
   if (kind === 'CLEAR_MOVE') return 'CLEAR_MOVE'
+  if (kind === 'SET_REG') return `SET ${instr.register} ${instr.value}`
+  if (kind === 'ADD_REG') {
+    if (instr.delta === 1) return `INC ${instr.register}`
+    if (instr.delta === -1) return `DEC ${instr.register}`
+    if (instr.delta >= 0) return `ADD ${instr.register} ${instr.delta}`
+    return `SUB ${instr.register} ${Math.abs(instr.delta)}`
+  }
 
   if (kind === 'SET_TARGET_BOT') return `SET_TARGET ${instr.selector}`
   if (kind === 'SET_TARGET_BULLET') return `SET_TARGET_BULLET ${instr.selector}`
+  if (kind === 'SET_TARGET_MINE') return `SET_TARGET_MINE ${instr.selector}`
   if (kind === 'SET_TARGET_POWERUP') return `TARGET_POWERUP ${instr.type}`
   if (kind === 'CLEAR_TARGET') return `CLEAR_TARGET ${instr.which ?? 'ALL'}`
 
@@ -1333,8 +1778,11 @@ function formatInstr(instr) {
 function formatMoveTarget(target) {
   if (!target || typeof target !== 'object') return ''
 
-  if (target.kind === 'TARGET') return 'TARGET'
-  if (target.kind === 'TARGET_AWAY') return 'TARGET_AWAY'
+  if (target.kind === 'TARGET') return Number.isInteger(target.untilRange) ? `TARGET UNTIL_RANGE ${target.untilRange}` : 'TARGET'
+  if (target.kind === 'TARGET_AWAY') {
+    return Number.isInteger(target.untilRange) ? `TARGET_AWAY UNTIL_RANGE ${target.untilRange}` : 'TARGET_AWAY'
+  }
+  if (target.kind === 'TARGET_ORBIT') return 'TARGET_ORBIT'
   if (target.kind === 'BOT') return `BOT ${target.token}`
   if (target.kind === 'POWERUP') return `POWERUP ${target.type}`
   if (target.kind === 'SECTOR') return target.zone ? `SECTOR ${target.sector} ZONE ${target.zone}` : `SECTOR ${target.sector}`

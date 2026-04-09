@@ -46,12 +46,12 @@ test('runMatchToReplay: normalizes loadout (duplicates removed; keep earliest)',
 })
 
 test('runMatchToReplay: normalizes loadout (multi-weapon removed; keep earliest)', () => {
-  const r = replayForLoadout(['SAW', 'BULLET', 'ARMOR'])
+  const r = replayForLoadout(['MINE', 'BULLET', 'ARMOR'])
 
   const bot1 = r.bots.find((x) => x.slotId === 'BOT1')
   assert.ok(bot1)
 
-  assert.deepStrictEqual(bot1.loadout, ['SAW', null, 'ARMOR'])
+  assert.deepStrictEqual(bot1.loadout, ['MINE', null, 'ARMOR'])
   assert.deepStrictEqual(bot1.loadoutIssues, [{ kind: 'MULTI_WEAPON', slot: 2, module: 'BULLET' }])
 })
 

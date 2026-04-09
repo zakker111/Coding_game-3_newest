@@ -17,6 +17,10 @@ import { parseExpression } from './expr.js'
  */
 
 /**
+ * @typedef {'R1' | 'R2' | 'R3' | 'R4'} RegisterId
+ */
+
+/**
  * @typedef {(
  *   | { kind: 'INVALID' }
  *   | { kind: 'NOP' }
@@ -31,11 +35,13 @@ import { parseExpression } from './expr.js'
  *   | { kind: 'TARGET_NEXT' }
  *   | { kind: 'TARGET_NEXT_IF_DEAD' }
  *   | { kind: 'TARGET_CLOSEST_BULLET' }
+ *   | { kind: 'TARGET_CLOSEST_MINE' }
  *   | { kind: 'TARGET_POWERUP', type: PowerupType }
  *   | { kind: 'SET_TARGET', bot: BotId }
  *   | { kind: 'CLEAR_TARGET_BOT' }
  *   | { kind: 'CLEAR_TARGET_POWERUP' }
  *   | { kind: 'CLEAR_TARGET_BULLET' }
+ *   | { kind: 'CLEAR_TARGET_MINE' }
  *   | { kind: 'CLEAR_TARGET' }
  *   | { kind: 'MOVE_DIR', dir: MoveDir }
  *   | { kind: 'SET_MOVE_TO_TARGET' }
@@ -51,7 +57,12 @@ import { parseExpression } from './expr.js'
  *   | { kind: 'MOVE_TO_LOWEST_HEALTH_BOT' }
  *   | { kind: 'MOVE_TO_POWERUP', type: PowerupType }
  *   | { kind: 'MOVE_TO_ARENA_EDGE', dir: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' }
+ *   | { kind: 'MOVE_TO_TARGET_UNTIL_IN_RANGE', range: number }
+ *   | { kind: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE', range: number }
+ *   | { kind: 'ORBIT_TARGET' }
  *   | { kind: 'CLEAR_MOVE' }
+ *   | { kind: 'SET_REG', register: RegisterId, value: number }
+ *   | { kind: 'ADD_REG', register: RegisterId, delta: number }
  *   | { kind: 'MODULE_TOGGLE', module: 'SAW' | 'SHIELD', on: boolean }
  *   | { kind: 'USE_SLOT', slot: 1 | 2 | 3, target: string }
  *   | { kind: 'STOP_SLOT', slot: 1 | 2 | 3 }
@@ -62,7 +73,9 @@ import { parseExpression } from './expr.js'
  * @typedef {Exclude<BotInstruction, { kind: 'GOTO' } | { kind: 'IF_GOTO' }>} BotRuntimeInstruction
  */
 
-const OPCODE_ALIASES = new Map([
+// Legacy spellings are still accepted for compatibility, but the canonical v1
+// vocabulary lives in BotInstructions.md and should prefer one name per behavior.
+const LEGACY_OPCODE_ALIASES = new Map([
   ['TARGET_NEAREST', 'TARGET_CLOSEST'],
   ['TARGET_CLOSEST_BOT', 'TARGET_CLOSEST'],
   ['TARGET_WEAKEST', 'TARGET_LOWEST_HEALTH'],
@@ -71,12 +84,14 @@ const OPCODE_ALIASES = new Map([
   ['MOVE_TO_NEAREST_BOT', 'MOVE_TO_CLOSEST_BOT'],
   ['MOVE_TO_WEAKEST_BOT', 'MOVE_TO_LOWEST_HEALTH_BOT'],
   ['MOVE_TO_WALL', 'MOVE_TO_ARENA_EDGE'],
+  ['HOLD_POSITION', 'CLEAR_MOVE'],
+  ['RETREAT_TO_SECTOR', 'SET_MOVE_TO_SECTOR'],
 
   // Module-type sugar (v1): default weapon is SLOT1, so FIRE_BULLET compiles to USE_SLOT1.
   ['FIRE_BULLET', 'USE_SLOT1'],
 ])
 
-const TARGET_TOKEN_ALIASES = new Map([
+const LEGACY_TARGET_TOKEN_ALIASES = new Map([
   ['NEAREST_BOT', 'CLOSEST_BOT'],
   ['WEAKEST_BOT', 'LOWEST_HEALTH_BOT'],
 ])
@@ -184,7 +199,7 @@ function normalizeOpcodeToken(token) {
   const fireSlot = upper.match(/^FIRE_SLOT([123])$/)
   if (fireSlot) return `USE_SLOT${fireSlot[1]}`
 
-  return OPCODE_ALIASES.get(upper) ?? upper
+  return LEGACY_OPCODE_ALIASES.get(upper) ?? upper
 }
 
 /**
@@ -192,7 +207,7 @@ function normalizeOpcodeToken(token) {
  */
 function normalizeTargetToken(token) {
   const upper = token.toUpperCase()
-  return TARGET_TOKEN_ALIASES.get(upper) ?? upper
+  return LEGACY_TARGET_TOKEN_ALIASES.get(upper) ?? upper
 }
 
 /**
@@ -385,6 +400,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'TARGET_LOWEST_HEALTH') return { kind: 'TARGET_LOWEST_HEALTH' }
 
   if (op === 'TARGET_CLOSEST_BULLET') return { kind: 'TARGET_CLOSEST_BULLET' }
+  if (op === 'TARGET_CLOSEST_MINE') return { kind: 'TARGET_CLOSEST_MINE' }
 
   if (op === 'TARGET_NEXT') return { kind: 'TARGET_NEXT' }
 
@@ -411,7 +427,56 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'CLEAR_TARGET_BOT') return { kind: 'CLEAR_TARGET_BOT' }
   if (op === 'CLEAR_TARGET_POWERUP') return { kind: 'CLEAR_TARGET_POWERUP' }
   if (op === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET_BULLET' }
+  if (op === 'CLEAR_TARGET_MINE') return { kind: 'CLEAR_TARGET_MINE' }
   if (op === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET' }
+
+  if (op === 'SET') {
+    const register = parseRegister(parts[1])
+    const value = parseNonNegativeInt(parts[2])
+    if (!register || value == null || parts.length !== 3) {
+      errors.push({ line: lineNo, message: 'SET expects: SET R1|R2|R3|R4 <0..999>' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'SET_REG', register, value }
+  }
+
+  if (op === 'INC') {
+    const register = parseRegister(parts[1])
+    if (!register || parts.length !== 2) {
+      errors.push({ line: lineNo, message: 'INC expects: INC R1|R2|R3|R4' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: 1 }
+  }
+
+  if (op === 'DEC') {
+    const register = parseRegister(parts[1])
+    if (!register || parts.length !== 2) {
+      errors.push({ line: lineNo, message: 'DEC expects: DEC R1|R2|R3|R4' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: -1 }
+  }
+
+  if (op === 'ADD') {
+    const register = parseRegister(parts[1])
+    const value = parseNonNegativeInt(parts[2])
+    if (!register || value == null || parts.length !== 3) {
+      errors.push({ line: lineNo, message: 'ADD expects: ADD R1|R2|R3|R4 <0..999>' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: value }
+  }
+
+  if (op === 'SUB') {
+    const register = parseRegister(parts[1])
+    const value = parseNonNegativeInt(parts[2])
+    if (!register || value == null || parts.length !== 3) {
+      errors.push({ line: lineNo, message: 'SUB expects: SUB R1|R2|R3|R4 <0..999>' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register, delta: -value }
+  }
 
   if (op === 'MOVE') {
     const dir = parseMoveDir(parts[1])
@@ -569,6 +634,38 @@ function parseSimpleInstruction(line, lineNo, errors) {
     return { kind: 'MOVE_TO_ARENA_EDGE', dir }
   }
 
+  if (op === 'MOVE_TO_TARGET_UNTIL_IN_RANGE') {
+    const range = parseNonNegativeInt(parts[1])
+    if (range == null || parts.length !== 2) {
+      errors.push({
+        line: lineNo,
+        message: 'MOVE_TO_TARGET_UNTIL_IN_RANGE expects: MOVE_TO_TARGET_UNTIL_IN_RANGE <0..999>',
+      })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'MOVE_TO_TARGET_UNTIL_IN_RANGE', range }
+  }
+
+  if (op === 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE') {
+    const range = parseNonNegativeInt(parts[1])
+    if (range == null || parts.length !== 2) {
+      errors.push({
+        line: lineNo,
+        message: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE expects: MOVE_AWAY_FROM_TARGET_UNTIL_RANGE <0..999>',
+      })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE', range }
+  }
+
+  if (op === 'ORBIT_TARGET') {
+    if (parts.length !== 1) {
+      errors.push({ line: lineNo, message: 'ORBIT_TARGET expects no arguments' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ORBIT_TARGET' }
+  }
+
   if (op === 'CLEAR_MOVE') {
     if (parts.length !== 1) {
       errors.push({ line: lineNo, message: 'CLEAR_MOVE expects no arguments' })
@@ -633,6 +730,17 @@ function parsePositiveInt(s) {
   if (!s) return 0
   const n = Number.parseInt(s, 10)
   if (!Number.isInteger(n) || n <= 0) return 0
+  return n
+}
+
+/**
+ * @param {string | undefined} s
+ * @returns {number | null}
+ */
+function parseNonNegativeInt(s) {
+  if (s == null) return null
+  const n = Number.parseInt(s, 10)
+  if (!Number.isInteger(n) || n < 0 || n > 999) return null
   return n
 }
 
@@ -707,6 +815,16 @@ function parseMoveDir(s) {
   if (t === 'UP_RIGHT') return 'UP_RIGHT'
   if (t === 'DOWN_LEFT') return 'DOWN_LEFT'
   if (t === 'DOWN_RIGHT') return 'DOWN_RIGHT'
+  return null
+}
+
+/**
+ * @param {string | undefined} s
+ * @returns {RegisterId | null}
+ */
+function parseRegister(s) {
+  const t = (s ?? '').toUpperCase()
+  if (t === 'R1' || t === 'R2' || t === 'R3' || t === 'R4') return t
   return null
 }
 

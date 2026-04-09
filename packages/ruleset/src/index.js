@@ -4,7 +4,7 @@ export const LOADOUT_SLOT_COUNT = 3
 
 export const EMPTY_LOADOUT = /** @type {[null, null, null]} */ ([null, null, null])
 
-export const MODULE_IDS = /** @type {const} */ (['BULLET', 'SAW', 'SHIELD', 'ARMOR'])
+export const MODULE_IDS = /** @type {const} */ (['BULLET', 'SAW', 'SHIELD', 'ARMOR', 'GRENADE', 'MINE', 'REPAIR_DRONE'])
 
 export const MODULE_DEFINITIONS = {
   BULLET: {
@@ -40,6 +40,32 @@ export const MODULE_DEFINITIONS = {
     activation: 'PASSIVE',
     targetKinds: ['NONE'],
     uiLabel: 'Armor',
+  },
+  GRENADE: {
+    id: 'GRENADE',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'INSTANT',
+    targetKinds: ['BOT'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Grenade',
+  },
+  MINE: {
+    id: 'MINE',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'INSTANT',
+    targetKinds: ['NONE'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Mine',
+  },
+  REPAIR_DRONE: {
+    id: 'REPAIR_DRONE',
+    itemKind: 'MODULE',
+    family: 'UTILITY',
+    activation: 'INSTANT',
+    targetKinds: ['SELF'],
+    uiLabel: 'Repair drone',
   },
 }
 

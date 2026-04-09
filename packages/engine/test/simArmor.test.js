@@ -20,7 +20,7 @@ test('runMatchToReplay: ARMOR reduces bullet damage (events + state)', () => {
     { slotId: 'BOT4', loadout: [null, null, null], sourceText: 'WAIT 1\n' },
   ]
 
-  const replay = runMatchToReplay({ seed: 123, tickCap: 60, bots })
+  const replay = runMatchToReplay({ seed: 123, tickCap: 30, bots })
 
   const allEvents = replay.events.flat()
 
@@ -60,7 +60,7 @@ test('runMatchToReplay: SHIELD + ARMOR ordering is shield first, then armor (odd
     { slotId: 'BOT4', loadout: [null, null, null], sourceText: 'WAIT 1\n' },
   ]
 
-  const replay = runMatchToReplay({ seed: 123, tickCap: 60, bots })
+  const replay = runMatchToReplay({ seed: 123, tickCap: 30, bots })
   const allEvents = replay.events.flat()
 
   // Expected: shield halves first (10 -> 5), then armor mitigates by floor(d/3) (5 -> 4).

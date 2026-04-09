@@ -15,10 +15,25 @@ export type RunLocalMessage = {
   seed: number
   tickCap: number
   bots: BotSpec[]
+  inactiveSlots?: SlotId[]
+}
+
+export type RunServerMirrorMessage = {
+  type: 'RUN_SERVER_MIRROR'
+  requestId: number
+  seed: number | string
+  tickCap: number
+  bots: BotSpec[]
 }
 
 export type RunResultMessage = {
   type: 'RUN_RESULT'
+  requestId: number
+  replay: Replay
+}
+
+export type RunServerMirrorResultMessage = {
+  type: 'RUN_SERVER_MIRROR_RESULT'
   requestId: number
   replay: Replay
 }
@@ -29,6 +44,10 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 function isSlotId(v: unknown): v is SlotId {
   return v === 'BOT1' || v === 'BOT2' || v === 'BOT3' || v === 'BOT4'
+}
+
+function isInactiveSlots(v: unknown): v is SlotId[] {
+  return Array.isArray(v) && v.every(isSlotId)
 }
 
 function isBotSpec(v: unknown): v is BotSpec {
@@ -55,12 +74,30 @@ export function isRunLocalMessage(v: unknown): v is RunLocalMessage {
   if (typeof v.seed !== 'number') return false
   if (typeof v.tickCap !== 'number') return false
   if (!Array.isArray(v.bots) || !v.bots.every(isBotSpec)) return false
+  if (v.inactiveSlots != null && !isInactiveSlots(v.inactiveSlots)) return false
+  return true
+}
+
+export function isRunServerMirrorMessage(v: unknown): v is RunServerMirrorMessage {
+  if (!isRecord(v)) return false
+  if (v.type !== 'RUN_SERVER_MIRROR') return false
+  if (typeof v.requestId !== 'number') return false
+  if (!(typeof v.seed === 'number' || typeof v.seed === 'string')) return false
+  if (typeof v.tickCap !== 'number') return false
+  if (!Array.isArray(v.bots) || !v.bots.every(isBotSpec)) return false
   return true
 }
 
 export function isRunResultMessage(v: unknown): v is RunResultMessage {
   if (!isRecord(v)) return false
   if (v.type !== 'RUN_RESULT') return false
+  if (typeof v.requestId !== 'number') return false
+  return isReplay(v.replay)
+}
+
+export function isRunServerMirrorResultMessage(v: unknown): v is RunServerMirrorResultMessage {
+  if (!isRecord(v)) return false
+  if (v.type !== 'RUN_SERVER_MIRROR_RESULT') return false
   if (typeof v.requestId !== 'number') return false
   return isReplay(v.replay)
 }

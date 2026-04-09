@@ -312,6 +312,35 @@ test('botVm: bot/powerup targets are independent registers', () => {
   assert.equal(vm.target.botSelector, 'LOWEST_HEALTH_BOT')
 })
 
+test('botVm: register instructions clamp and are visible to expressions', () => {
+  const program = {
+    instructions: [
+      { kind: 'SET_REG', register: 'R1', value: 998 },
+      { kind: 'ADD_REG', register: 'R1', delta: 5 },
+      { kind: 'ADD_REG', register: 'R1', delta: -999 },
+      {
+        kind: 'IF_DO',
+        expr: parseExpression('R1 == 0'),
+        instruction: { kind: 'SET_REG', register: 'R2', value: 7 },
+      },
+    ],
+  }
+
+  let vm = initBotVm(program)
+
+  ;({ vm } = stepBotVm(vm, {}))
+  assert.equal(vm.vars.R1, 998)
+
+  ;({ vm } = stepBotVm(vm, {}))
+  assert.equal(vm.vars.R1, 999)
+
+  ;({ vm } = stepBotVm(vm, {}))
+  assert.equal(vm.vars.R1, 0)
+
+  ;({ vm } = stepBotVm(vm, {}))
+  assert.equal(vm.vars.R2, 7)
+})
+
 test('botVm: integration smoke - compile bot0 and step 10 ticks without crashing', () => {
   const filename = path.join(repoRoot, 'examples', 'bot0.md')
   const md = readFileSync(filename, 'utf8')

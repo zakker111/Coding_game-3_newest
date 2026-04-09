@@ -18,6 +18,13 @@ export type RunMatchParams = {
 
   /** Bot sources for the 4 match slots. */
   bots: BotSourceSpec[]
+
+  /**
+   * Optional local-only override: slots listed here start inactive/dead from tick 0.
+   * Workshop uses this for client-side "none" opponent slots; server matches should
+   * continue providing real bot inputs for all active participants.
+   */
+  inactiveSlots?: SlotId[]
 }
 
 export type BotCompileError = {

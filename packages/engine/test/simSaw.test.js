@@ -43,6 +43,7 @@ test('runMatchToReplay: SAW drains energy and deals damage (hp decreases determi
     drains.every((e) => e.energyDelta < 0 && e.ammoDelta === 0 && e.healthDelta === 0),
     'expected SAW_DRAIN to only decrease energy'
   )
+  assert.ok(drains.every((e) => e.energyDelta === -2), 'expected saw to drain 2 energy per active tick')
 
   const sawDamages = allEvents.filter((e) => e && e.type === 'DAMAGE' && e.source === 'SAW' && e.sourceBotId === 'BOT1')
   assert.ok(sawDamages.length > 0, 'expected at least one SAW DAMAGE event from BOT1')

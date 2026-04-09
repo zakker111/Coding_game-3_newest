@@ -33,6 +33,10 @@ Determinism guardrail:
   - tick-events filter/search
   - richer raw JSON (`nameMap`, `eventsWithNames`, query metadata)
   - replay export affordances (`Copy replay JSON`, `Download replay JSON`)
+- React Workshop match setup now supports Workshop-only inactive opponent slots:
+  - BOT2..BOT4 can be set to `None (inactive)` for local inspection runs
+  - randomize still fills opponent slots with real bots only
+  - this is a client-only Workshop convenience, not part of the server match contract
 - React Workshop replay loadout warnings now surface in the replay-analysis tabs and Inspector while keeping the detailed `Loadout issues` list in the `Loadout` card.
 - Phase 5b source-line debugging shipped for BOT1:
   - local compile metadata in the app
@@ -50,7 +54,7 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: Phase 8 server runner MVP
+## 3) Next slice: Phase 8A sandbox server runner
 
 Why this is next:
 - The local deterministic loop is already guarded by:
@@ -60,16 +64,25 @@ Why this is next:
   - deploy drift/import checks
   - app build + deploy/app Workshop parity smoke in the release gate
 - The server-side loadout contract is already aligned with the shipped engine/docs.
+- Workshop-only inactive opponent slots are explicitly local UX and do not change the server runner contract.
 - The remaining local-loop risk is operational, not architectural: run the browser-capable release gate where appropriate and fix any surfaced regressions in context.
 
 Scope:
 - Start the smallest deterministic server runner that consumes the existing engine contract.
+- Use a new `apps/server` workspace app with:
+  - `GET /api/ruleset`
+  - `POST /api/simulations`
+  - `GET /api/matches/:matchId`
+  - `GET /api/matches/:matchId/replay`
+- Accept inline participant snapshots (`sourceText` + explicit `loadout`) rather than auth-backed saved bots.
+- Keep storage in-memory for this slice so the HTTP/API boundary is proven before DB/auth/scheduler work expands scope.
 - Keep replay/schema/ruleset semantics unchanged while the server path is wired up.
 - Reuse the local parity/sign-off workflow as the contract for server acceptance.
 
 Acceptance criteria:
 - The server can execute a deterministic headless match from submitted bot sources + explicit loadouts.
 - Stored/retrieved replay output matches the local engine contract.
+- `apps/server` participates in workspace build/test execution.
 - Local release verification stays green via `pnpm qa:release` (or `pnpm gate:phase1`).
 
 ---
@@ -87,8 +100,9 @@ Manual checks:
 
 ---
 
-## 5) After the server runner MVP starts
+## 5) After Phase 8A lands
 
 - Add persistent submissions/versioning.
-- Add replay storage and retrieval.
+- Replace the in-memory match store with durable storage.
 - Add auth/validation once the deterministic runner path is stable.
+- Add daily scheduling after the sandbox path is stable.

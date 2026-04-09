@@ -30,6 +30,41 @@ export type ArenaRenderBullet = {
   alpha?: number
 }
 
+export type ArenaRenderGrenade = {
+  grenadeId: string
+  ownerBotId?: SlotId
+  pos: { x: number; y: number }
+  vel?: { x: number; y: number }
+  fuse?: number
+  alpha?: number
+}
+
+export type ArenaRenderExplosion = {
+  explosionId: string
+  kind?: 'grenade' | 'mine'
+  ownerBotId?: SlotId
+  pos: { x: number; y: number }
+  innerRadius?: number
+  outerRadius?: number
+  alpha?: number
+}
+
+export type ArenaRenderMine = {
+  mineId: string
+  ownerBotId?: SlotId
+  pos: { x: number; y: number }
+  armRemaining?: number
+  fuseRemaining?: number
+}
+
+export type ArenaRenderDrone = {
+  droneId: string
+  ownerBotId?: SlotId
+  pos: { x: number; y: number }
+  hp?: number
+  alpha?: number
+}
+
 export type ArenaRenderPowerup = {
   powerupId: string
   kind: 'HEALTH' | 'AMMO' | 'ENERGY'
@@ -39,6 +74,10 @@ export type ArenaRenderPowerup = {
 export type ArenaRenderState = {
   bots: ArenaRenderBot[]
   bullets?: ArenaRenderBullet[]
+  grenades?: ArenaRenderGrenade[]
+  explosions?: ArenaRenderExplosion[]
+  mines?: ArenaRenderMine[]
+  drones?: ArenaRenderDrone[]
   powerups?: ArenaRenderPowerup[]
 }
 
@@ -326,6 +365,140 @@ export function ArenaCanvas({
           ctx.lineWidth = Math.max(1, Math.floor(0.25 * s))
           ctx.stroke()
         }
+
+        ctx.restore()
+      }
+    }
+
+    if (renderState.grenades?.length) {
+      for (const g of renderState.grenades) {
+        const x = worldToSnappedCssPx(g.pos.x, s, dpr)
+        const y = worldToSnappedCssPx(g.pos.y, s, dpr)
+
+        const r = Math.max(3, Math.floor(1.8 * s))
+        const ownerColor = g.ownerBotId ? slotFallbackColor(g.ownerBotId) : null
+        const alpha = typeof g.alpha === 'number' ? clamp(g.alpha, 0, 1) : 1
+
+        ctx.save()
+        ctx.globalAlpha = alpha
+
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fillStyle = ownerColor ?? 'rgba(248, 250, 252, 0.9)'
+        ctx.fill()
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.8)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.25 * s))
+        ctx.stroke()
+
+        if (typeof g.fuse === 'number') {
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'
+          ctx.font = `${Math.max(8, Math.floor(2.2 * s))}px ui-monospace, monospace`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(String(Math.max(0, g.fuse)), x, y)
+        }
+
+        ctx.restore()
+      }
+    }
+
+    if (renderState.explosions?.length) {
+      for (const fx of renderState.explosions) {
+        const x = worldToSnappedCssPx(fx.pos.x, s, dpr)
+        const y = worldToSnappedCssPx(fx.pos.y, s, dpr)
+        const ownerColor = fx.ownerBotId ? slotFallbackColor(fx.ownerBotId) : '#f97316'
+        const alpha = typeof fx.alpha === 'number' ? clamp(fx.alpha, 0, 1) : 0.85
+        const outerRadiusPx = Math.max(8, Math.floor((fx.outerRadius ?? SECTOR_SIZE_WORLD) * s))
+        const innerRadiusPx = Math.max(4, Math.floor((fx.innerRadius ?? SECTOR_SIZE_WORLD / 2) * s))
+        const outerFill = fx.kind === 'mine' ? '#fca5a5' : '#fb923c'
+        const innerFill = fx.kind === 'mine' ? '#fee2e2' : '#fde68a'
+
+        ctx.save()
+        ctx.globalAlpha = alpha * 0.16
+        ctx.beginPath()
+        ctx.arc(x, y, outerRadiusPx, 0, Math.PI * 2)
+        ctx.fillStyle = outerFill
+        ctx.fill()
+
+        ctx.globalAlpha = alpha * 0.26
+        ctx.beginPath()
+        ctx.arc(x, y, innerRadiusPx, 0, Math.PI * 2)
+        ctx.fillStyle = innerFill
+        ctx.fill()
+
+        ctx.globalAlpha = alpha * 0.7
+        ctx.beginPath()
+        ctx.arc(x, y, outerRadiusPx, 0, Math.PI * 2)
+        ctx.strokeStyle = ownerColor
+        ctx.lineWidth = Math.max(1, Math.floor(0.35 * s))
+        ctx.stroke()
+
+        ctx.globalAlpha = alpha
+        ctx.beginPath()
+        ctx.arc(x, y, innerRadiusPx, 0, Math.PI * 2)
+        ctx.strokeStyle = ownerColor
+        ctx.lineWidth = Math.max(1, Math.floor(0.35 * s))
+        ctx.stroke()
+        ctx.restore()
+      }
+    }
+
+    if (renderState.mines?.length) {
+      for (const m of renderState.mines) {
+        const x = worldToSnappedCssPx(m.pos.x, s, dpr)
+        const y = worldToSnappedCssPx(m.pos.y, s, dpr)
+
+        const half = Math.max(3, Math.floor(1.7 * s))
+        const ownerColor = m.ownerBotId ? slotFallbackColor(m.ownerBotId) : null
+        const armed = (m.armRemaining ?? 0) <= 0
+
+        ctx.save()
+        ctx.fillStyle = ownerColor ?? 'rgba(255, 255, 255, 0.9)'
+        ctx.strokeStyle = armed ? 'rgba(127, 29, 29, 0.95)' : 'rgba(15, 23, 42, 0.8)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.25 * s))
+
+        ctx.beginPath()
+        ctx.rect(x - half, y - half, half * 2, half * 2)
+        ctx.fill()
+        ctx.stroke()
+
+        const label = armed ? String(Math.max(0, m.fuseRemaining ?? 0)) : 'A'
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)'
+        ctx.font = `${Math.max(8, Math.floor(2.1 * s))}px ui-monospace, monospace`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(label, x, y)
+        ctx.restore()
+      }
+    }
+
+    if (renderState.drones?.length) {
+      for (const d of renderState.drones) {
+        const x = worldToSnappedCssPx(d.pos.x, s, dpr)
+        const y = worldToSnappedCssPx(d.pos.y, s, dpr)
+        const r = Math.max(3, Math.floor(1.5 * s))
+        const ownerColor = d.ownerBotId ? slotFallbackColor(d.ownerBotId) : null
+        const alpha = typeof d.alpha === 'number' ? clamp(d.alpha, 0, 1) : 1
+
+        ctx.save()
+        ctx.globalAlpha = alpha
+
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.92)'
+        ctx.fill()
+        ctx.strokeStyle = ownerColor ?? 'rgba(59, 130, 246, 0.9)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.3 * s))
+        ctx.stroke()
+
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.22 * s))
+        ctx.beginPath()
+        ctx.moveTo(x - r * 0.45, y)
+        ctx.lineTo(x + r * 0.45, y)
+        ctx.moveTo(x, y - r * 0.45)
+        ctx.lineTo(x, y + r * 0.45)
+        ctx.stroke()
 
         ctx.restore()
       }

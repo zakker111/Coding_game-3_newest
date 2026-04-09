@@ -5,9 +5,12 @@
   "packageManager": "pnpm@10.30.3",
   "scripts": {
     "dev": "pnpm -C apps/web dev",
+    "dev:server": "pnpm -C apps/server dev",
     "build": "pnpm -C apps/web build",
     "preview": "pnpm -C apps/web preview",
+    "start:server": "pnpm -C apps/server start",
     "test": "pnpm -C apps/web test",
+    "test:server": "pnpm -C apps/server test",
 
     "sync:deploy": "node scripts/sync-deploy.mjs",
     "check:deploy": "node scripts/sync-deploy.mjs --check",

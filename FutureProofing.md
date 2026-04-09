@@ -85,7 +85,9 @@ These are the “shape” of a module. New modules should primarily be expressib
 - defensive interaction flags (examples):
   - `ignoresShield`
   - `piercesShield`
+  - `ignoresArmor`
   - `piercesArmor`
+  - `deflectsProjectiles`
   - `stopsOnFirstHit` (false implies pierce-through entities)
 
 - AoE / collateral flags (examples):
@@ -214,6 +216,13 @@ Instead of adding many one-off predicates, prefer generic primitives like:
 - `ENEMY_COUNT(<ENTITY_KIND>)`
 - `DIST_TO_CLOSEST(<ENTITY_KIND>)`
 
+Recommended player-facing sugar on top of those primitives:
+- `DRONE_COUNT()` → `OWNED_COUNT(HEAL_DRONE)`
+- `COUNT_ALIVE_ENEMIES()`
+- `ENEMIES_IN_RANGE(n)`
+- `DIST_TO_CLOSEST_POWERUP(ANY|HEALTH|AMMO|ENERGY)`
+- `LOWEST_HEALTH_ENEMY_IN_RANGE(n)`
+
 Then layer convenience predicates later if needed.
 
 ---
@@ -224,6 +233,8 @@ Model helpers as first-class simulation entities:
 - `entityId`, `kind`, `ownerBotId`
 - deterministic movement pattern (orbit/seek)
 - deterministic effect (heal, shield, intercept)
+- optional `hp` / `hitPoints` so helpers can be destroyed by attacks
+- optional `energyDrainPerTick` so helpers vanish if the owner can no longer support them
 
 Important design constraints:
 - helpers must have deterministic update order (entity id ascending)
@@ -232,6 +243,15 @@ Important design constraints:
 Bot interaction:
 - bots use `USE_SLOTn` to spawn/command helpers
 - bots use generic counters to decide when to spawn/stop them
+
+Recommended first helper module:
+- `REPAIR_DRONE`
+  - costs ammo to spawn
+  - creates small orbiting drones around the owner
+  - drones heal in pulses / phases
+  - drones are destroyed if hit by bullets
+  - remaining drones vanish if owner energy reaches 0
+  - ideal player-facing counter: `DRONE_COUNT()`
 
 ---
 
@@ -258,5 +278,9 @@ When adding a new module type:
 - Standardize `<TARGET>` kinds early (`BOT`, `LOCATION`, `DIRECTION`, `NONE`) so new module targeting stays additive.
 - Keep existing `FIRE_SLOTn` as an alias/sugar for compatibility and readability.
 - Add a small generic introspection surface (`SLOT_QUERY`, `SLOT_HAS_CAP`) rather than many bespoke opcodes.
+- Add a thin layer of high-value tactical sugar on top of the stable core:
+  - range-management movement helpers
+  - enemy-count / powerup-distance helpers
+  - small deterministic bot-local variables
 - Prefer new module work to be implemented via module behavior + data, not new opcodes.
 - When new opcodes are unavoidable, treat them as sugar that compiles down to a stable internal IR.

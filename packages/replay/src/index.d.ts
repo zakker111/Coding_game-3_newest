@@ -45,6 +45,7 @@ export type ReplayBotState = {
   alive: boolean
   pc: number
   targetBulletId?: string | null
+  targetMineId?: string | null
 }
 
 export type ReplayBulletState = {
@@ -52,6 +53,32 @@ export type ReplayBulletState = {
   ownerBotId: SlotId
   pos: Pos
   vel: Pos
+}
+
+export type ReplayGrenadeState = {
+  grenadeId: string
+  ownerBotId: SlotId
+  pos: Pos
+  vel: Pos
+  fuse: number
+}
+
+export type ReplayMineState = {
+  mineId: string
+  ownerBotId: SlotId
+  pos: Pos
+  sector: number
+  armRemaining: number
+  fuseRemaining: number
+}
+
+export type ReplayDroneState = {
+  droneId: string
+  ownerBotId: SlotId
+  slotIndex: 0 | 1 | 2
+  orbitIndex: number
+  hp: number
+  pos: Pos
 }
 
 export type ReplayPowerupState = {
@@ -65,6 +92,9 @@ export type ReplayTickState = {
   t: number
   bots: ReplayBotState[]
   bullets: ReplayBulletState[]
+  grenades?: ReplayGrenadeState[]
+  mines?: ReplayMineState[]
+  drones?: ReplayDroneState[]
   powerups: ReplayPowerupState[]
 }
 
@@ -80,6 +110,11 @@ export type BotExecReason =
 
 export type ResourceDeltaCause =
   | 'SHOOT'
+  | 'THROW_GRENADE'
+  | 'PLACE_MINE'
+  | 'SPAWN_DRONE'
+  | 'DRONE_DRAIN'
+  | 'DRONE_HEAL'
   | 'SAW_DRAIN'
   | 'SHIELD_DRAIN'
   | 'PICKUP_HEALTH'
@@ -184,6 +219,107 @@ export type BulletDespawnEvent = {
   pos?: Pos
 }
 
+export type GrenadeSpawnEvent = {
+  type: 'GRENADE_SPAWN'
+  grenadeId: string
+  ownerBotId: SlotId
+  pos: Pos
+  vel: Pos
+  fuse: number
+  targetBotId?: SlotId
+  targetPos?: Pos
+}
+
+export type GrenadeMoveEvent = {
+  type: 'GRENADE_MOVE'
+  grenadeId: string
+  fromPos: Pos
+  toPos: Pos
+}
+
+export type GrenadeExplodeEvent = {
+  type: 'GRENADE_EXPLODE'
+  grenadeId: string
+  ownerBotId: SlotId
+  pos: Pos
+  sector: number
+}
+
+export type GrenadeDespawnEvent = {
+  type: 'GRENADE_DESPAWN'
+  grenadeId: string
+  reason: 'TTL' | 'EXPLODED'
+  pos?: Pos
+}
+
+export type MinePlaceEvent = {
+  type: 'MINE_PLACE'
+  mineId: string
+  ownerBotId: SlotId
+  pos: Pos
+  sector: number
+  armTicks: number
+}
+
+export type MineArmedEvent = {
+  type: 'MINE_ARMED'
+  mineId: string
+}
+
+export type MineTriggerEvent = {
+  type: 'MINE_TRIGGER'
+  mineId: string
+  triggerBotId: SlotId
+}
+
+export type MineDetonateEvent = {
+  type: 'MINE_DETONATE'
+  mineId: string
+  ownerBotId: SlotId
+  pos: Pos
+  centerSector: number
+  damageCenter: number
+  damageAdjacent: number
+}
+
+export type MineDespawnEvent = {
+  type: 'MINE_DESPAWN'
+  mineId: string
+  reason: 'TTL' | 'EXPLODED'
+}
+
+export type DroneSpawnEvent = {
+  type: 'DRONE_SPAWN'
+  droneId: string
+  ownerBotId: SlotId
+  slotIndex: 0 | 1 | 2
+  orbitIndex: number
+  pos: Pos
+}
+
+export type DroneHealEvent = {
+  type: 'DRONE_HEAL'
+  droneId: string
+  ownerBotId: SlotId
+  amount: number
+}
+
+export type DroneHitEvent = {
+  type: 'DRONE_HIT'
+  droneId: string
+  ownerBotId: SlotId
+  bulletId: string
+  sourceBotId: SlotId
+}
+
+export type DroneDespawnEvent = {
+  type: 'DRONE_DESPAWN'
+  droneId: string
+  ownerBotId: SlotId
+  reason: 'STOP' | 'HIT' | 'NO_ENERGY' | 'OWNER_DEAD'
+  pos: Pos
+}
+
 export type DamageEvent = {
   type: 'DAMAGE'
   victimBotId: SlotId
@@ -220,6 +356,19 @@ export type KnownReplayEvent =
   | BulletMoveEvent
   | BulletHitEvent
   | BulletDespawnEvent
+  | GrenadeSpawnEvent
+  | GrenadeMoveEvent
+  | GrenadeExplodeEvent
+  | GrenadeDespawnEvent
+  | MinePlaceEvent
+  | MineArmedEvent
+  | MineTriggerEvent
+  | MineDetonateEvent
+  | MineDespawnEvent
+  | DroneSpawnEvent
+  | DroneHealEvent
+  | DroneHitEvent
+  | DroneDespawnEvent
   | DamageEvent
   | BotDiedEvent
   | MatchEndEvent

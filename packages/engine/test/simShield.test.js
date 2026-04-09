@@ -20,7 +20,7 @@ test('runMatchToReplay: SHIELD reduces bullet damage and drains energy', () => {
     { slotId: 'BOT4', loadout: [null, null, null], sourceText: 'WAIT 1\n' },
   ]
 
-  const replay = runMatchToReplay({ seed: 123, tickCap: 60, bots })
+  const replay = runMatchToReplay({ seed: 123, tickCap: 30, bots })
 
   const allEvents = replay.events.flat()
 
@@ -37,4 +37,5 @@ test('runMatchToReplay: SHIELD reduces bullet damage and drains energy', () => {
     shieldDrains.every((e) => e.energyDelta < 0 && e.ammoDelta === 0 && e.healthDelta === 0),
     'expected SHIELD_DRAIN to only decrease energy'
   )
+  assert.ok(shieldDrains.every((e) => e.energyDelta === -2), 'expected shield to drain 2 energy per active tick')
 })

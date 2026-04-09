@@ -1,4 +1,4 @@
-# Built-in bot: Zone Patrol Shooter (BULLET)
+# Built-in bot: Weakest-Link Patrol (BULLET)
 
 **Suggested loadout**
 - `SLOT1 = BULLET`
@@ -8,11 +8,11 @@
 **Intended behavior**
 - Demonstrates a **zone patrol loop** inside the bot’s current sector that reliably cycles through all 4 zones.
   - To keep the script simple (no extra state), this bot patrols in an axis-aligned loop: **1 → 2 → 4 → 3 → 1**.
-- If bullets are nearby, briefly dodges (helps avoid standing still in crossfire).
+- Uses `TARGET_LOWEST_HEALTH` to opportunistically pressure the weakest visible enemy while continuing the patrol.
+- If bullets are nearby, briefly targets the closest bullet, dodges away from it, and clears the bullet target.
 - If a bot is **very close** (or we just bumped), briefly backs off toward the center before resuming patrol.
 - If health is low and a HEALTH powerup exists, commits briefly to a healing run.
 - If ammo is low and an AMMO powerup exists (and we’re not currently healing), commits briefly to an ammo run.
-- Opportunistically fires at the nearest bot using an **inline selector** (no target register).
 
 ## Script
 
@@ -20,9 +20,9 @@
 ;@slot1 BULLET
 ;@slot2 EMPTY
 ;@slot3 EMPTY
-; bot1 — Zone Patrol Shooter
+; bot1 — Weakest-Link Patrol
 ; Loadout: SLOT1=BULLET
-; Summary: patrol zones 1→2→4→3→1 (current sector); avoid bump-lock; detour for HEALTH/AMMO when low; dodge bullets; fire at NEAREST_BOT.
+; Summary: patrol zones 1→2→4→3→1 (current sector); pressure the weakest bot; dodge bullets via the bullet target register; detour for HEALTH/AMMO when low.
 
 LABEL LOOP
 
@@ -43,7 +43,8 @@ IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 4
 IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 3
 IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 1
 
-IF (SLOT_READY(SLOT1)) DO FIRE_SLOT1 NEAREST_BOT
+TARGET_LOWEST_HEALTH
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
 
 GOTO LOOP
 
@@ -59,12 +60,11 @@ CLEAR_MOVE
 GOTO LOOP
 
 LABEL DODGE_BULLETS
-; Quick evasive step: move to a different zone for 1 tick.
+; Quick evasive step: move away from the closest bullet, then clear the bullet target.
 CLEAR_MOVE
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 1
+TARGET_CLOSEST_BULLET
+IF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET
+IF (HAS_TARGET_BULLET()) DO CLEAR_TARGET_BULLET
 WAIT 1
 CLEAR_MOVE
 GOTO LOOP

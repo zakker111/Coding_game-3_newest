@@ -50,11 +50,13 @@ function normalizeInstruction(instr) {
   if (instr.kind === 'TARGET_NEXT') return { kind: 'SET_TARGET_BOT', selector: 'NEXT' }
   if (instr.kind === 'TARGET_NEXT_IF_DEAD') return { kind: 'SET_TARGET_BOT', selector: 'NEXT_IF_DEAD' }
   if (instr.kind === 'TARGET_CLOSEST_BULLET') return { kind: 'SET_TARGET_BULLET', selector: 'CLOSEST_BULLET' }
+  if (instr.kind === 'TARGET_CLOSEST_MINE') return { kind: 'SET_TARGET_MINE', selector: 'CLOSEST_MINE' }
   if (instr.kind === 'TARGET_POWERUP') return { kind: 'SET_TARGET_POWERUP', type: instr.type }
 
   if (instr.kind === 'CLEAR_TARGET_BOT') return { kind: 'CLEAR_TARGET', which: 'BOT' }
   if (instr.kind === 'CLEAR_TARGET_POWERUP') return { kind: 'CLEAR_TARGET', which: 'POWERUP' }
   if (instr.kind === 'CLEAR_TARGET_BULLET') return { kind: 'CLEAR_TARGET', which: 'BULLET' }
+  if (instr.kind === 'CLEAR_TARGET_MINE') return { kind: 'CLEAR_TARGET', which: 'MINE' }
   if (instr.kind === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET', which: 'ALL' }
 
   // Persistent movement goal writes.
@@ -88,10 +90,18 @@ function normalizeInstruction(instr) {
   if (instr.kind === 'MOVE_TO_CLOSEST_BOT') return { kind: 'MOVE', target: { kind: 'BOT', token: 'CLOSEST_BOT' } }
   if (instr.kind === 'MOVE_TO_LOWEST_HEALTH_BOT') return { kind: 'MOVE', target: { kind: 'BOT', token: 'LOWEST_HEALTH_BOT' } }
   if (instr.kind === 'MOVE_TO_ARENA_EDGE') return { kind: 'MOVE', target: { kind: 'ARENA_EDGE', dir: instr.dir } }
+  if (instr.kind === 'MOVE_TO_TARGET_UNTIL_IN_RANGE') {
+    return { kind: 'SET_MOVE', target: { kind: 'TARGET', untilRange: instr.range } }
+  }
+  if (instr.kind === 'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE') {
+    return { kind: 'SET_MOVE', target: { kind: 'TARGET_AWAY', untilRange: instr.range } }
+  }
+  if (instr.kind === 'ORBIT_TARGET') return { kind: 'SET_MOVE', target: { kind: 'TARGET_ORBIT' } }
 
   // Already-canonical instructions pass through:
   // - MOVE_DIR, CLEAR_MOVE
   // - NOP, WAIT, SET_TIMER, CLEAR_TIMER
+  // - SET_REG, ADD_REG
   // - MODULE_TOGGLE, USE_SLOT, STOP_SLOT
   // - INVALID
   return instr

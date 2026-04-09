@@ -14,6 +14,8 @@ const ALLOWED_KINDS = new Set([
   // timing
   'SET_TIMER',
   'CLEAR_TIMER',
+  'SET_REG',
+  'ADD_REG',
 
   // canonical targeting
   'SET_TARGET_BOT',
@@ -59,6 +61,9 @@ const LEGACY_KINDS = new Set([
   'MOVE_TO_LOWEST_HEALTH_BOT',
   'MOVE_TO_POWERUP',
   'MOVE_TO_ARENA_EDGE',
+  'MOVE_TO_TARGET_UNTIL_IN_RANGE',
+  'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE',
+  'ORBIT_TARGET',
 ])
 
 function flattenInstructions(instructions) {
@@ -78,7 +83,7 @@ test('compileBotSource emits a very small canonical core IR', () => {
     '; core IR smoke test',
     'LABEL LOOP',
     '',
-    'TARGET_NEAREST',
+    'TARGET_CLOSEST',
     'IF (HEALTH < 10) DO TARGET_POWERUP HEALTH',
     'IF (HEALTH < 10) GOTO LOOP',
     'GOTO LOOP',
@@ -87,11 +92,19 @@ test('compileBotSource emits a very small canonical core IR', () => {
     'SET_MOVE_TO_SECTOR 5 ZONE 2',
     'MOVE_TO_SECTOR 1',
     'MOVE UP_LEFT',
-    'MOVE_TO_BOT NEAREST_BOT',
+    'MOVE_TO_BOT CLOSEST_BOT',
     'MOVE_TO_CLOSEST_BOT',
-    'MOVE_TO_WALL LEFT',
+    'MOVE_TO_TARGET_UNTIL_IN_RANGE 64',
+    'MOVE_AWAY_FROM_TARGET_UNTIL_RANGE 128',
+    'ORBIT_TARGET',
+    'MOVE_TO_ARENA_EDGE LEFT',
+    'SET_MOVE_TO_SECTOR 9',
     'CLEAR_MOVE',
-    'FIRE_SLOT1 NEAREST_BOT',
+    'SET R1 5',
+    'INC R1',
+    'SUB R1 2',
+    'CLEAR_MOVE',
+    'USE_SLOT1 CLOSEST_BOT',
   ].join('\n')
 
   const r = compileBotSource(src)
@@ -119,9 +132,19 @@ test('compileBotSource emits a very small canonical core IR', () => {
 
   // Movement normalization.
   assert.ok(flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'SECTOR' && i.target?.sector === 5))
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'SECTOR' && i.target?.sector === 9))
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'TARGET' && i.target?.untilRange === 64))
+  assert.ok(
+    flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'TARGET_AWAY' && i.target?.untilRange === 128)
+  )
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_MOVE' && i.target?.kind === 'TARGET_ORBIT'))
   assert.ok(flatInstrs.some((i) => i.kind === 'MOVE_DIR' && i.dir === 'UP_LEFT'))
   assert.ok(flatInstrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'BOT' && i.target?.token === 'CLOSEST_BOT'))
   assert.ok(flatInstrs.some((i) => i.kind === 'MOVE' && i.target?.kind === 'ARENA_EDGE' && i.target?.dir === 'LEFT'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'CLEAR_MOVE'))
+  assert.ok(flatInstrs.some((i) => i.kind === 'SET_REG' && i.register === 'R1' && i.value === 5))
+  assert.ok(flatInstrs.some((i) => i.kind === 'ADD_REG' && i.register === 'R1' && i.delta === 1))
+  assert.ok(flatInstrs.some((i) => i.kind === 'ADD_REG' && i.register === 'R1' && i.delta === -2))
 
   // Slot alias normalization.
   const useSlot = flatInstrs.find((i) => i.kind === 'USE_SLOT' && i.slot === 1)

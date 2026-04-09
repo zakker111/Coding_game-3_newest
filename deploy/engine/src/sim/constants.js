@@ -35,8 +35,34 @@ export const BULLET_SPEED_UNITS_PER_TICK = 16
 export const BULLET_TTL_TICKS = 18
 export const BULLET_DAMAGE = 10
 
-export const BULLET_AMMO_COST = 1
+// Kept high enough that ammo powerups matter during ordinary Workshop matches.
+export const BULLET_AMMO_COST = 2
 export const BULLET_COOLDOWN_TICKS = 4
+
+export const GRENADE_SPEED_UNITS_PER_TICK = 24
+export const GRENADE_FUSE_TICKS = 4
+export const GRENADE_TTL_TICKS = 10
+export const GRENADE_DAMAGE_CENTER = 18
+export const GRENADE_DAMAGE_ADJACENT = 10
+export const GRENADE_AMMO_COST = 6
+export const GRENADE_COOLDOWN_TICKS = 8
+
+export const MINE_ARM_TICKS = 2
+export const MINE_FUSE_TICKS = 18
+export const MINE_TTL_TICKS = 18
+export const MINE_DAMAGE_CENTER = 20
+export const MINE_DAMAGE_ADJACENT = 12
+export const MINE_AMMO_COST = 5
+export const MINE_COOLDOWN_TICKS = 14
+
+export const REPAIR_DRONE_MAX_ACTIVE = 2
+export const REPAIR_DRONE_HIT_POINTS = 1
+export const REPAIR_DRONE_HEAL_AMOUNT = 2
+export const REPAIR_DRONE_HEAL_PULSE_TICKS = 4
+export const REPAIR_DRONE_ENERGY_DRAIN_PER_TICK = 1
+export const REPAIR_DRONE_AMMO_COST = 12
+export const REPAIR_DRONE_COOLDOWN_TICKS = 6
+export const REPAIR_DRONE_HALF_SIZE = 4
 
 export const WALL_BUMP_DAMAGE = 2
 

@@ -235,36 +235,36 @@ A replay should minimally include:
 ### 3.4 One-off simulations (Workshop “Run on Server”)
 
 - `POST /api/simulations`
-  - auth: required (session cookie or guest session); rate-limit aggressively
-  - body (minimal, v1):
+  - Phase 8A implementation: no auth yet; accepts inline participant snapshots and executes immediately in-process
+  - later phases: may require auth/session + rate limiting + saved bot lookup
+  - body (Phase 8A):
 
     ```json
     {
-      "tick_cap": 600,
-      "seed_mode": "random",
+      "tickCap": 600,
       "seed": 123,
       "participants": [
-        {"slot": "BOT1", "botId": "alice/bot1"},
-        {"slot": "BOT2", "botId": "builtin/chaser-shooter"},
-        {"slot": "BOT3", "botId": "builtin/corner-bunker"},
-        {"slot": "BOT4", "botId": "builtin/saw-rusher"}
+        {"slot": "BOT1", "displayName": "Alpha", "sourceText": "WAIT 1\n", "loadout": ["BULLET", null, null]},
+        {"slot": "BOT2", "displayName": "Beta", "sourceText": "WAIT 1\n", "loadout": [null, null, null]},
+        {"slot": "BOT3", "displayName": "Gamma", "sourceText": "WAIT 1\n", "loadout": [null, null, null]},
+        {"slot": "BOT4", "displayName": "Delta", "sourceText": "WAIT 1\n", "loadout": [null, null, null]}
       ]
     }
     ```
 
     Notes:
-    - The server always uses the **latest saved** `Bot.source_text` for each `botId`.
-    - The server-run match should also use the explicit per-participant `loadout` for each slot, defaulting omitted values to `[null, null, null]` and applying the same deterministic normalization as the local engine.
-    - Workshop UX should require an explicit **Save** before “Run on Server” if the editor has unsaved changes.
+    - Phase 8A uses inline source snapshots intentionally so the deterministic runner can be proven before auth/bot persistence exists.
+    - Each participant snapshot should be stored with `source_text_snapshot`, `source_hash`, `loadout_snapshot`, and `loadoutIssues`.
+    - Later phases may accept saved `botId` references in addition to or instead of inline source snapshots.
 
-  - response (async):
+  - response (Phase 8A current behavior):
 
     ```json
     {
       "matchId": "m_123",
       "kind": "sandbox",
-      "status": "queued",
-      "replay_url": "/api/matches/m_123/replay"
+      "status": "complete",
+      "replayUrl": "/api/matches/m_123/replay"
     }
     ```
 

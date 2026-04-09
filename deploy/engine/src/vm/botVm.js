@@ -16,10 +16,13 @@ const KNOWN_KINDS = new Set([
   'WAIT',
   'SET_TIMER',
   'CLEAR_TIMER',
+  'SET_REG',
+  'ADD_REG',
 
   // targeting
   'SET_TARGET_BOT',
   'SET_TARGET_BULLET',
+  'SET_TARGET_MINE',
   'SET_TARGET_POWERUP',
   'CLEAR_TARGET',
 
@@ -47,7 +50,8 @@ export function initBotVm(program) {
     pc: 1,
     waitRemaining: 0,
     timers: { 1: 0, 2: 0, 3: 0 },
-    target: { botSelector: null, bulletId: null, powerupType: null },
+    vars: { R1: 0, R2: 0, R3: 0, R4: 0 },
+    target: { botSelector: null, bulletId: null, mineId: null, powerupType: null },
     moveGoal: null,
   }
 }
@@ -73,6 +77,7 @@ export function stepBotVm(vm, observation) {
   const nextVm = {
     ...vm,
     timers: { ...vm.timers },
+    vars: { ...(vm.vars ?? { R1: 0, R2: 0, R3: 0, R4: 0 }) },
     target: { ...vm.target },
   }
 
@@ -188,6 +193,10 @@ function evalCond(expr, vm, observation) {
   const ctx = {
     ...(observation && typeof observation === 'object' ? observation : {}),
     timers,
+    vars: {
+      ...(observation && typeof observation === 'object' && observation.vars ? observation.vars : {}),
+      ...(vm?.vars ?? {}),
+    },
 
     // Prefer explicit hasTargetBot from the sim layer (it can incorporate
     // validity checks like target existence/alive). Fall back to the VM's
@@ -201,6 +210,11 @@ function evalCond(expr, vm, observation) {
       observation && typeof observation === 'object' && observation.hasTargetBullet != null
         ? observation.hasTargetBullet
         : vm?.target?.bulletId != null,
+
+    hasTargetMine:
+      observation && typeof observation === 'object' && observation.hasTargetMine != null
+        ? observation.hasTargetMine
+        : vm?.target?.mineId != null,
   }
 
   const r = evalExpr(expr, ctx)
@@ -241,6 +255,24 @@ function execInstr(instr, vm, effects) {
     return
   }
 
+  if (kind === 'SET_REG') {
+    const register = instr.register
+    if (register === 'R1' || register === 'R2' || register === 'R3' || register === 'R4') {
+      vm.vars[register] = clampRegisterValue(instr.value)
+    }
+    return
+  }
+
+  if (kind === 'ADD_REG') {
+    const register = instr.register
+    if (register === 'R1' || register === 'R2' || register === 'R3' || register === 'R4') {
+      const current = Number.isInteger(vm.vars[register]) ? vm.vars[register] : 0
+      const delta = Number.isInteger(instr.delta) ? instr.delta : 0
+      vm.vars[register] = clampRegisterValue(current + delta)
+    }
+    return
+  }
+
   if (kind === 'SET_TARGET_BOT') {
     // Per BotInstructions.md, bot and powerup targets are independent registers.
     // Setting one must not clear the other.
@@ -253,6 +285,11 @@ function execInstr(instr, vm, effects) {
     return
   }
 
+  if (kind === 'SET_TARGET_MINE') {
+    vm.target.mineId = instr.selector ?? null
+    return
+  }
+
   if (kind === 'SET_TARGET_POWERUP') {
     vm.target.powerupType = instr.type ?? null
     return
@@ -262,6 +299,7 @@ function execInstr(instr, vm, effects) {
     const which = instr.which ?? 'ALL'
     if (which === 'BOT' || which === 'ALL') vm.target.botSelector = null
     if (which === 'BULLET' || which === 'ALL') vm.target.bulletId = null
+    if (which === 'MINE' || which === 'ALL') vm.target.mineId = null
     if (which === 'POWERUP' || which === 'ALL') vm.target.powerupType = null
     return
   }
@@ -304,4 +342,12 @@ function execInstr(instr, vm, effects) {
   }
 
   // Unknown kinds are treated as INVALID by `stepBotVm`.
+}
+
+/**
+ * @param {unknown} value
+ */
+function clampRegisterValue(value) {
+  const n = Number.isInteger(value) ? value : 0
+  return Math.max(0, Math.min(999, n))
 }

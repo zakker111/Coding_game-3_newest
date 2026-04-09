@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { generateSampleReplay } from '@coding-game/replay'
-import { isRunLocalMessage, isRunResultMessage } from '../messages'
+import {
+  isRunLocalMessage,
+  isRunResultMessage,
+  isRunServerMirrorMessage,
+  isRunServerMirrorResultMessage,
+} from '../messages'
 
 describe('worker message guards', () => {
   it('accepts valid RUN_LOCAL', () => {
@@ -17,10 +22,21 @@ describe('worker message guards', () => {
           { slotId: 'BOT3', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
           { slotId: 'BOT4', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
         ],
+        inactiveSlots: ['BOT3', 'BOT4'],
       }),
     ).toBe(true)
 
     expect(isRunLocalMessage({ type: 'RUN_LOCAL' })).toBe(false)
+    expect(
+      isRunLocalMessage({
+        type: 'RUN_LOCAL',
+        requestId: 1,
+        seed: 123,
+        tickCap: 50,
+        bots: [],
+        inactiveSlots: ['BOT5'],
+      }),
+    ).toBe(false)
   })
 
   it('accepts valid RUN_RESULT', () => {
@@ -35,5 +51,36 @@ describe('worker message guards', () => {
     ).toBe(true)
 
     expect(isRunResultMessage({ type: 'RUN_RESULT', requestId: 1, replay: {} })).toBe(false)
+  })
+
+  it('accepts valid RUN_SERVER_MIRROR and mirror result messages', () => {
+    const replay = generateSampleReplay(12345, { tickCap: 3 })
+
+    expect(
+      isRunServerMirrorMessage({
+        type: 'RUN_SERVER_MIRROR',
+        requestId: 2,
+        seed: 'seed-123',
+        tickCap: 40,
+        bots: [
+          { slotId: 'BOT1', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
+          { slotId: 'BOT2', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
+          { slotId: 'BOT3', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
+          { slotId: 'BOT4', sourceText: 'WAIT 1', loadout: ['BULLET', null, null] },
+        ],
+      }),
+    ).toBe(true)
+
+    expect(isRunServerMirrorMessage({ type: 'RUN_SERVER_MIRROR', requestId: 2, seed: null, tickCap: 40, bots: [] })).toBe(false)
+
+    expect(
+      isRunServerMirrorResultMessage({
+        type: 'RUN_SERVER_MIRROR_RESULT',
+        requestId: 2,
+        replay,
+      }),
+    ).toBe(true)
+
+    expect(isRunServerMirrorResultMessage({ type: 'RUN_SERVER_MIRROR_RESULT', requestId: 2, replay: {} })).toBe(false)
   })
 })

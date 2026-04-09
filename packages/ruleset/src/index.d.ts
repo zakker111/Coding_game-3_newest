@@ -4,7 +4,7 @@ export const LOADOUT_SLOT_COUNT: 3
 
 export const EMPTY_LOADOUT: [null, null, null]
 
-export const MODULE_IDS: readonly ['BULLET', 'SAW', 'SHIELD', 'ARMOR']
+export const MODULE_IDS: readonly ['BULLET', 'SAW', 'SHIELD', 'ARMOR', 'GRENADE', 'MINE', 'REPAIR_DRONE']
 
 export type ModuleId = (typeof MODULE_IDS)[number]
 
@@ -23,7 +23,7 @@ export type ModuleDefinition = {
   itemKind: 'MODULE'
   family: 'WEAPON' | 'DEFENSE' | 'UTILITY' | 'PASSIVE' | 'SPAWN'
   activation: 'INSTANT' | 'TOGGLE' | 'PASSIVE'
-  targetKinds: readonly ('BOT' | 'LOCATION' | 'NONE')[]
+  targetKinds: readonly ('BOT' | 'LOCATION' | 'NONE' | 'SELF')[]
   exclusiveGroup?: 'WEAPON'
   uiLabel: string
 }

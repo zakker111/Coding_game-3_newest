@@ -13,7 +13,7 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
       {
         slotId: 'BOT1',
         sourceText: 'WAIT 1\n',
-        loadout: ['BULLET', 'LASER', 'BULLET'],
+        loadout: ['GRENADE', 'LASER', 'BULLET'],
       },
       {
         slotId: 'BOT2',
@@ -31,10 +31,10 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
   )
 
   const bot1 = replay.bots[0]
-  assert.deepStrictEqual(bot1.loadout, ['BULLET', null, null])
+  assert.deepStrictEqual(bot1.loadout, ['GRENADE', null, null])
   assert.deepStrictEqual(bot1.loadoutIssues, [
     { kind: 'UNKNOWN_MODULE', slot: 2, module: 'LASER' },
-    { kind: 'DUPLICATE', slot: 3, module: 'BULLET' },
+    { kind: 'MULTI_WEAPON', slot: 3, module: 'BULLET' },
   ])
 
   for (const bot of replay.bots.slice(1)) {
@@ -49,6 +49,19 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
 
   for (const snap of replay.state) {
     assert.equal(snap.bots.length, 4, `expected 4 bots in state[t=${snap.t}]`)
+    assert.ok(Array.isArray(snap.bullets), `expected bullets array in state[t=${snap.t}]`)
+    assert.ok(
+      snap.grenades == null || Array.isArray(snap.grenades),
+      `expected grenades to be omitted or an array in state[t=${snap.t}]`,
+    )
+    assert.ok(
+      snap.mines == null || Array.isArray(snap.mines),
+      `expected mines to be omitted or an array in state[t=${snap.t}]`,
+    )
+    assert.ok(
+      snap.drones == null || Array.isArray(snap.drones),
+      `expected drones to be omitted or an array in state[t=${snap.t}]`,
+    )
     for (const bot of snap.bots) {
       assert.ok(SLOT_IDS.includes(bot.botId), `unexpected botId in state[t=${snap.t}]: ${bot.botId}`)
       assert.equal(
@@ -59,6 +72,15 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
       assert.ok(
         bot.targetBulletId == null || typeof bot.targetBulletId === 'string',
         `expected targetBulletId to be string|null in state[t=${snap.t}] for ${bot.botId}`,
+      )
+      assert.equal(
+        Object.prototype.hasOwnProperty.call(bot, 'targetMineId'),
+        true,
+        `expected targetMineId field in state[t=${snap.t}] for ${bot.botId}`,
+      )
+      assert.ok(
+        bot.targetMineId == null || typeof bot.targetMineId === 'string',
+        `expected targetMineId to be string|null in state[t=${snap.t}] for ${bot.botId}`,
       )
     }
   }
