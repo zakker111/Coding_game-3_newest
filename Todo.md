@@ -19,13 +19,13 @@ Recently completed (this merge set)
 - Phase 6 golden determinism fixtures committed + enforced in CI.
 - Replay contract and deploy Workshop static-contract tests now lock the current 0.2.0 schema/QA surface more explicitly.
 
-Next slice (non-server roadmap)
-- Start the smallest server runner slice now that the local-loop parity/sign-off work is in place.
+Next slice (server follow-up roadmap)
+- Harden the new server MVP rather than re-planning it from scratch.
 - Prioritize:
-  - deterministic headless match execution
-  - submission/version storage
-  - replay storage
-- Keep local-loop hardening additive; do not block Phase 8 on more speculative polish.
+  - scheduled daily automation
+  - rate limiting / submission-operability safeguards
+  - broader admin/re-run tooling
+- Keep local-loop hardening additive; do not regress the server-backed deterministic path.
 
 ### Status board
 
@@ -41,7 +41,7 @@ Implemented now
   - actionable browser-runtime diagnostics for `qa:workshop`
 
 Still open
-- [ ] Phase 8 server runner MVP.
+- [ ] Phase 8 follow-up hardening (automation, rate limits, admin tooling).
 
 ### Near-term execution checklist
 
@@ -51,7 +51,7 @@ Do next
 - [x] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
 
 Ready after audit
-- [ ] Start the smallest Phase 8 server slice:
+- [x] Start the smallest Phase 8 server slice:
   - deterministic headless runner
   - submission storage/versioning
   - replay storage
@@ -76,7 +76,7 @@ Next up
 - [x] Local-loop hardening: close the remaining deploy/workshop parity and release-sign-off guardrails.
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
-- [ ] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
+- [x] Phase 8: server runner MVP (submissions + deterministic runs + replay storage).
 
 ---
 
@@ -377,24 +377,28 @@ QA checklist
 Goal: run deterministic daily competitions and accept bot submissions.
 
 Concrete tasks
-- [ ] Headless deterministic match runner:
+- [x] Headless deterministic match runner:
   - accepts bot source + match config
   - runs engine deterministically
   - outputs replay JSON + summary results
-- [ ] Storage + retrieval:
+- [x] Storage + retrieval:
   - store bot submissions with versioning
   - store daily match results + replays
-- [ ] Submission API:
+- [x] Submission API:
   - auth
-  - validation (size limits, compile/parse limits, timeouts)
-  - rate limiting
-- [ ] Operations:
+  - validation (compile validation + canonical source hashing + explicit loadout snapshots)
+- [ ] Submission safeguards:
+  - size limits / compile limits / rate limiting
+- [x] Manual operations:
+  - queue ad-hoc daily runs with deterministic `run_seed -> match_seed`
+- [ ] Operations hardening:
   - scheduled daily runs
-  - admin tooling to re-run a day with the same seed
+  - broader admin tooling to re-run a day with the same seed
 
 Acceptance criteria
-- Given a fixed seed and identical bot sources, the server produces the same replay as local engine execution.
-- Submissions are validated consistently and failures are explainable (actionable error messages).
+- [x] Given a fixed seed and identical bot sources, the server produces the same replay as local engine execution.
+- [x] Submissions are validated consistently and failures are explainable (actionable error messages).
+- [ ] Automation/rate-limit hardening lands without changing the replay contract.
 
 QA checklist
 - Engine gates: `pnpm -C packages/engine test` + `pnpm golden:check`

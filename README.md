@@ -6,7 +6,8 @@ This repo is **spec-first**, and includes a runnable prototype:
 
 - `packages/engine`: bot DSL compiler/VM + deterministic simulation + replay generation
 - `apps/web`: Vite + React workshop that runs local matches in a Web Worker and renders the replay
-- `packages/replay`: legacy replay schema + sample generator (uses lightweight source heuristics like scanning for `SAW`/`SHIELD`; not authoritative engine behavior)
+- `apps/server`: Fastify + Postgres server runner for auth, bot storage, queued matches, replay persistence, and manual daily runs
+- `packages/replay`: legacy replay schema + sample generator (loadout-driven for `rulesetVersion = 0.2.0`; not the authoritative engine)
 
 ## Running the prototype
 
@@ -26,8 +27,37 @@ To run tests:
 
 ```bash
 pnpm test          # apps/web
+pnpm server:test   # apps/server
 pnpm -C packages/engine test
 ```
+
+## Running the server MVP
+
+Prereqs:
+- Node.js + pnpm
+- PostgreSQL
+
+Typical local flow:
+
+```bash
+pnpm install
+DATABASE_URL=postgres://localhost:5432/nowt pnpm server:migrate
+DATABASE_URL=postgres://localhost:5432/nowt pnpm server:seed:builtins
+DATABASE_URL=postgres://localhost:5432/nowt COOKIE_SECRET=dev-secret pnpm server:dev
+```
+
+The server listens on `127.0.0.1:3001` by default.
+
+Implemented server slice:
+- cookie-backed username/password auth
+- 3 starter bots per user
+- built-in bot seeding from `examples/*.md`
+- bot save/version history with canonicalized `source_text` + `source_hash`
+- queued sandbox simulations via `POST /api/simulations`
+- manual daily runs via `POST /api/runs`
+- replay retrieval via `GET /api/matches/:matchId/replay`
+
+See `apps/server/README.md` for the package-local notes.
 
 ## QA (Phase 1)
 
@@ -145,4 +175,5 @@ Supporting docs:
 - `FutureProofing.md` / `BotLanguageDesign.md` — extensibility direction (modules, targeting, future DSL)
 - `DailyCompetition.md` — daily/season competition format
 - `ServerTechStack.md` — recommended backend stack
+- `apps/server/README.md` — local server setup and commands
 - `Todo.md`, `Bugs.md`, `Versions.md` — tracking and versioning
