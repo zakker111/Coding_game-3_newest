@@ -640,6 +640,7 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.equal(match.participants.length, 4)
   assert.equal(match.participants[0].displayName, 'Alpha')
   assert.ok(typeof match.participants[0].sourceHash === 'string')
+  assert.ok(Array.isArray(match.result.placements))
 
   const replayResponse = await app.inject({
     method: 'GET',
@@ -652,4 +653,113 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.ok(Array.isArray(replay.state))
   assert.ok(Array.isArray(replay.events))
   assert.equal(Object.prototype.hasOwnProperty.call(replay.state[0].bots[0], 'targetMineId'), true)
+})
+
+test('POST /api/runs creates a daily run and exposes standings + match summaries', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  await registerUser(app, 'alice', 'password123')
+  await registerUser(app, 'bob', 'password123')
+
+  const createResponse = await app.inject({
+    method: 'POST',
+    url: '/api/runs',
+    payload: {
+      runDate: '2026-04-09',
+      seed: 'daily-seed',
+      tickCap: 20,
+      maxRoundsPerDay: 1,
+    },
+  })
+
+  assert.equal(createResponse.statusCode, 201)
+  const created = createResponse.json()
+  assert.equal(created.status, 'complete')
+  assert.match(created.runId, /^dr_\d{6}$/)
+  assert.equal(created.matchIds.length, 1)
+  assert.ok(Array.isArray(created.leaderboardSnapshot))
+
+  const runResponse = await app.inject({
+    method: 'GET',
+    url: `/api/runs/${created.runId}`,
+  })
+
+  assert.equal(runResponse.statusCode, 200)
+  assert.equal(runResponse.json().seasonId, created.seasonId)
+
+  const matchesResponse = await app.inject({
+    method: 'GET',
+    url: `/api/runs/${created.runId}/matches`,
+  })
+
+  assert.equal(matchesResponse.statusCode, 200)
+  const runMatches = matchesResponse.json().matches
+  assert.equal(runMatches.length, 1)
+  assert.equal(runMatches[0].kind, 'daily')
+  assert.ok(Array.isArray(runMatches[0].result.placements))
+  assert.ok(runMatches[0].result.placements.every((entry) => typeof entry.pointDelta === 'number'))
+
+  const standingsResponse = await app.inject({
+    method: 'GET',
+    url: `/api/seasons/${created.seasonId}/standings`,
+  })
+
+  assert.equal(standingsResponse.statusCode, 200)
+  const standingsBody = standingsResponse.json()
+  assert.equal(standingsBody.season.seasonId, created.seasonId)
+  assert.equal(standingsBody.standings.length, 6)
+  assert.ok(standingsBody.standings.some((entry) => entry.lastActiveRunDate === '2026-04-09'))
+})
+
+test('re-enable restores a bot to the current season floor after a daily run elimination', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const aliceCookie = await registerUser(app, 'alice', 'password123')
+  const bobCookie = await registerUser(app, 'bob', 'password123')
+
+  const createResponse = await app.inject({
+    method: 'POST',
+    url: '/api/runs',
+    payload: {
+      runDate: '2026-04-09',
+      seed: 'daily-seed',
+      tickCap: 20,
+      maxRoundsPerDay: 1,
+    },
+  })
+
+  assert.equal(createResponse.statusCode, 201)
+  const run = createResponse.json()
+
+  const standingsResponse = await app.inject({
+    method: 'GET',
+    url: `/api/seasons/${run.seasonId}/standings`,
+  })
+  const eliminated = standingsResponse.json().standings.find((entry) => entry.seasonPoints < 1)
+  assert.ok(eliminated)
+
+  const [, owner, name] = /^([^/]+)\/(.+)$/.exec(eliminated.botId) ?? []
+  const cookieByOwner = {
+    alice: aliceCookie,
+    bob: bobCookie,
+  }
+
+  const reenableResponse = await app.inject({
+    method: 'POST',
+    url: `/api/seasons/${run.seasonId}/bots/${owner}/${name}/re-enable`,
+    headers: {
+      cookie: cookieByOwner[owner],
+    },
+  })
+
+  assert.equal(reenableResponse.statusCode, 200)
+  const updated = reenableResponse.json().bot
+  assert.equal(updated.activeForNextRun, true)
+  assert.equal(updated.seasonPoints, 1)
 })

@@ -4,12 +4,16 @@ import { getServerConfig } from './config.js'
 import { registerAuthRoutes } from './routes/auth.js'
 import { registerBotRoutes } from './routes/bots.js'
 import { registerMatchRoutes } from './routes/matches.js'
+import { registerRunRoutes } from './routes/runs.js'
 import { registerRulesetRoutes } from './routes/ruleset.js'
+import { registerSeasonRoutes } from './routes/seasons.js'
 import { createAuthService } from './services/authService.js'
+import { createDailyRunService } from './services/dailyRunService.js'
 import { registerSimulationRoutes } from './routes/simulations.js'
 import { createBotService } from './services/botService.js'
 import { createSimulationService } from './services/simulationService.js'
 import { createInMemoryBotStore } from './store/inMemoryBotStore.js'
+import { createInMemoryDailyRunStore } from './store/inMemoryDailyRunStore.js'
 import { createInMemoryMatchStore } from './store/inMemoryMatchStore.js'
 import { createInMemoryUserStore } from './store/inMemoryUserStore.js'
 
@@ -27,6 +31,7 @@ export async function buildApp({
   config = getServerConfig(),
   store = createInMemoryMatchStore(),
   botStore = createInMemoryBotStore(),
+  dailyRunStore = createInMemoryDailyRunStore(),
   userStore = createInMemoryUserStore(),
 } = {}) {
   const app = Fastify({
@@ -41,6 +46,7 @@ export async function buildApp({
   app.decorate('serverConfig', config)
   app.decorate('matchStore', store)
   app.decorate('botStore', botStore)
+  app.decorate('dailyRunStore', dailyRunStore)
   app.decorate('userStore', userStore)
   app.decorate(
     'authService',
@@ -59,6 +65,15 @@ export async function buildApp({
     'botService',
     createBotService({
       store: botStore,
+      config,
+    })
+  )
+  app.decorate(
+    'dailyRunService',
+    createDailyRunService({
+      dailyRunStore,
+      matchStore: store,
+      botStore,
       config,
     })
   )
@@ -103,6 +118,8 @@ export async function buildApp({
   await registerBotRoutes(app)
   await registerSimulationRoutes(app)
   await registerMatchRoutes(app)
+  await registerRunRoutes(app)
+  await registerSeasonRoutes(app)
   await app.ready()
 
   return app

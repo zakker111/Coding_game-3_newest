@@ -46,6 +46,7 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   const firstApp = await buildApp({
     store: firstStores.matchStore,
     botStore: firstStores.botStore,
+    dailyRunStore: firstStores.dailyRunStore,
     userStore: firstStores.userStore,
   })
 
@@ -72,12 +73,27 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   assert.equal(createResponse.statusCode, 201)
   const matchId = createResponse.json().matchId
 
+  const runResponse = await firstApp.inject({
+    method: 'POST',
+    url: '/api/runs',
+    payload: {
+      runDate: '2026-04-09',
+      seed: 'daily-seed',
+      tickCap: 20,
+      maxRoundsPerDay: 1,
+    },
+  })
+  assert.equal(runResponse.statusCode, 201)
+  const runId = runResponse.json().runId
+  const seasonId = runResponse.json().seasonId
+
   await firstApp.close()
 
   const secondStores = createStores(filePath)
   const secondApp = await buildApp({
     store: secondStores.matchStore,
     botStore: secondStores.botStore,
+    dailyRunStore: secondStores.dailyRunStore,
     userStore: secondStores.userStore,
   })
   t.after(async () => {
@@ -127,4 +143,18 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   })
   assert.equal(replayResponse.statusCode, 200)
   assert.equal(replayResponse.json().matchSeed, 123)
+
+  const persistedRun = await secondApp.inject({
+    method: 'GET',
+    url: `/api/runs/${runId}`,
+  })
+  assert.equal(persistedRun.statusCode, 200)
+  assert.equal(persistedRun.json().status, 'complete')
+
+  const standingsResponse = await secondApp.inject({
+    method: 'GET',
+    url: `/api/seasons/${seasonId}/standings`,
+  })
+  assert.equal(standingsResponse.statusCode, 200)
+  assert.ok(Array.isArray(standingsResponse.json().standings))
 })
