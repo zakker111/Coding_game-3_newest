@@ -20,6 +20,9 @@ importers:
       '@coding-game/replay':
         specifier: workspace:*
         version: link:../../packages/replay
+      '@coding-game/ruleset':
+        specifier: workspace:*
+        version: link:../../packages/ruleset
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -66,12 +69,21 @@ importers:
       '@coding-game/replay':
         specifier: workspace:*
         version: link:../replay
+      '@coding-game/ruleset':
+        specifier: workspace:*
+        version: link:../ruleset
     devDependencies:
       typescript:
         specifier: ^5.2.2
         version: 5.9.3
 
-  packages/replay: {}
+  packages/replay:
+    dependencies:
+      '@coding-game/ruleset':
+        specifier: workspace:*
+        version: link:../ruleset
+
+  packages/ruleset: {}
 
 packages:
 
