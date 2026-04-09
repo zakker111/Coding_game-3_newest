@@ -18,7 +18,7 @@
         const q = params.get('q')
         if (!p) return
 
-        const base = '/Coding_game-3_newest/'.replace(/\/+$/, '')
+        const base = './'.replace(/\/+$/, '')
         const restoredPath = decodeURIComponent(p)
         const restoredQuery = q ? `?${decodeURIComponent(q)}` : ''
         const alreadyBased = restoredPath === base || restoredPath.startsWith(`${base}/`)
@@ -27,8 +27,8 @@
         window.history.replaceState(null, '', restored)
       })()
     </script>
-    <script type="module" crossorigin src="/Coding_game-3_newest/assets/main-C5gIzjrI.js"></script>
-    <link rel="stylesheet" crossorigin href="/Coding_game-3_newest/assets/main-vokESq0E.css">
+    <script type="module" crossorigin src="./assets/main-BpzHvO3h.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main-vokESq0E.css">
   </head>
   <body>
     <div id="root"></div>
