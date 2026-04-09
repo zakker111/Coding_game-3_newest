@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nowt</title>
+
+    <!--
+      SPA deep-link support for static hosting.
+
+      Many static hosts serve /404.html for unknown paths (e.g. /workshop). Our 404.html redirects
+      back to / with the intended path encoded in ?p=...&q=... so the app can restore it.
+    -->
+    <script>
+      ;(() => {
+        const params = new URLSearchParams(window.location.search)
+        const p = params.get('p')
+        const q = params.get('q')
+        if (!p) return
+
+        const base = './'.replace(/\/+$/, '')
+        const restoredPath = decodeURIComponent(p)
+        const restoredQuery = q ? `?${decodeURIComponent(q)}` : ''
+        const alreadyBased = restoredPath === base || restoredPath.startsWith(`${base}/`)
+        const restored = `${alreadyBased ? restoredPath : `${base}${restoredPath}`}${restoredQuery}${window.location.hash}`
+
+        window.history.replaceState(null, '', restored)
+      })()
+    </script>
+    <script type="module" crossorigin src="./assets/main-BpzHvO3h.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/main-vokESq0E.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
