@@ -54,9 +54,9 @@ Determinism guardrail:
 
 ---
 
-## 3) Next slice: Phase 8A sandbox server runner
+## 3) Recently completed: Phase 8A sandbox server runner
 
-Why this is next:
+Why this was the right first server slice:
 - The local deterministic loop is already guarded by:
   - collision/invariant hardening
   - golden replay checks
@@ -67,29 +67,60 @@ Why this is next:
 - Workshop-only inactive opponent slots are explicitly local UX and do not change the server runner contract.
 - The remaining local-loop risk is operational, not architectural: run the browser-capable release gate where appropriate and fix any surfaced regressions in context.
 
-Scope:
-- Start the smallest deterministic server runner that consumes the existing engine contract.
-- Use a new `apps/server` workspace app with:
+Shipped scope:
+- `apps/server` provides the deterministic server runner that consumes the existing engine contract.
+- The server app includes:
   - `GET /api/ruleset`
   - `POST /api/simulations`
   - `GET /api/matches/:matchId`
   - `GET /api/matches/:matchId/replay`
-- Accept inline participant snapshots (`sourceText` + explicit `loadout`) rather than auth-backed saved bots.
-- Keep storage in-memory for this slice so the HTTP/API boundary is proven before DB/auth/scheduler work expands scope.
-- Keep replay/schema/ruleset semantics unchanged while the server path is wired up.
-- Reuse the local parity/sign-off workflow as the contract for server acceptance.
+- Inline participant snapshots (`sourceText` + explicit `loadout`) can be executed as sandbox matches.
+- Match metadata and replay retrieval work over HTTP.
+- Source limits, compile errors, loadout normalization, and failed-match lifecycle handling are covered by server tests.
+- Auth, starter user bots, bot save/load, and source version history have also started in the server app.
 
-Acceptance criteria:
-- The server can execute a deterministic headless match from submitted bot sources + explicit loadouts.
-- Stored/retrieved replay output matches the local engine contract.
-- `apps/server` participates in workspace build/test execution.
-- Local release verification stays green via `pnpm qa:release` (or `pnpm gate:phase1`).
+Verification:
+- `pnpm -C apps/server test`
 
 ---
 
-## 4) Pre-merge checklist (run locally)
+## 4) Next slice: Phase 8B server-backed Workshop simulations
+
+Why this is next:
+- The client can already run local deterministic matches.
+- The server can already run deterministic sandbox matches and return replay JSON.
+- The next product milestone is proving that the Workshop can use the server runner without replacing the local workflow.
+
+Scope:
+- Add a Workshop control/path for server-backed simulations while keeping the current local run path.
+- Send the current bot source snapshots and explicit loadouts to `POST /api/simulations`.
+- Fetch the returned replay from `GET /api/matches/:matchId/replay`.
+- Render the server replay in the existing replay viewer.
+- Surface actionable server validation errors in the Workshop UI:
+  - invalid request shape
+  - source-size limit failures
+  - compile errors with slot details
+  - loadout normalization warnings
+- Keep Workshop-only inactive opponent slots local-only unless the server contract is intentionally expanded.
+
+Acceptance criteria:
+- A user can run the same 4-bot setup locally or through the server from the Workshop.
+- Server-returned replay JSON renders in the existing viewer without schema changes.
+- Server error responses are visible and understandable in the UI.
+- Server-backed runs do not change `rulesetVersion = 0.2.0` or `schemaVersion = 0.2.0`.
+- Relevant web/server tests pass.
+
+Recommended QA:
+- `pnpm -C apps/server test`
+- `pnpm -C apps/web test`
+- `pnpm build`
+
+---
+
+## 5) Pre-merge checklist (run locally)
 
 ```bash
+pnpm -C apps/server test
 pnpm qa:release
 pnpm -C packages/engine test:golden
 ```
@@ -100,9 +131,9 @@ Manual checks:
 
 ---
 
-## 5) After Phase 8A lands
+## 6) After Phase 8B lands
 
-- Add persistent submissions/versioning.
+- Harden persistent submissions/versioning beyond the current server baseline.
 - Replace the in-memory match store with durable storage.
-- Add auth/validation once the deterministic runner path is stable.
+- Add rate limiting and production-grade auth/session hardening.
 - Add daily scheduling after the sandbox path is stable.

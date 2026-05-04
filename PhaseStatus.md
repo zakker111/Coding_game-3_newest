@@ -7,13 +7,14 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: Phase 8A sandbox server runner
+## Current slice: Phase 8B server-backed Workshop simulations
 
 Goals:
-- Start the smallest server-side slice now that the local deterministic loop and deploy parity guardrails are in place.
-- Keep engine semantics locked while the server consumes the already-tested local replay contract.
-- Treat further local-loop work as additive hardening, not as a reason to delay Phase 8 again. Workshop-only inactive opponent slots remain a local UI affordance and are not part of the server-side match surface.
-- Start with inline participant snapshots and in-memory storage before auth, persistence, or daily scheduling widen scope.
+- Connect the existing Workshop UI to the already-shipped sandbox server runner.
+- Keep the current local run path while adding a server-backed run path.
+- Keep engine/replay semantics locked: `rulesetVersion = 0.2.0`, `schemaVersion = 0.2.0`.
+- Surface server validation errors clearly in the Workshop.
+- Keep Workshop-only inactive opponent slots local-only unless the server contract is intentionally expanded.
 
 ---
 
@@ -97,15 +98,23 @@ Status: ✅ done
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: 🚧 started via Phase 8A sandbox runner
+Status: 🚧 Phase 8A shipped; Phase 8B is next
 
-Phase 8A now in scope:
-- New `apps/server` workspace app.
+Phase 8A shipped:
+- `apps/server` workspace app.
 - Deterministic sandbox match execution from submitted bot source snapshots + explicit loadouts.
 - Match metadata + replay retrieval over HTTP.
-- In-memory storage only for the initial slice.
+- Server-side source limits, compile-error responses, loadout normalization, and match lifecycle coverage.
+- Auth, starter user bots, bot save/load, and source version history are present as the first submissions baseline.
+
+Phase 8B next:
+- Add Workshop “run on server” flow.
+- POST current bot source/loadout snapshots to `/api/simulations`.
+- Fetch `/api/matches/:matchId/replay`.
+- Render the server replay in the existing viewer.
+- Show actionable server errors in the UI.
 
 Still deferred inside Phase 8:
-- Auth + bot submissions + versioning + validation.
-- Persistent replay/match storage.
+- Production-grade auth/session hardening + rate limiting.
+- Durable replay/match storage.
 - Daily run scheduling and standings.

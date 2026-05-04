@@ -21,12 +21,13 @@ Recently completed (this merge set)
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
 Next slice
-- Phase 8A is now the active slice: standalone sandbox server runner in `apps/server`.
+- Phase 8B is now the active slice: server-backed Workshop simulations using the existing `apps/server` sandbox runner.
 - Prioritize:
-  - deterministic headless match execution from submitted source snapshots
-  - match metadata + replay retrieval over HTTP
-  - workspace build/test integration
-- Keep auth, persistence, and daily scheduling explicitly deferred until the sandbox path is stable.
+  - Workshop “run on server” flow
+  - POST current source/loadout snapshots to `/api/simulations`
+  - fetch and render `/api/matches/:matchId/replay`
+  - clear UI handling for server validation/compile errors
+- Keep durable replay storage, rate limiting, and daily scheduling explicitly deferred until the server-backed Workshop path is stable.
 
 ### Status board
 
@@ -43,7 +44,7 @@ Implemented now
   - actionable browser-runtime diagnostics for `qa:workshop`
 
 Still open
-- [ ] Phase 8A sandbox server runner.
+- [ ] Phase 8B server-backed Workshop simulations.
 
 ### Near-term execution checklist
 
@@ -53,11 +54,11 @@ Do next
 - [x] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
 
 Ready after audit
-- [ ] Start the smallest Phase 8 server slice:
-  - deterministic headless runner
-  - match/replay HTTP surface
-  - in-memory storage boundary
-  - workspace build/test integration
+- [ ] Start the Phase 8B Workshop/server integration slice:
+  - server-backed run control/path in Workshop
+  - simulation POST from current bot setup
+  - replay fetch + render
+  - server error display
 
 ### Checklist (done vs. not done)
 
@@ -79,7 +80,8 @@ Next up
 - [x] Local-loop hardening: close the remaining deploy/workshop parity and release-sign-off guardrails.
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
-- [ ] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
+- [x] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
+- [ ] Phase 8B: server-backed Workshop simulations.
 
 ---
 
@@ -381,20 +383,22 @@ Goal: start with a narrow sandbox runner, then expand to persistent submissions 
 
 ### Phase 8A — sandbox runner MVP
 
+Status: ✅ shipped in `apps/server`
+
 Concrete tasks
-- [ ] Headless deterministic match runner:
+- [x] Headless deterministic match runner:
   - accepts inline bot source + explicit loadout snapshots
   - runs the shared engine deterministically
   - outputs replay JSON + summary results
-- [ ] HTTP surface:
+- [x] HTTP surface:
   - `GET /api/ruleset`
   - `POST /api/simulations`
   - `GET /api/matches/:matchId`
   - `GET /api/matches/:matchId/replay`
-- [ ] Storage boundary:
+- [x] Storage boundary:
   - in-memory match/replay store for the first slice
   - explicit match lifecycle (`queued|running|complete|failed`)
-- [ ] Validation:
+- [x] Validation:
   - source normalization + size limits
   - compile errors surfaced as actionable `400` responses
   - loadout normalization preserved in participant snapshots
@@ -410,9 +414,42 @@ QA checklist
 - `pnpm test:all`
 - `pnpm build:all`
 
+### Phase 8B — server-backed Workshop simulations
+
+Goal: connect the existing Workshop UI to the shipped sandbox server runner while preserving the current local run path.
+
+Concrete tasks
+- [ ] Add a Workshop control/path for running a match through the server.
+- [ ] Serialize the current 4-bot setup into the `/api/simulations` request shape:
+  - `seed`
+  - `tickCap`
+  - participant `slot`
+  - participant `displayName`
+  - participant `sourceText`
+  - participant explicit `loadout`
+- [ ] Fetch the returned replay from `/api/matches/:matchId/replay`.
+- [ ] Render the server replay in the existing replay viewer.
+- [ ] Display server errors clearly:
+  - invalid request
+  - source size limits
+  - compile errors with slot details
+  - failed match lifecycle
+- [ ] Keep Workshop-only inactive opponent slots local-only unless a server contract change is made deliberately.
+
+Acceptance criteria
+- The Workshop can run the same active 4-bot setup locally or through the server.
+- Server replay JSON renders without schema changes.
+- Server validation errors are actionable in the UI.
+- Existing local Workshop behavior remains intact.
+
+QA checklist
+- `pnpm -C apps/server test`
+- `pnpm -C apps/web test`
+- `pnpm build`
+
 ### Later in Phase 8
 
-- [ ] Persistent submissions/versioning.
+- [ ] Harden persistent submissions/versioning beyond the current server baseline.
 - [ ] Durable replay/match storage.
-- [ ] Auth + rate limiting.
+- [ ] Production-grade auth/session hardening + rate limiting.
 - [ ] Scheduled daily runs and admin tooling.
