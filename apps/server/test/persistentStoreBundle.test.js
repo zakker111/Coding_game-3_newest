@@ -38,6 +38,33 @@ function createValidPayload() {
   }
 }
 
+function createDailyBotStore() {
+  const sourceText = 'WAIT 1\n'
+  const bots = ['daily/bot1', 'daily/bot2', 'daily/bot3', 'daily/bot4']
+
+  return {
+    listBots() {
+      return bots.map((botId) => {
+        const [ownerUsername, name] = botId.split('/')
+        return {
+          botId,
+          ownerUsername,
+          name,
+          updatedAt: null,
+          sourceHash: null,
+        }
+      })
+    },
+
+    getBotSource(ownerUsername, name) {
+      return {
+        botId: `${ownerUsername}/${name}`,
+        sourceText,
+      }
+    },
+  }
+}
+
 test('persistent stores survive server rebuilds for users, bots, sessions, and matches', async (t) => {
   const dir = mkdtempSync(join(tmpdir(), 'nowt-server-'))
   const filePath = join(dir, 'server-state.json')
@@ -73,7 +100,17 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   assert.equal(createResponse.statusCode, 201)
   const matchId = createResponse.json().matchId
 
-  const dailyRunResponse = await firstApp.inject({
+  await firstApp.close()
+
+  const dailyStores = createStores(filePath)
+  const dailyApp = await buildApp({
+    store: dailyStores.matchStore,
+    botStore: createDailyBotStore(),
+    userStore: dailyStores.userStore,
+    dailyRunStore: dailyStores.dailyRunStore,
+  })
+
+  const dailyRunResponse = await dailyApp.inject({
     method: 'POST',
     url: '/api/runs/daily',
     payload: {
@@ -85,7 +122,7 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   assert.equal(dailyRunResponse.statusCode, 201)
   const dailyRunId = dailyRunResponse.json().runId
 
-  await firstApp.close()
+  await dailyApp.close()
 
   const secondStores = createStores(filePath)
   const secondApp = await buildApp({
@@ -148,5 +185,5 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   })
   assert.equal(dailyRunAfterRebuild.statusCode, 200)
   assert.equal(dailyRunAfterRebuild.json().status, 'complete')
-  assert.equal(dailyRunAfterRebuild.json().matchIds.length, 2)
+  assert.equal(dailyRunAfterRebuild.json().matchIds.length, 1)
 })

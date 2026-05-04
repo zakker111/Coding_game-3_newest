@@ -677,9 +677,10 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(run.status, 'complete')
   assert.equal(run.runDate, '2026-05-04')
   assert.equal(run.rulesetVersion, '0.2.0')
-  assert.equal(run.matchIds.length, 1)
-  assert.equal(run.summary.matchCount, 1)
-  assert.equal(run.summary.leaderboard.length, 4)
+  assert.equal(run.matchIds.length, 35)
+  assert.equal(run.summary.matchCount, 35)
+  assert.equal(run.summary.leaderboard.length, 7)
+  assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 20))
 
   const runResponse = await app.inject({
     method: 'GET',
@@ -695,7 +696,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatchesResponse.statusCode, 200)
   const runMatches = runMatchesResponse.json()
   assert.equal(runMatches.runId, run.runId)
-  assert.equal(runMatches.matches.length, 1)
+  assert.equal(runMatches.matches.length, 35)
   assert.equal(runMatches.matches[0].kind, 'daily')
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
   assert.equal(runMatches.matches[0].participants.length, 4)
@@ -705,7 +706,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     url: `/api/matches?runId=${run.runId}&kind=daily`,
   })
   assert.equal(listMatchesResponse.statusCode, 200)
-  assert.equal(listMatchesResponse.json().matches.length, 1)
+  assert.equal(listMatchesResponse.json().matches.length, 35)
 
   const replayResponse = await app.inject({
     method: 'GET',

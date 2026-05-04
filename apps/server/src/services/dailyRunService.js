@@ -52,17 +52,36 @@ function hashString(value) {
   return hash >>> 0
 }
 
+function shuffleIdentity(item) {
+  if (Array.isArray(item)) return item.map((entry) => entry.botId).join('|')
+  return item.botId
+}
+
 function deterministicShuffle(items, seed) {
   return items
     .map((item, index) => ({
       item,
-      key: hashString(`${String(seed)}:${index}:${item.botId}`),
+      key: hashString(`${String(seed)}:${index}:${shuffleIdentity(item)}`),
     }))
     .sort((a, b) => {
       if (a.key !== b.key) return a.key - b.key
-      return a.item.botId.localeCompare(b.item.botId)
+      return shuffleIdentity(a.item).localeCompare(shuffleIdentity(b.item))
     })
     .map((entry) => entry.item)
+}
+
+function createFourBotCombinations(bots) {
+  const combinations = []
+  for (let first = 0; first < bots.length - 3; first += 1) {
+    for (let second = first + 1; second < bots.length - 2; second += 1) {
+      for (let third = second + 1; third < bots.length - 1; third += 1) {
+        for (let fourth = third + 1; fourth < bots.length; fourth += 1) {
+          combinations.push([bots[first], bots[second], bots[third], bots[fourth]])
+        }
+      }
+    }
+  }
+  return combinations
 }
 
 function parseBotId(botId) {
@@ -126,16 +145,25 @@ function scoreMatch(match) {
 
 function summarizeRun(matches) {
   const pointsByBotId = {}
+  const matchesByBotId = {}
 
   for (const match of matches) {
+    for (const participant of match.participants) {
+      matchesByBotId[participant.displayName] = (matchesByBotId[participant.displayName] ?? 0) + 1
+    }
+
     const matchPoints = scoreMatch(match)
     for (const [botId, points] of Object.entries(matchPoints)) {
       pointsByBotId[botId] = (pointsByBotId[botId] ?? 0) + points
     }
   }
 
-  const leaderboard = Object.entries(pointsByBotId)
-    .map(([botId, points]) => ({ botId, points }))
+  const leaderboard = Object.entries(matchesByBotId)
+    .map(([botId, matchesPlayed]) => ({
+      botId,
+      matchesPlayed,
+      points: pointsByBotId[botId] ?? 0,
+    }))
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points
       return a.botId.localeCompare(b.botId)
@@ -216,12 +244,13 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
 
         for (let round = 0; round < maxRounds; round += 1) {
           const roundBots = deterministicShuffle(eligibleBots, `${String(runSeed)}:round:${round}`)
+          const groups = deterministicShuffle(createFourBotCombinations(roundBots), `${String(runSeed)}:round:${round}:groups`)
 
-          for (let index = 0; index + SLOT_IDS.length <= roundBots.length; index += SLOT_IDS.length) {
-            const group = roundBots.slice(index, index + SLOT_IDS.length)
+          for (let index = 0; index < groups.length; index += 1) {
+            const group = groups[index]
             const match = simulationService.createSimulation(
               {
-                seed: `${String(runSeed)}:round:${round}:match:${index / SLOT_IDS.length}`,
+                seed: `${String(runSeed)}:round:${round}:match:${index}`,
                 tickCap,
                 participants: buildParticipants(botStore, group),
               },
