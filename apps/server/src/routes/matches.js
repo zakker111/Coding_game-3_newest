@@ -10,6 +10,7 @@ function buildMatchResponse(match) {
   return {
     matchId: match.matchId,
     kind: match.kind,
+    ...(match.dailyRunId ? { dailyRunId: match.dailyRunId } : {}),
     status: match.status,
     matchSeed: match.matchSeed,
     tickCap: match.tickCap,
