@@ -11,6 +11,7 @@ const app = await buildApp({
   store: stores.matchStore,
   botStore: stores.botStore,
   userStore: stores.userStore,
+  dailyRunStore: stores.dailyRunStore,
 })
 
 try {

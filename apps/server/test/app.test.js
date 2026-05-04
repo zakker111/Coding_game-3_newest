@@ -653,3 +653,79 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.ok(Array.isArray(replay.events))
   assert.equal(Object.prototype.hasOwnProperty.call(replay.state[0].bots[0], 'targetMineId'), true)
 })
+
+test('POST /api/runs/daily creates deterministic daily matches and leaderboard', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const createResponse = await app.inject({
+    method: 'POST',
+    url: '/api/runs/daily',
+    payload: {
+      runDate: '2026-05-04',
+      seed: 'daily-seed',
+      tickCap: 20,
+      maxRounds: 1,
+    },
+  })
+
+  assert.equal(createResponse.statusCode, 201)
+  const run = createResponse.json()
+  assert.equal(run.runId, 'd_000001')
+  assert.equal(run.status, 'complete')
+  assert.equal(run.runDate, '2026-05-04')
+  assert.equal(run.rulesetVersion, '0.2.0')
+  assert.equal(run.matchIds.length, 1)
+  assert.equal(run.summary.matchCount, 1)
+  assert.equal(run.summary.leaderboard.length, 4)
+
+  const runResponse = await app.inject({
+    method: 'GET',
+    url: `/api/runs/${run.runId}`,
+  })
+  assert.equal(runResponse.statusCode, 200)
+  assert.equal(runResponse.json().runId, run.runId)
+
+  const runMatchesResponse = await app.inject({
+    method: 'GET',
+    url: `/api/runs/${run.runId}/matches`,
+  })
+  assert.equal(runMatchesResponse.statusCode, 200)
+  const runMatches = runMatchesResponse.json()
+  assert.equal(runMatches.runId, run.runId)
+  assert.equal(runMatches.matches.length, 1)
+  assert.equal(runMatches.matches[0].kind, 'daily')
+  assert.equal(runMatches.matches[0].dailyRunId, run.runId)
+  assert.equal(runMatches.matches[0].participants.length, 4)
+
+  const listMatchesResponse = await app.inject({
+    method: 'GET',
+    url: `/api/matches?runId=${run.runId}&kind=daily`,
+  })
+  assert.equal(listMatchesResponse.statusCode, 200)
+  assert.equal(listMatchesResponse.json().matches.length, 1)
+
+  const replayResponse = await app.inject({
+    method: 'GET',
+    url: `/api/matches/${run.matchIds[0]}/replay`,
+  })
+  assert.equal(replayResponse.statusCode, 200)
+  assert.equal(replayResponse.json().matchSeed, 'daily-seed:round:0:match:0')
+})
+
+test('GET /api/runs/:runId returns 404 for unknown daily runs', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/runs/d_999999',
+  })
+
+  assert.equal(response.statusCode, 404)
+  assert.equal(response.json().error.code, 'DAILY_RUN_NOT_FOUND')
+})

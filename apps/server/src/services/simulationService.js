@@ -172,7 +172,7 @@ export function createSimulationService({
       }
     },
 
-    createSimulation(input) {
+    createSimulation(input, meta = {}) {
       if (!isPlainObject(input)) {
         throw createHttpError(400, 'INVALID_REQUEST', 'request body must be a JSON object')
       }
@@ -182,6 +182,7 @@ export function createSimulationService({
       const participants = normalizeParticipants(input.participants, config, compileSource)
 
       const match = store.createMatch({
+        ...meta,
         matchSeed: seed,
         tickCap,
         participants,

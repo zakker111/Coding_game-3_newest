@@ -68,5 +68,16 @@ export function createInMemoryMatchStore() {
       const match = matches.get(matchId)
       return cloneRecord(match?.replay ?? null)
     },
+
+    listMatches({ dailyRunId, kind } = {}) {
+      const results = []
+      for (const match of matches.values()) {
+        if (dailyRunId && match.dailyRunId !== dailyRunId) continue
+        if (kind && match.kind !== kind) continue
+        results.push(match)
+      }
+      results.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      return cloneRecord(results)
+    },
   }
 }

@@ -47,6 +47,7 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
     store: firstStores.matchStore,
     botStore: firstStores.botStore,
     userStore: firstStores.userStore,
+    dailyRunStore: firstStores.dailyRunStore,
   })
 
   const cookie = await registerUser(firstApp, 'alice', 'password123')
@@ -72,6 +73,18 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   assert.equal(createResponse.statusCode, 201)
   const matchId = createResponse.json().matchId
 
+  const dailyRunResponse = await firstApp.inject({
+    method: 'POST',
+    url: '/api/runs/daily',
+    payload: {
+      runDate: '2026-05-04',
+      seed: 'persistent-daily',
+      tickCap: 20,
+    },
+  })
+  assert.equal(dailyRunResponse.statusCode, 201)
+  const dailyRunId = dailyRunResponse.json().runId
+
   await firstApp.close()
 
   const secondStores = createStores(filePath)
@@ -79,6 +92,7 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
     store: secondStores.matchStore,
     botStore: secondStores.botStore,
     userStore: secondStores.userStore,
+    dailyRunStore: secondStores.dailyRunStore,
   })
   t.after(async () => {
     await secondApp.close()
@@ -127,4 +141,12 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   })
   assert.equal(replayResponse.statusCode, 200)
   assert.equal(replayResponse.json().matchSeed, 123)
+
+  const dailyRunAfterRebuild = await secondApp.inject({
+    method: 'GET',
+    url: `/api/runs/${dailyRunId}`,
+  })
+  assert.equal(dailyRunAfterRebuild.statusCode, 200)
+  assert.equal(dailyRunAfterRebuild.json().status, 'complete')
+  assert.equal(dailyRunAfterRebuild.json().matchIds.length, 2)
 })

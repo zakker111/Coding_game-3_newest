@@ -21,6 +21,7 @@ function createInitialState() {
     sessions: [],
     bots: [],
     matches: [],
+    dailyRuns: [],
   }
 }
 
@@ -35,6 +36,7 @@ function normalizeState(raw) {
     sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
     bots: Array.isArray(raw.bots) ? raw.bots : [],
     matches: Array.isArray(raw.matches) ? raw.matches : [],
+    dailyRuns: Array.isArray(raw.dailyRuns) ? raw.dailyRuns : [],
   }
 }
 
@@ -329,11 +331,89 @@ export function createPersistentStoreBundle({ filePath }) {
       const match = state.matches.find((entry) => entry.matchId === matchId)
       return cloneRecord(match?.replay ?? null)
     },
+
+    listMatches({ dailyRunId, kind } = {}) {
+      const matches = state.matches.filter((match) => {
+        if (dailyRunId && match.dailyRunId !== dailyRunId) return false
+        if (kind && match.kind !== kind) return false
+        return true
+      })
+      return cloneRecord(matches.sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    },
+  }
+
+  const dailyRunStore = {
+    createRun(meta) {
+      const existingIds = state.dailyRuns
+        .map((run) => (typeof run.runId === 'string' ? Number.parseInt(run.runId.slice(2), 10) : 0))
+        .filter((id) => Number.isInteger(id))
+      const runId = `d_${String(Math.max(0, ...existingIds) + 1).padStart(6, '0')}`
+      const createdAt = new Date().toISOString()
+      const run = {
+        runId,
+        status: 'planned',
+        createdAt,
+        updatedAt: createdAt,
+        matchIds: [],
+        summary: null,
+        error: null,
+        ...meta,
+      }
+
+      state.dailyRuns.push(run)
+      persist()
+      return cloneRecord(run)
+    },
+
+    markRunning(runId) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'running'
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    markComplete(runId, payload) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'complete'
+      run.matchIds = payload.matchIds
+      run.summary = payload.summary
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    markFailed(runId, error) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'failed'
+      run.error = error
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    getRun(runId) {
+      return cloneRecord(state.dailyRuns.find((entry) => entry.runId === runId) ?? null)
+    },
+
+    listRuns() {
+      return cloneRecord([...state.dailyRuns].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    },
   }
 
   return {
     userStore,
     botStore,
     matchStore,
+    dailyRunStore,
   }
 }
