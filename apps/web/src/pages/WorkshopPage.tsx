@@ -71,6 +71,7 @@ const OPPONENT_ASSIGNMENTS_KEY = 'nowt:workshop:opponents:v1'
 const SERVER_BASE_URL_KEY = 'nowt:workshop:serverBaseUrl:v1'
 const SERVER_MODE_KEY = 'nowt:workshop:serverMode:v1'
 const NONE_OPPONENT_ID = '__NONE__'
+const RANDOM_OPPONENT_ID = '__RANDOM__'
 
 type OpponentAssignments = {
   BOT2: string
@@ -1486,6 +1487,20 @@ export function WorkshopPage() {
   }
 
   function setOpponent(slot: keyof OpponentAssignments, id: string) {
+    if (id === RANDOM_OPPONENT_ID) {
+      const otherSlots = OPPONENT_SLOTS.filter((s) => s !== slot)
+      const usedByOtherSlots = new Set(otherSlots.map((s) => opponents[s]))
+      const candidates = opponentPoolIds.filter((candidate) => !usedByOtherSlots.has(candidate))
+      const nonce = readOpponentNonce()
+      const index = candidates.length ? ((seed >>> 0) ^ fnv1a32(`${slot}:${selectedMyBot.sourceText}:${nonce}`)) % candidates.length : -1
+
+      if (index >= 0) {
+        setOpponents((prev) => normalizeOpponentAssignments({ ...prev, [slot]: candidates[index] }, opponentPoolIds))
+      }
+      writeOpponentNonce((nonce + 1) >>> 0)
+      return
+    }
+
     setOpponents((prev) => normalizeOpponentAssignments({ ...prev, [slot]: id }, opponentPoolIds))
   }
 
@@ -1811,6 +1826,7 @@ export function WorkshopPage() {
     const usedByOtherSlots = new Set(otherSlots.map((s) => opponents[s]))
 
     return [
+      { id: RANDOM_OPPONENT_ID, displayName: 'Random bot', sourceText: '', loadout: EMPTY_LOADOUT },
       { id: NONE_OPPONENT_ID, displayName: 'None (inactive)', sourceText: '', loadout: EMPTY_LOADOUT },
       ...opponentPool.filter((o) => o.id === opponents[slot] || !usedByOtherSlots.has(o.id)),
     ]

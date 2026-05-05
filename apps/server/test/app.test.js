@@ -47,6 +47,7 @@ test('default admin account exists with starter bots', async (t) => {
   })
 
   assert.equal(loginResponse.statusCode, 200)
+  await registerUser(app, 'alice', 'password123')
   assert.equal(loginResponse.json().user.username, 'admin')
 
   const botsResponse = await app.inject({
@@ -708,6 +709,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     },
   })
   assert.equal(loginResponse.statusCode, 200)
+  await registerUser(app, 'alice', 'password123')
 
   const saveAdminBot = await app.inject({
     method: 'PUT',
@@ -742,10 +744,10 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(run.status, 'complete')
   assert.equal(run.runDate, '2026-05-04')
   assert.equal(run.rulesetVersion, '0.2.0')
-  assert.equal(run.matchIds.length, 210)
-  assert.equal(run.summary.matchCount, 210)
-  assert.equal(run.summary.leaderboard.length, 10)
-  assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 84))
+  assert.equal(run.matchIds.length, 15)
+  assert.equal(run.summary.matchCount, 15)
+  assert.equal(run.summary.leaderboard.length, 6)
+  assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 10))
 
   const runResponse = await app.inject({
     method: 'GET',
@@ -761,7 +763,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatchesResponse.statusCode, 200)
   const runMatches = runMatchesResponse.json()
   assert.equal(runMatches.runId, run.runId)
-  assert.equal(runMatches.matches.length, 210)
+  assert.equal(runMatches.matches.length, 15)
   assert.equal(runMatches.matches[0].kind, 'daily')
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
   assert.equal(runMatches.matches[0].replayStored, false)
@@ -776,7 +778,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     url: `/api/matches?runId=${run.runId}&kind=daily`,
   })
   assert.equal(listMatchesResponse.statusCode, 200)
-  assert.equal(listMatchesResponse.json().matches.length, 210)
+  assert.equal(listMatchesResponse.json().matches.length, 15)
 
   const replayResponse = await app.inject({
     method: 'GET',

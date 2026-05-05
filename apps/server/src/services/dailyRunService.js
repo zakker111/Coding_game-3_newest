@@ -225,7 +225,10 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         })
       }
       const maxRounds = validatePositiveInt(input.maxRounds, DEFAULT_MAX_ROUNDS, 'maxRounds')
-      const eligibleBots = deterministicShuffle(botStore.listBots(), runSeed)
+      const eligibleBots = deterministicShuffle(
+        botStore.listBots().filter((bot) => bot.ownerUsername !== 'builtin'),
+        runSeed
+      )
 
       if (eligibleBots.length < SLOT_IDS.length) {
         throw createHttpError(409, 'NOT_ENOUGH_BOTS', 'Daily runs require at least four eligible bots', {
