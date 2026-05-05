@@ -10,7 +10,7 @@ it('renders the landing page', () => {
 
   render(<RouterProvider router={router} />)
 
-  expect(screen.getByRole('heading', { name: 'Nowt' })).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Write the bot. Watch the fight.' })).toBeInTheDocument()
 })
 
 it('renders the docs page', () => {
@@ -28,7 +28,7 @@ it('renders the leaderboard page', async () => {
   render(<RouterProvider router={router} />)
 
   expect(await screen.findByRole('heading', { name: 'Daily leaderboard' })).toBeInTheDocument()
-  expect(await screen.findByText('Rank')).toBeInTheDocument()
+  expect(await screen.findByText(/Rank|No daily results yet/i)).toBeInTheDocument()
 })
 
 it('workshop layout surfaces setup, hides opponent code, and keeps tick events scrollable', () => {

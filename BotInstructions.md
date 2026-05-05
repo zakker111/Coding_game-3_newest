@@ -3,6 +3,42 @@
 > Canonical **stable v1 bot language** reference.
 > For future-proof planning (lasers/snipers/teleport/grenades/mines/helpers) without bloating the opcode list, see `BotLanguageDesign.md`.
 
+## Beginner quick start
+
+Bots run one instruction per tick from top to bottom. Most scripts use this shape:
+
+```text
+LABEL LOOP
+TARGET_CLOSEST
+IF (SLOT_READY(SLOT1) && HAS_TARGET_BOT()) DO USE_SLOT1 TARGET
+SET_MOVE_TO_TARGET
+GOTO LOOP
+```
+
+Common beginner patterns:
+
+```text
+; shoot the weakest enemy
+TARGET_LOWEST_HEALTH
+IF (SLOT_READY(SLOT1) && HAS_TARGET_BOT()) DO USE_SLOT1 TARGET
+```
+
+```text
+; heal when low
+IF (HEALTH_LOW() && POWERUP_EXISTS(HEALTH)) DO TARGET_POWERUP HEALTH
+IF (HAS_POWERUP_TARGET()) DO SET_MOVE_TO_TARGET
+```
+
+```text
+; avoid close enemies
+IF (ENEMY_IN_RANGE()) DO SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+```
+
+The three most important ideas:
+- `TARGET_*` chooses what your bot cares about.
+- `SET_MOVE_*` keeps moving while later ticks execute other instructions.
+- `USE_SLOT1/2/3` activates the module equipped in that loadout slot.
+
 ## Core execution rules (do not skip)
 
 - **1 instruction per tick**: each bot executes exactly one runtime instruction per simulation tick at its current `pc`.
