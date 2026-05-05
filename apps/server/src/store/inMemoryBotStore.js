@@ -9,6 +9,31 @@ function botKey(ownerUsername, name) {
   return `${ownerUsername}/${name}`
 }
 
+function rankedFields(bot) {
+  const source = bot && typeof bot === 'object' ? bot : {}
+  return {
+    rankedEnabled: source.rankedEnabled !== false,
+    rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
+    rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
+    lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,
+    lastSubmittedAt: typeof source.lastSubmittedAt === 'string' ? source.lastSubmittedAt : null,
+    droppedAt: typeof source.droppedAt === 'string' ? source.droppedAt : null,
+    dropReason: typeof source.dropReason === 'string' ? source.dropReason : null,
+  }
+}
+
+function botSummary(bot) {
+  return {
+    botId: bot.botId,
+    ownerUsername: bot.ownerUsername,
+    name: bot.name,
+    updatedAt: bot.updatedAt,
+    sourceHash: bot.sourceHash,
+    loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
+    ...rankedFields(bot),
+  }
+}
+
 export function createInMemoryBotStore() {
   const bots = new Map()
 
@@ -42,14 +67,7 @@ export function createInMemoryBotStore() {
         ) {
           continue
         }
-        results.push({
-          botId: bot.botId,
-          ownerUsername: bot.ownerUsername,
-          name: bot.name,
-          updatedAt: bot.updatedAt,
-          sourceHash: bot.sourceHash,
-          loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
-        })
+        results.push(botSummary(bot))
       }
 
       results.sort((a, b) => {
@@ -70,17 +88,22 @@ export function createInMemoryBotStore() {
       return count
     },
 
+    updateRankedStatus(ownerUsername, name, rankedPatch) {
+      const key = botKey(ownerUsername, name)
+      const bot = bots.get(key)
+      if (!bot) return null
+      const next = {
+        ...bot,
+        ...rankedFields({ ...bot, ...rankedPatch }),
+      }
+      bots.set(key, next)
+      return cloneRecord(botSummary(next))
+    },
+
     getBot(ownerUsername, name) {
       const bot = requireBot(ownerUsername, name)
       if (!bot) return null
-      return cloneRecord({
-        botId: bot.botId,
-        ownerUsername: bot.ownerUsername,
-        name: bot.name,
-        updatedAt: bot.updatedAt,
-        sourceHash: bot.sourceHash,
-        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
-      })
+      return cloneRecord(botSummary(bot))
     },
 
     getBotSource(ownerUsername, name) {
@@ -108,6 +131,8 @@ export function createInMemoryBotStore() {
         })
       }
 
+      const ranked = rankedFields(existing)
+      const nextRankedStatus = ranked.rankedStatus === 'dropped' ? 'pending' : ranked.rankedStatus
       const next = {
         ownerUsername,
         name,
@@ -117,18 +142,14 @@ export function createInMemoryBotStore() {
         loadout: normalizeLoadout(loadout ?? existing?.loadout ?? EMPTY_LOADOUT).loadout,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
+        ...ranked,
+        rankedStatus: nextRankedStatus,
+        lastSubmittedAt: timestamp,
         versions,
       }
 
       bots.set(key, next)
-      return cloneRecord({
-        botId: next.botId,
-        ownerUsername: next.ownerUsername,
-        name: next.name,
-        updatedAt: next.updatedAt,
-        sourceHash: next.sourceHash,
-        loadout: next.loadout,
-      })
+      return cloneRecord(botSummary(next))
     },
 
     listVersions(ownerUsername, name) {

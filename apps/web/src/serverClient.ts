@@ -32,6 +32,13 @@ export type ServerBotSummary = {
   updatedAt: string | null
   sourceHash: string | null
   loadout: Loadout
+  rankedEnabled: boolean
+  rankedStatus: 'active' | 'pending' | 'dropped'
+  rankedPoints: number
+  lastRankedRunId: string | null
+  lastSubmittedAt: string | null
+  droppedAt: string | null
+  dropReason: string | null
 }
 
 export type ServerBotListResponse = {

@@ -13,6 +13,31 @@ function botKey(ownerUsername, name) {
   return `${ownerUsername}/${name}`
 }
 
+function rankedFields(bot) {
+  const source = bot && typeof bot === 'object' ? bot : {}
+  return {
+    rankedEnabled: source.rankedEnabled !== false,
+    rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
+    rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
+    lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,
+    lastSubmittedAt: typeof source.lastSubmittedAt === 'string' ? source.lastSubmittedAt : null,
+    droppedAt: typeof source.droppedAt === 'string' ? source.droppedAt : null,
+    dropReason: typeof source.dropReason === 'string' ? source.dropReason : null,
+  }
+}
+
+function botSummary(bot) {
+  return {
+    botId: bot.botId,
+    ownerUsername: bot.ownerUsername,
+    name: bot.name,
+    updatedAt: bot.updatedAt,
+    sourceHash: bot.sourceHash,
+    loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
+    ...rankedFields(bot),
+  }
+}
+
 function createInitialState() {
   return {
     version: 1,
@@ -174,14 +199,7 @@ export function createPersistentStoreBundle({ filePath }) {
         ) {
           continue
         }
-        results.push({
-          botId: bot.botId,
-          ownerUsername: bot.ownerUsername,
-          name: bot.name,
-          updatedAt: bot.updatedAt,
-          sourceHash: bot.sourceHash,
-          loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
-        })
+        results.push(botSummary(bot))
       }
 
       results.sort((a, b) => {
@@ -196,17 +214,18 @@ export function createPersistentStoreBundle({ filePath }) {
       return state.bots.filter((bot) => bot.ownerUsername === ownerUsername).length
     },
 
+    updateRankedStatus(ownerUsername, name, rankedPatch) {
+      const bot = findUserBot(ownerUsername, name)
+      if (!bot) return null
+      Object.assign(bot, rankedFields({ ...bot, ...rankedPatch }))
+      persist()
+      return cloneRecord(botSummary(bot))
+    },
+
     getBot(ownerUsername, name) {
       const bot = findAnyBot(ownerUsername, name)
       if (!bot) return null
-      return cloneRecord({
-        botId: bot.botId,
-        ownerUsername: bot.ownerUsername,
-        name: bot.name,
-        updatedAt: bot.updatedAt,
-        sourceHash: bot.sourceHash,
-        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
-      })
+      return cloneRecord(botSummary(bot))
     },
 
     getBotSource(ownerUsername, name) {
@@ -233,6 +252,8 @@ export function createPersistentStoreBundle({ filePath }) {
         })
       }
 
+      const ranked = rankedFields(existing)
+      const nextRankedStatus = ranked.rankedStatus === 'dropped' ? 'pending' : ranked.rankedStatus
       const next = {
         ownerUsername,
         name,
@@ -242,6 +263,9 @@ export function createPersistentStoreBundle({ filePath }) {
         loadout: normalizeLoadout(loadout ?? existing?.loadout ?? EMPTY_LOADOUT).loadout,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
+        ...ranked,
+        rankedStatus: nextRankedStatus,
+        lastSubmittedAt: timestamp,
         versions,
       }
 
@@ -253,14 +277,7 @@ export function createPersistentStoreBundle({ filePath }) {
       }
 
       persist()
-      return cloneRecord({
-        botId: next.botId,
-        ownerUsername: next.ownerUsername,
-        name: next.name,
-        updatedAt: next.updatedAt,
-        sourceHash: next.sourceHash,
-        loadout: next.loadout,
-      })
+      return cloneRecord(botSummary(next))
     },
 
     listVersions(ownerUsername, name) {

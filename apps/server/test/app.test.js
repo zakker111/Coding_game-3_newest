@@ -241,6 +241,10 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
   assert.equal(metadataResponse.statusCode, 200)
   assert.equal(metadataResponse.json().sourceHash, saved.sourceHash)
   assert.deepEqual(metadataResponse.json().loadout, ['BULLET', 'ARMOR', null])
+  assert.equal(metadataResponse.json().rankedEnabled, true)
+  assert.equal(metadataResponse.json().rankedStatus, 'active')
+  assert.equal(metadataResponse.json().rankedPoints, 0)
+  assert.equal(typeof metadataResponse.json().lastSubmittedAt, 'string')
 
   const sourceResponse = await app.inject({
     method: 'GET',
@@ -284,6 +288,42 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
     sourceHash: saved.sourceHash,
     sourceText: 'WAIT 1\n',
   })
+})
+
+test('saving a dropped bot marks it pending for ranked resubmission', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+  const cookie = await registerUser(app, 'alice', 'password123')
+
+  const dropped = app.botStore.updateRankedStatus('alice', 'bot1', {
+    rankedStatus: 'dropped',
+    rankedPoints: 1,
+    lastRankedRunId: 'd_000001',
+    droppedAt: '2026-05-05T00:00:00.000Z',
+    dropReason: 'below_daily_cut',
+  })
+  assert.equal(dropped.rankedStatus, 'dropped')
+
+  const saveResponse = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/alice/bot1',
+    headers: {
+      cookie,
+    },
+    payload: {
+      sourceText: 'WAIT 2\n',
+      loadout: ['BULLET', null, null],
+    },
+  })
+
+  assert.equal(saveResponse.statusCode, 200)
+  const saved = saveResponse.json()
+  assert.equal(saved.rankedStatus, 'pending')
+  assert.equal(saved.rankedPoints, 1)
+  assert.equal(saved.lastRankedRunId, 'd_000001')
+  assert.equal(saved.dropReason, 'below_daily_cut')
 })
 
 test('saving the same bot source dedupes version history by source hash', async (t) => {
