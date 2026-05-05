@@ -11,6 +11,11 @@ Primary specs (authoritative for `rulesetVersion = 0.2.0`, `schemaVersion = 0.2.
 ## Current status
 
 Recently completed (this merge set)
+- Public leaderboard page and latest daily run API shipped.
+- Server bot management in Workshop now edits/saves the authenticated user’s own server bots.
+- Daily rankings now use saved user/server bots only.
+- Placement scoring shipped: 3/2/1/0 points with wins, matches played, and average points.
+- Bot language helpers and new `SNIPER` / `ROCKET` / `TELEPORT` modules shipped.
 - `schemaVersion = 0.2.0` end-to-end (engine output + deploy artifacts + sample/mock replays).
 - Deploy Workshop build tag bumped to **v0.3.5**.
 - Example bots updated with locked loadout header directives (`;@slot1/2/3`).
@@ -21,12 +26,74 @@ Recently completed (this merge set)
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
 Next slice
-- Phase 8A is now the active slice: standalone sandbox server runner in `apps/server`.
-- Prioritize:
-  - deterministic headless match execution from submitted source snapshots
-  - match metadata + replay retrieval over HTTP
-  - workspace build/test integration
-- Keep auth, persistence, and daily scheduling explicitly deferred until the sandbox path is stable.
+- Add ranked lifecycle controls so daily runs stay small:
+  - ranked bot status (`active` / `pending` / `dropped`)
+  - active daily cutoff (`rankedActiveLimit`, recommended default: `20`)
+  - dropped bots excluded from future ranked runs
+  - saving a dropped bot marks it `pending` for the next daily run
+  - after daily scoring, top `rankedActiveLimit` bots become/remain `active`; lower-ranked eligible bots become `dropped`
+  - keep this admin-controlled first, then add user-facing resubmit details later
+- Add polished example bots for `SNIPER`, `ROCKET`, and `TELEPORT`.
+- Add a repeatable admin/dev seed flow for demo users and bot concepts.
+- Balance the new module numbers after running daily leagues.
+
+### Ranked lifecycle plan (next backend/admin slice)
+
+Goal: keep daily ranked runs bounded while still letting users improve and re-upload bots.
+
+Recommended bot fields:
+
+```js
+{
+  rankedEnabled: true,
+  rankedStatus: 'active', // 'active' | 'pending' | 'dropped'
+  rankedPoints: 0,
+  lastRankedRunId: null,
+  lastSubmittedAt: null,
+  droppedAt: null,
+  dropReason: null
+}
+```
+
+Initial/default behavior:
+- New starter user bots begin as `active`.
+- Daily eligibility includes saved user/server bots where:
+  - `rankedEnabled === true`
+  - `rankedStatus` is `active` or `pending`
+- Built-in bots remain excluded from ranked daily runs.
+
+Daily run size control:
+- Add `rankedActiveLimit` to daily run input/config.
+- Recommended early default: `20`.
+- If more eligible bots exist than the limit, select deterministically:
+  1. `pending` bots first
+  2. then `active` bots by previous `rankedPoints` descending
+  3. then `botId` ascending
+  4. take the first `rankedActiveLimit`
+
+After daily scoring:
+- Top `rankedActiveLimit` bots in the run become/remain `active`.
+- Lower-ranked eligible bots become `dropped`.
+- Store their latest `rankedPoints`, `lastRankedRunId`, `droppedAt`, and `dropReason = 'below_daily_cut'`.
+
+Resubmission loop:
+- When a user saves a dropped bot, automatically set:
+  - `rankedStatus = 'pending'`
+  - `rankedEnabled = true`
+  - `lastSubmittedAt = now`
+- That bot is included in the next daily run.
+- If it places above the cutoff, it returns to `active`; otherwise it drops again.
+
+Admin-first controls:
+- Keep ranked controls admin-only for now.
+- Add `/admin` controls later for:
+  - `rankedActiveLimit`
+  - activate/drop/reset bot status
+  - ranked bot status table
+
+Publishing recommendation:
+- Keep `POST /api/runs/daily` admin-triggered and synchronous while `rankedActiveLimit` is low.
+- Move to queued/background processing only when daily run runtime becomes too high.
 
 ### Status board
 
@@ -43,7 +110,7 @@ Implemented now
   - actionable browser-runtime diagnostics for `qa:workshop`
 
 Still open
-- [ ] Phase 8A sandbox server runner.
+- [ ] Phase 8B server-backed Workshop simulations.
 
 ### Near-term execution checklist
 
@@ -53,11 +120,11 @@ Do next
 - [x] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
 
 Ready after audit
-- [ ] Start the smallest Phase 8 server slice:
-  - deterministic headless runner
-  - match/replay HTTP surface
-  - in-memory storage boundary
-  - workspace build/test integration
+- [ ] Start the Phase 8B Workshop/server integration slice:
+  - server-backed run control/path in Workshop
+  - simulation POST from current bot setup
+  - replay fetch + render
+  - server error display
 
 ### Checklist (done vs. not done)
 
@@ -79,7 +146,8 @@ Next up
 - [x] Local-loop hardening: close the remaining deploy/workshop parity and release-sign-off guardrails.
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
-- [ ] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
+- [x] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
+- [ ] Phase 8B: server-backed Workshop simulations.
 
 ---
 
@@ -381,20 +449,22 @@ Goal: start with a narrow sandbox runner, then expand to persistent submissions 
 
 ### Phase 8A — sandbox runner MVP
 
+Status: ✅ shipped in `apps/server`
+
 Concrete tasks
-- [ ] Headless deterministic match runner:
+- [x] Headless deterministic match runner:
   - accepts inline bot source + explicit loadout snapshots
   - runs the shared engine deterministically
   - outputs replay JSON + summary results
-- [ ] HTTP surface:
+- [x] HTTP surface:
   - `GET /api/ruleset`
   - `POST /api/simulations`
   - `GET /api/matches/:matchId`
   - `GET /api/matches/:matchId/replay`
-- [ ] Storage boundary:
+- [x] Storage boundary:
   - in-memory match/replay store for the first slice
   - explicit match lifecycle (`queued|running|complete|failed`)
-- [ ] Validation:
+- [x] Validation:
   - source normalization + size limits
   - compile errors surfaced as actionable `400` responses
   - loadout normalization preserved in participant snapshots
@@ -410,9 +480,60 @@ QA checklist
 - `pnpm test:all`
 - `pnpm build:all`
 
+### Phase 8B — server-backed Workshop simulations
+
+Goal: connect the existing Workshop UI to the shipped sandbox server runner while preserving the current local run path.
+
+Shipped daily/admin baseline:
+- [x] Default `admin` / `admin` account is created on server boot.
+- [x] Simple JSON database layer persists users, sessions, user bots, matches, and daily runs.
+- [x] Landing page has a minimal login form.
+- [x] `/admin` shows a minimal server sandbox for daily runs, daily matches, and points.
+- [x] `POST /api/runs/daily` is admin-only.
+- [x] Daily runs schedule all eligible saved/builtin bots across deterministic 4-bot combinations.
+- [x] Daily run leaderboard includes points and matches played.
+- [x] Server bots persist explicit loadouts and daily runs use saved bot loadouts.
+
+Still open:
+- [ ] Security hardening: move beyond the current simple local JSON database defaults before production.
+  - User passwords should be stored with production-grade password hashing/encryption policy.
+  - Sessions should use secure cookie settings and expiry.
+  - The default `admin` / `admin` account must be removed or forced to rotate before public deployment.
+- [ ] Add a normal user-facing account/bot management flow beyond the minimal admin tools.
+- [ ] Add a Workshop “run on server” flow for the current local setup.
+
+Concrete tasks
+- [ ] Add a Workshop control/path for running a match through the server.
+- [ ] Serialize the current 4-bot setup into the `/api/simulations` request shape:
+  - `seed`
+  - `tickCap`
+  - participant `slot`
+  - participant `displayName`
+  - participant `sourceText`
+  - participant explicit `loadout`
+- [ ] Fetch the returned replay from `/api/matches/:matchId/replay`.
+- [ ] Render the server replay in the existing replay viewer.
+- [ ] Display server errors clearly:
+  - invalid request
+  - source size limits
+  - compile errors with slot details
+  - failed match lifecycle
+- [ ] Keep Workshop-only inactive opponent slots local-only unless a server contract change is made deliberately.
+
+Acceptance criteria
+- The Workshop can run the same active 4-bot setup locally or through the server.
+- Server replay JSON renders without schema changes.
+- Server validation errors are actionable in the UI.
+- Existing local Workshop behavior remains intact.
+
+QA checklist
+- `pnpm -C apps/server test`
+- `pnpm -C apps/web test`
+- `pnpm build`
+
 ### Later in Phase 8
 
-- [ ] Persistent submissions/versioning.
+- [ ] Harden persistent submissions/versioning beyond the current server baseline.
 - [ ] Durable replay/match storage.
-- [ ] Auth + rate limiting.
+- [ ] Production-grade auth/session hardening + rate limiting.
 - [ ] Scheduled daily runs and admin tooling.

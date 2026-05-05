@@ -7,13 +7,14 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Next slice: Phase 8A sandbox server runner
+## Current slice: Phase 9 release hardening + gameplay expansion
 
 Goals:
-- Start the smallest server-side slice now that the local deterministic loop and deploy parity guardrails are in place.
-- Keep engine semantics locked while the server consumes the already-tested local replay contract.
-- Treat further local-loop work as additive hardening, not as a reason to delay Phase 8 again. Workshop-only inactive opponent slots remain a local UI affordance and are not part of the server-side match surface.
-- Start with inline participant snapshots and in-memory storage before auth, persistence, or daily scheduling widen scope.
+- Connect the existing Workshop UI to the already-shipped sandbox server runner.
+- Keep the current local run path while adding a server-backed run path.
+- Keep engine/replay semantics locked: `rulesetVersion = 0.2.0`, `schemaVersion = 0.2.0`.
+- Surface server validation errors clearly in the Workshop.
+- Keep Workshop-only inactive opponent slots local-only unless the server contract is intentionally expanded.
 
 ---
 
@@ -97,15 +98,33 @@ Status: ✅ done
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: 🚧 started via Phase 8A sandbox runner
+Status: ✅ done
 
-Phase 8A now in scope:
-- New `apps/server` workspace app.
+Phase 8A shipped:
+- `apps/server` workspace app.
 - Deterministic sandbox match execution from submitted bot source snapshots + explicit loadouts.
 - Match metadata + replay retrieval over HTTP.
-- In-memory storage only for the initial slice.
+- Server-side source limits, compile-error responses, loadout normalization, and match lifecycle coverage.
+- Auth, starter user bots, bot save/load, and source version history are present as the first submissions baseline.
+- Default `admin` account is bootstrapped (`admin` / `admin`) with starter bots.
+- Daily runs can be triggered by admin, schedule saved user/server bots across deterministic 4-bot combinations, and produce placement-points summaries.
+- Landing page has a minimal login form; `/admin` exposes the server sandbox/daily leaderboard.
+- `/leaderboard` exposes the latest daily run to players.
+- Workshop can manage the authenticated user’s 3 server bots and save source+loadout.
+
+## Phase 9 — Gameplay expansion
+
+Status: 🚧 started
+
+Shipped:
+- Bot helper instructions/expressions for powerups, low resources, movement, and targeting.
+- `SNIPER`, `ROCKET`, and `TELEPORT` modules.
+
+Next:
+- Balance pass for new module costs/damage/cooldowns.
+- Add polished built-in example bots using the new modules.
 
 Still deferred inside Phase 8:
-- Auth + bot submissions + versioning + validation.
-- Persistent replay/match storage.
+- Production-grade auth/session hardening + rate limiting.
+- Durable replay/match storage.
 - Daily run scheduling and standings.

@@ -329,11 +329,39 @@ function evalNode(node, ctx) {
       return ok(v)
     }
 
-    if (fn === 'HAS_TARGET_POWERUP') {
-      if (node.arguments.length !== 0) return err('ARITY', 'HAS_TARGET_POWERUP expects 0 arguments')
+    if (fn === 'HAS_TARGET_POWERUP' || fn === 'HAS_POWERUP_TARGET') {
+      if (node.arguments.length !== 0) return err('ARITY', `${fn} expects 0 arguments`)
       const v = resolveBoolish(ctx?.hasTargetPowerup)
-      if (v == null) return err('MISSING', 'HAS_TARGET_POWERUP not available in ctx')
+      if (v == null) return err('MISSING', `${fn} not available in ctx`)
       return ok(v)
+    }
+
+    if (fn === 'ENEMY_IN_RANGE') {
+      if (node.arguments.length !== 0) return err('ARITY', 'ENEMY_IN_RANGE expects 0 arguments')
+      const v = resolveEnemiesInRange(ctx, 64)
+      if (!isInt(v)) return err('MISSING', 'ENEMY_IN_RANGE not available in ctx')
+      return ok(v > 0)
+    }
+
+    if (fn === 'AMMO_LOW') {
+      if (node.arguments.length !== 0) return err('ARITY', 'AMMO_LOW expects 0 arguments')
+      const v = resolveIdentifier(ctx, 'AMMO')
+      if (!isInt(v)) return err('MISSING', 'AMMO not available in ctx')
+      return ok(v < 25)
+    }
+
+    if (fn === 'ENERGY_LOW') {
+      if (node.arguments.length !== 0) return err('ARITY', 'ENERGY_LOW expects 0 arguments')
+      const v = resolveIdentifier(ctx, 'ENERGY')
+      if (!isInt(v)) return err('MISSING', 'ENERGY not available in ctx')
+      return ok(v < 35)
+    }
+
+    if (fn === 'HEALTH_LOW') {
+      if (node.arguments.length !== 0) return err('ARITY', 'HEALTH_LOW expects 0 arguments')
+      const v = resolveIdentifier(ctx, 'HEALTH')
+      if (!isInt(v)) return err('MISSING', 'HEALTH not available in ctx')
+      return ok(v < 50)
     }
 
     if (

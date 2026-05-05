@@ -3,13 +3,16 @@ import Fastify from 'fastify'
 import { getServerConfig } from './config.js'
 import { registerAuthRoutes } from './routes/auth.js'
 import { registerBotRoutes } from './routes/bots.js'
+import { registerDailyRunRoutes } from './routes/dailyRuns.js'
 import { registerMatchRoutes } from './routes/matches.js'
 import { registerRulesetRoutes } from './routes/ruleset.js'
 import { createAuthService } from './services/authService.js'
 import { registerSimulationRoutes } from './routes/simulations.js'
 import { createBotService } from './services/botService.js'
+import { createDailyRunService } from './services/dailyRunService.js'
 import { createSimulationService } from './services/simulationService.js'
 import { createInMemoryBotStore } from './store/inMemoryBotStore.js'
+import { createInMemoryDailyRunStore } from './store/inMemoryDailyRunStore.js'
 import { createInMemoryMatchStore } from './store/inMemoryMatchStore.js'
 import { createInMemoryUserStore } from './store/inMemoryUserStore.js'
 
@@ -28,6 +31,7 @@ export async function buildApp({
   store = createInMemoryMatchStore(),
   botStore = createInMemoryBotStore(),
   userStore = createInMemoryUserStore(),
+  dailyRunStore = createInMemoryDailyRunStore(),
 } = {}) {
   const app = Fastify({
     logger: false,
@@ -42,23 +46,34 @@ export async function buildApp({
   app.decorate('matchStore', store)
   app.decorate('botStore', botStore)
   app.decorate('userStore', userStore)
+  app.decorate('dailyRunStore', dailyRunStore)
+
+  const authService = createAuthService({
+    store: userStore,
+  })
+  const botService = createBotService({
+    store: botStore,
+    config,
+  })
+  const simulationService = createSimulationService({
+    store,
+    config,
+  })
+
+  app.decorate('authService', authService)
+  app.decorate('simulationService', simulationService)
+  app.decorate('botService', botService)
+  authService.ensureDefaultAdmin()
+  if (typeof botStore.getBot === 'function' && typeof botStore.saveBot === 'function') {
+    botService.ensureStarterBots('admin')
+  }
   app.decorate(
-    'authService',
-    createAuthService({
-      store: userStore,
-    })
-  )
-  app.decorate(
-    'simulationService',
-    createSimulationService({
-      store,
-      config,
-    })
-  )
-  app.decorate(
-    'botService',
-    createBotService({
-      store: botStore,
+    'dailyRunService',
+    createDailyRunService({
+      store: dailyRunStore,
+      botStore,
+      matchStore: store,
+      simulationService,
       config,
     })
   )
@@ -102,6 +117,7 @@ export async function buildApp({
   await registerRulesetRoutes(app)
   await registerBotRoutes(app)
   await registerSimulationRoutes(app)
+  await registerDailyRunRoutes(app)
   await registerMatchRoutes(app)
   await app.ready()
 

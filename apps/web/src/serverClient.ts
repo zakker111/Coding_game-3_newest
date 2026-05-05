@@ -1,4 +1,5 @@
 import { normalizeServerBaseUrl } from './serverSimulation'
+import type { Loadout } from '@coding-game/ruleset'
 
 type FetchLike = typeof fetch
 
@@ -30,6 +31,14 @@ export type ServerBotSummary = {
   name: string
   updatedAt: string | null
   sourceHash: string | null
+  loadout: Loadout
+  rankedEnabled: boolean
+  rankedStatus: 'active' | 'pending' | 'dropped'
+  rankedPoints: number
+  lastRankedRunId: string | null
+  lastSubmittedAt: string | null
+  droppedAt: string | null
+  dropReason: string | null
 }
 
 export type ServerBotListResponse = {
@@ -39,11 +48,81 @@ export type ServerBotListResponse = {
 export type ServerBotSourceResponse = {
   botId: string
   sourceText: string
+  loadout: Loadout
 }
 
 export type ServerSaveBotRequest = {
   sourceText: string
+  loadout: Loadout
   saveMessage?: string
+}
+
+export type ServerDailyRunSummary = {
+  matchCount: number
+  leaderboard: Array<{
+    botId: string
+    points: number
+    matchesPlayed: number
+    wins: number
+    averagePoints: number
+  }>
+}
+
+export type ServerDailyRun = {
+  runId: string
+  status: string
+  runDate: string
+  runSeed: string | number
+  rulesetVersion: string
+  maxRounds: number
+  tickCap: number
+  matchIds: string[]
+  summary: ServerDailyRunSummary | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ServerDailyRunListResponse = {
+  runs: ServerDailyRun[]
+}
+
+export type ServerDailyRunMatch = {
+  matchId: string
+  kind: string
+  dailyRunId?: string
+  status: string
+  matchSeed: string | number
+  tickCap: number
+  result: {
+    endReason: string | null
+    winnerSlot: string | null
+    placements?: Array<{
+      slot: string
+      rank: number
+      points: number
+      alive: boolean
+      hp: number
+      ammo: number
+      energy: number
+    }>
+  } | null
+  participants: Array<{
+    slot: string
+    displayName: string
+    sourceHash: string
+  }>
+}
+
+export type ServerDailyRunMatchesResponse = {
+  runId: string
+  matches: ServerDailyRunMatch[]
+}
+
+export type ServerCreateDailyRunRequest = {
+  runDate?: string
+  seed?: string | number
+  tickCap?: number
+  maxRounds?: number
 }
 
 function buildApiUrl(baseUrl: string, path: string) {
@@ -181,6 +260,43 @@ export async function saveServerBot(
       method: 'PUT',
       body: JSON.stringify(body),
     },
+    fetchImpl,
+  )
+}
+
+export async function listServerDailyRuns(baseUrl: string, fetchImpl?: FetchLike): Promise<ServerDailyRunListResponse> {
+  return requestJson<ServerDailyRunListResponse>(baseUrl, '/api/runs', { method: 'GET' }, fetchImpl)
+}
+
+export async function fetchLatestServerDailyRun(baseUrl: string, fetchImpl?: FetchLike): Promise<ServerDailyRun> {
+  return requestJson<ServerDailyRun>(baseUrl, '/api/runs/latest', { method: 'GET' }, fetchImpl)
+}
+
+export async function createServerDailyRun(
+  baseUrl: string,
+  body: ServerCreateDailyRunRequest,
+  fetchImpl?: FetchLike,
+): Promise<ServerDailyRun> {
+  return requestJson<ServerDailyRun>(
+    baseUrl,
+    '/api/runs/daily',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    fetchImpl,
+  )
+}
+
+export async function fetchServerDailyRunMatches(
+  baseUrl: string,
+  runId: string,
+  fetchImpl?: FetchLike,
+): Promise<ServerDailyRunMatchesResponse> {
+  return requestJson<ServerDailyRunMatchesResponse>(
+    baseUrl,
+    `/api/runs/${encodeURIComponent(runId)}/matches`,
+    { method: 'GET' },
     fetchImpl,
   )
 }

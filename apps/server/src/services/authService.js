@@ -1,8 +1,10 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 
 const USERNAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
-const MIN_PASSWORD_LENGTH = 8
+const MIN_PASSWORD_LENGTH = 5
 const SESSION_COOKIE_NAME = 'nowt_session'
+const DEFAULT_ADMIN_USERNAME = 'admin'
+const DEFAULT_ADMIN_PASSWORD = 'admin'
 
 function createHttpError(statusCode, code, message, details) {
   return Object.assign(new Error(message), {
@@ -87,6 +89,17 @@ export function createAuthService({ store } = {}) {
   }
 
   return {
+    ensureDefaultAdmin() {
+      if (store.getUserByUsername(DEFAULT_ADMIN_USERNAME)) return null
+
+      return toSessionUser(
+        store.createUser({
+          username: DEFAULT_ADMIN_USERNAME,
+          passwordHash: hashPassword(DEFAULT_ADMIN_PASSWORD),
+        })
+      )
+    },
+
     getCurrentUser(cookieHeader) {
       const cookies = parseCookieHeader(cookieHeader)
       const sessionId = cookies[SESSION_COOKIE_NAME]

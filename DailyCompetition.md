@@ -96,16 +96,17 @@ This provides the behavior you described: bots that drop below a threshold “ar
 ## 5) Points and elimination threshold
 
 ### 5.1 Points
-The scoring formula is not finalized. The server should compute points as a pure function:
-- inputs: match placements + match stats
-- output: points delta per bot
+The current shipped v1 scoring formula is placement-only:
+- 1st: `+3`
+- 2nd: `+2`
+- 3rd: `+1`
+- 4th: `+0`
 
-Common v1 approach (simple):
-- 4-bot match placement points:
-  - 1st: +X
-  - 2nd: +Y
-  - 3rd: +Z
-  - 4th: +W
+The server computes points as a pure function of match placements and publishes:
+- points
+- wins
+- matches played
+- average points
 
 Tie handling (time-limit / stalemate):
 - If a match ends with multiple bots still alive (`endReason ∈ {TICK_CAP, STALEMATE}`), the surviving bots **tie**.

@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { randomBytes } from 'node:crypto'
+import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
 
 import { loadBuiltinExampleBots } from '../services/exampleBots.js'
 
@@ -12,6 +13,31 @@ function botKey(ownerUsername, name) {
   return `${ownerUsername}/${name}`
 }
 
+function rankedFields(bot) {
+  const source = bot && typeof bot === 'object' ? bot : {}
+  return {
+    rankedEnabled: source.rankedEnabled !== false,
+    rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
+    rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
+    lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,
+    lastSubmittedAt: typeof source.lastSubmittedAt === 'string' ? source.lastSubmittedAt : null,
+    droppedAt: typeof source.droppedAt === 'string' ? source.droppedAt : null,
+    dropReason: typeof source.dropReason === 'string' ? source.dropReason : null,
+  }
+}
+
+function botSummary(bot) {
+  return {
+    botId: bot.botId,
+    ownerUsername: bot.ownerUsername,
+    name: bot.name,
+    updatedAt: bot.updatedAt,
+    sourceHash: bot.sourceHash,
+    loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
+    ...rankedFields(bot),
+  }
+}
+
 function createInitialState() {
   return {
     version: 1,
@@ -21,6 +47,7 @@ function createInitialState() {
     sessions: [],
     bots: [],
     matches: [],
+    dailyRuns: [],
   }
 }
 
@@ -35,6 +62,7 @@ function normalizeState(raw) {
     sessions: Array.isArray(raw.sessions) ? raw.sessions : [],
     bots: Array.isArray(raw.bots) ? raw.bots : [],
     matches: Array.isArray(raw.matches) ? raw.matches : [],
+    dailyRuns: Array.isArray(raw.dailyRuns) ? raw.dailyRuns : [],
   }
 }
 
@@ -64,6 +92,8 @@ export function createPersistentStoreBundle({ filePath }) {
 
   const state = readState(filePath)
   const builtinBots = new Map()
+  let transactionDepth = 0
+  let transactionDirty = false
 
   for (const builtin of loadBuiltinExampleBots()) {
     builtinBots.set(botKey(builtin.ownerUsername, builtin.name), {
@@ -71,12 +101,30 @@ export function createPersistentStoreBundle({ filePath }) {
       createdAt: null,
       updatedAt: null,
       sourceHash: null,
+      loadout: normalizeLoadout(builtin.loadout ?? EMPTY_LOADOUT).loadout,
       versions: [],
     })
   }
 
   function persist() {
+    if (transactionDepth > 0) {
+      transactionDirty = true
+      return
+    }
     writeState(filePath, state)
+  }
+
+  function transact(fn) {
+    transactionDepth += 1
+    try {
+      return fn()
+    } finally {
+      transactionDepth -= 1
+      if (transactionDepth === 0 && transactionDirty) {
+        transactionDirty = false
+        writeState(filePath, state)
+      }
+    }
   }
 
   function findUserBot(ownerUsername, name) {
@@ -151,13 +199,7 @@ export function createPersistentStoreBundle({ filePath }) {
         ) {
           continue
         }
-        results.push({
-          botId: bot.botId,
-          ownerUsername: bot.ownerUsername,
-          name: bot.name,
-          updatedAt: bot.updatedAt,
-          sourceHash: bot.sourceHash,
-        })
+        results.push(botSummary(bot))
       }
 
       results.sort((a, b) => {
@@ -172,16 +214,18 @@ export function createPersistentStoreBundle({ filePath }) {
       return state.bots.filter((bot) => bot.ownerUsername === ownerUsername).length
     },
 
+    updateRankedStatus(ownerUsername, name, rankedPatch) {
+      const bot = findUserBot(ownerUsername, name)
+      if (!bot) return null
+      Object.assign(bot, rankedFields({ ...bot, ...rankedPatch }))
+      persist()
+      return cloneRecord(botSummary(bot))
+    },
+
     getBot(ownerUsername, name) {
       const bot = findAnyBot(ownerUsername, name)
       if (!bot) return null
-      return cloneRecord({
-        botId: bot.botId,
-        ownerUsername: bot.ownerUsername,
-        name: bot.name,
-        updatedAt: bot.updatedAt,
-        sourceHash: bot.sourceHash,
-      })
+      return cloneRecord(botSummary(bot))
     },
 
     getBotSource(ownerUsername, name) {
@@ -190,10 +234,11 @@ export function createPersistentStoreBundle({ filePath }) {
       return cloneRecord({
         botId: bot.botId,
         sourceText: bot.sourceText,
+        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
       })
     },
 
-    saveBot({ ownerUsername, name, sourceText, sourceHash, saveMessage }) {
+    saveBot({ ownerUsername, name, sourceText, sourceHash, loadout, saveMessage }) {
       const existing = findUserBot(ownerUsername, name)
       const timestamp = new Date().toISOString()
       const versions = existing?.versions ? [...existing.versions] : []
@@ -207,14 +252,20 @@ export function createPersistentStoreBundle({ filePath }) {
         })
       }
 
+      const ranked = rankedFields(existing)
+      const nextRankedStatus = ranked.rankedStatus === 'dropped' ? 'pending' : ranked.rankedStatus
       const next = {
         ownerUsername,
         name,
         botId: `${ownerUsername}/${name}`,
         sourceText,
         sourceHash,
+        loadout: normalizeLoadout(loadout ?? existing?.loadout ?? EMPTY_LOADOUT).loadout,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
+        ...ranked,
+        rankedStatus: nextRankedStatus,
+        lastSubmittedAt: timestamp,
         versions,
       }
 
@@ -226,13 +277,7 @@ export function createPersistentStoreBundle({ filePath }) {
       }
 
       persist()
-      return cloneRecord({
-        botId: next.botId,
-        ownerUsername: next.ownerUsername,
-        name: next.name,
-        updatedAt: next.updatedAt,
-        sourceHash: next.sourceHash,
-      })
+      return cloneRecord(botSummary(next))
     },
 
     listVersions(ownerUsername, name) {
@@ -329,11 +374,91 @@ export function createPersistentStoreBundle({ filePath }) {
       const match = state.matches.find((entry) => entry.matchId === matchId)
       return cloneRecord(match?.replay ?? null)
     },
+
+    listMatches({ dailyRunId, kind } = {}) {
+      const matches = state.matches.filter((match) => {
+        if (dailyRunId && match.dailyRunId !== dailyRunId) return false
+        if (kind && match.kind !== kind) return false
+        return true
+      })
+      return cloneRecord(matches.sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    },
+  }
+
+  const dailyRunStore = {
+    createRun(meta) {
+      const existingIds = state.dailyRuns
+        .map((run) => (typeof run.runId === 'string' ? Number.parseInt(run.runId.slice(2), 10) : 0))
+        .filter((id) => Number.isInteger(id))
+      const runId = `d_${String(Math.max(0, ...existingIds) + 1).padStart(6, '0')}`
+      const createdAt = new Date().toISOString()
+      const run = {
+        runId,
+        status: 'planned',
+        createdAt,
+        updatedAt: createdAt,
+        matchIds: [],
+        summary: null,
+        error: null,
+        ...meta,
+      }
+
+      state.dailyRuns.push(run)
+      persist()
+      return cloneRecord(run)
+    },
+
+    markRunning(runId) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'running'
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    markComplete(runId, payload) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'complete'
+      run.matchIds = payload.matchIds
+      run.summary = payload.summary
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    markFailed(runId, error) {
+      const run = state.dailyRuns.find((entry) => entry.runId === runId)
+      if (!run) {
+        throw new Error(`Unknown daily run: ${runId}`)
+      }
+      run.status = 'failed'
+      run.error = error
+      run.updatedAt = new Date().toISOString()
+      persist()
+      return cloneRecord(run)
+    },
+
+    getRun(runId) {
+      return cloneRecord(state.dailyRuns.find((entry) => entry.runId === runId) ?? null)
+    },
+
+    listRuns() {
+      return cloneRecord([...state.dailyRuns].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+    },
+
+    transact,
   }
 
   return {
     userStore,
     botStore,
     matchStore,
+    dailyRunStore,
   }
 }

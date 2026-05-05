@@ -1,9 +1,32 @@
 import React from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { getDefaultServerBaseUrl } from './config'
+import { fetchServerMe } from './serverClient'
 
 export default function App() {
   const location = useLocation()
   const isWorkshopRoute = location.pathname === '/workshop'
+  const [isAdmin, setIsAdmin] = React.useState(false)
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    fetchServerMe(getDefaultServerBaseUrl())
+      .then((result) => {
+        if (!cancelled) {
+          setIsAdmin(result.user?.username === 'admin')
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsAdmin(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [location.pathname])
 
   return (
     <div className="app-shell">
@@ -22,6 +45,14 @@ export default function App() {
           >
             Workshop
           </NavLink>
+          <NavLink className={({ isActive }) => (isActive ? 'active' : undefined)} to="/leaderboard">
+            Leaderboard
+          </NavLink>
+          {isAdmin ? (
+            <NavLink className={({ isActive }) => (isActive ? 'active' : undefined)} to="/admin">
+              Server
+            </NavLink>
+          ) : null}
           <NavLink className={({ isActive }) => (isActive ? 'active' : undefined)} to="/docs">
             Docs
           </NavLink>

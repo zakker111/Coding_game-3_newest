@@ -33,6 +33,9 @@ export default defineConfig({
       allow: [repoRoot],
     },
   },
+  preview: {
+    allowedHosts: ['4173-uknkc4ygdpnmvktw.cosine.computer'],
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

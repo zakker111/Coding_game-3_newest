@@ -1,5 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { getDefaultServerBaseUrl } from '../config'
+import { loginServerUser, registerServerUser } from '../serverClient'
 
 function formatMarketingVersion(version: string) {
   const m = /^0\.0\.(\d+)$/.exec(version)
@@ -7,21 +9,39 @@ function formatMarketingVersion(version: string) {
   return `0.0${m[1]}`
 }
 
-const STARTER_SNIPPET = `; Aggressive starter (BULLET in SLOT1)
-LABEL LOOP
-IF (HEALTH < 45 && POWERUP_EXISTS(HEALTH)) DO MOVE_TO_POWERUP HEALTH
-TARGET_CLOSEST
-SET_MOVE_TO_TARGET
-IF (SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
-GOTO LOOP`
-
 export function LandingPage() {
   const nav = useNavigate()
-  const startRef = React.useRef<HTMLButtonElement | null>(null)
+  const usernameRef = React.useRef<HTMLInputElement | null>(null)
+  const [username, setUsername] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [loginNotice, setLoginNotice] = React.useState<string | null>(null)
+  const [loginError, setLoginError] = React.useState<string | null>(null)
+  const [loginBusy, setLoginBusy] = React.useState(false)
 
   React.useEffect(() => {
-    startRef.current?.focus()
+    usernameRef.current?.focus()
   }, [])
+
+  async function handleAuth(event: React.FormEvent, mode: 'login' | 'register') {
+    event.preventDefault()
+    setLoginBusy(true)
+    setLoginNotice(null)
+    setLoginError(null)
+
+    try {
+      const body = { username, password }
+      const result =
+        mode === 'register'
+          ? await registerServerUser(getDefaultServerBaseUrl(), body)
+          : await loginServerUser(getDefaultServerBaseUrl(), body)
+      setLoginNotice(`${mode === 'register' ? 'Created account' : 'Logged in'} as ${result.user.username}`)
+      nav(result.user.username === 'admin' ? '/admin' : '/workshop')
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoginBusy(false)
+    }
+  }
 
   return (
     <div className="landing">
@@ -34,56 +54,38 @@ export function LandingPage() {
           v{formatMarketingVersion(__APP_VERSION__)}
         </p>
 
-        <div className="actions">
-          <button
-            ref={startRef}
-            className="ui-button"
-            onClick={() => nav('/workshop')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') nav('/workshop')
-            }}
-          >
-            Start Game
+        <form className="landing-login panel" onSubmit={(event) => handleAuth(event, 'login')}>
+          <div>
+            <div className="panel-title">Login</div>
+            <div className="muted" style={{ marginTop: 6 }}>
+              Create a user or login. New users get a Workshop with three starter bots.
+            </div>
+          </div>
+          <label className="mini-field">
+            <span className="mini-label">Username</span>
+            <input ref={usernameRef} className="admin-input" value={username} onChange={(event) => setUsername(event.target.value)} />
+          </label>
+          <label className="mini-field">
+            <span className="mini-label">Password</span>
+            <input
+              className="admin-input"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+          </label>
+          <button className="ui-button" disabled={loginBusy} type="submit">
+            Login
           </button>
-
-          <button className="ui-button ui-button-secondary" onClick={() => nav('/docs')}>
+          <button className="ui-button ui-button-secondary" disabled={loginBusy} type="button" onClick={(event) => handleAuth(event, 'register')}>
+            Make new user
+          </button>
+          <button className="ui-button ui-button-secondary" type="button" onClick={() => nav('/docs')}>
             Bot instructions
           </button>
-        </div>
-
-        <div style={{ marginTop: 18 }} className="panel landing-features">
-          <div className="row">
-            <div style={{ flex: '1 1 240px' }}>
-              <strong>Deterministic</strong>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Same seed + same inputs → identical outcome.
-              </div>
-            </div>
-            <div style={{ flex: '1 1 240px' }}>
-              <strong>Replayable</strong>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Inspect matches with per-tick state and events.
-              </div>
-            </div>
-            <div style={{ flex: '1 1 240px' }}>
-              <strong>Easy to script</strong>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Tiny DSL: loops, IFs, movement goals, and module actions.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 18 }}>
-          <div className="panel-title">A tiny bot script</div>
-          <div className="muted" style={{ marginTop: 8 }}>
-            Built-ins include aggressive bots like <strong style={{ color: 'var(--text)' }}>Burst Hunter</strong> and{' '}
-            <strong style={{ color: 'var(--text)' }}>Energy Saw Skirmisher</strong>.
-          </div>
-          <pre className="docs-pre" style={{ marginTop: 10, maxHeight: 260 }}>
-            {STARTER_SNIPPET}
-          </pre>
-        </div>
+          {loginNotice ? <span className="admin-notice">{loginNotice}</span> : null}
+          {loginError ? <span className="admin-error">{loginError}</span> : null}
+        </form>
       </div>
     </div>
   )

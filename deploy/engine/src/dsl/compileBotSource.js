@@ -47,11 +47,14 @@ function normalizeInstruction(instr) {
   if (instr.kind === 'SET_TARGET') return { kind: 'SET_TARGET_BOT', selector: instr.bot }
   if (instr.kind === 'TARGET_CLOSEST') return { kind: 'SET_TARGET_BOT', selector: 'CLOSEST_BOT' }
   if (instr.kind === 'TARGET_LOWEST_HEALTH') return { kind: 'SET_TARGET_BOT', selector: 'LOWEST_HEALTH_BOT' }
+  if (instr.kind === 'TARGET_LOWEST_AMMO') return { kind: 'SET_TARGET_BOT', selector: 'LOWEST_AMMO_BOT' }
+  if (instr.kind === 'TARGET_LOWEST_ENERGY') return { kind: 'SET_TARGET_BOT', selector: 'LOWEST_ENERGY_BOT' }
   if (instr.kind === 'TARGET_NEXT') return { kind: 'SET_TARGET_BOT', selector: 'NEXT' }
   if (instr.kind === 'TARGET_NEXT_IF_DEAD') return { kind: 'SET_TARGET_BOT', selector: 'NEXT_IF_DEAD' }
   if (instr.kind === 'TARGET_CLOSEST_BULLET') return { kind: 'SET_TARGET_BULLET', selector: 'CLOSEST_BULLET' }
   if (instr.kind === 'TARGET_CLOSEST_MINE') return { kind: 'SET_TARGET_MINE', selector: 'CLOSEST_MINE' }
   if (instr.kind === 'TARGET_POWERUP') return { kind: 'SET_TARGET_POWERUP', type: instr.type }
+  if (instr.kind === 'TARGET_NEAREST_POWERUP') return { kind: 'SET_TARGET_POWERUP', type: 'ANY' }
 
   if (instr.kind === 'CLEAR_TARGET_BOT') return { kind: 'CLEAR_TARGET', which: 'BOT' }
   if (instr.kind === 'CLEAR_TARGET_POWERUP') return { kind: 'CLEAR_TARGET', which: 'POWERUP' }
@@ -61,6 +64,10 @@ function normalizeInstruction(instr) {
 
   // Persistent movement goal writes.
   if (instr.kind === 'SET_MOVE_TO_TARGET') return { kind: 'SET_MOVE', target: { kind: 'TARGET' } }
+  if (instr.kind === 'SET_MOVE_TO_CENTER') return { kind: 'SET_MOVE', target: { kind: 'SECTOR', sector: 5 } }
+  if (instr.kind === 'SET_MOVE_TO_CORNER') return { kind: 'SET_MOVE', target: { kind: 'NEAREST_CORNER' } }
+  if (instr.kind === 'SET_MOVE_AWAY_FROM_BOT') return { kind: 'SET_MOVE', target: { kind: 'BOT_AWAY', token: instr.target } }
+  if (instr.kind === 'HOLD_SECTOR') return { kind: 'SET_MOVE', target: { kind: 'SECTOR', sector: instr.sector } }
   if (instr.kind === 'SET_MOVE_TO_ZONE') return { kind: 'SET_MOVE', target: { kind: 'ZONE_IN_CURRENT_SECTOR', zone: instr.zone } }
   if (instr.kind === 'SET_MOVE_TO_SECTOR') {
     return {

@@ -10,6 +10,8 @@ function buildMatchResponse(match) {
   return {
     matchId: match.matchId,
     kind: match.kind,
+    ...(match.dailyRunId ? { dailyRunId: match.dailyRunId } : {}),
+    ...(match.persistReplay === false ? { replayStored: false } : {}),
     status: match.status,
     matchSeed: match.matchSeed,
     tickCap: match.tickCap,
@@ -22,6 +24,14 @@ function buildMatchResponse(match) {
 }
 
 export async function registerMatchRoutes(app) {
+  app.get('/api/matches', async (request) => {
+    const kind = request.query.kind === 'daily' || request.query.kind === 'sandbox' ? request.query.kind : undefined
+    const dailyRunId = typeof request.query.runId === 'string' && request.query.runId !== '' ? request.query.runId : undefined
+    return {
+      matches: app.matchStore.listMatches({ dailyRunId, kind }).map(buildMatchResponse),
+    }
+  })
+
   app.get('/api/matches/:matchId', async (request) => {
     const match = app.matchStore.getMatch(request.params.matchId)
     if (!match) {

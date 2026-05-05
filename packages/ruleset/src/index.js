@@ -4,7 +4,18 @@ export const LOADOUT_SLOT_COUNT = 3
 
 export const EMPTY_LOADOUT = /** @type {[null, null, null]} */ ([null, null, null])
 
-export const MODULE_IDS = /** @type {const} */ (['BULLET', 'SAW', 'SHIELD', 'ARMOR', 'GRENADE', 'MINE', 'REPAIR_DRONE'])
+export const MODULE_IDS = /** @type {const} */ ([
+  'BULLET',
+  'SAW',
+  'SHIELD',
+  'ARMOR',
+  'GRENADE',
+  'MINE',
+  'REPAIR_DRONE',
+  'SNIPER',
+  'ROCKET',
+  'TELEPORT',
+])
 
 export const MODULE_DEFINITIONS = {
   BULLET: {
@@ -66,6 +77,32 @@ export const MODULE_DEFINITIONS = {
     activation: 'INSTANT',
     targetKinds: ['SELF'],
     uiLabel: 'Repair drone',
+  },
+  SNIPER: {
+    id: 'SNIPER',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'INSTANT',
+    targetKinds: ['BOT'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Sniper',
+  },
+  ROCKET: {
+    id: 'ROCKET',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'INSTANT',
+    targetKinds: ['BOT'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Rocket',
+  },
+  TELEPORT: {
+    id: 'TELEPORT',
+    itemKind: 'MODULE',
+    family: 'UTILITY',
+    activation: 'INSTANT',
+    targetKinds: ['LOCATION'],
+    uiLabel: 'Teleport',
   },
 }
 

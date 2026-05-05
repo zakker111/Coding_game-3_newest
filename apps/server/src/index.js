@@ -1,16 +1,17 @@
 import { buildApp } from './app.js'
 import { getServerConfig } from './config.js'
-import { createPersistentStoreBundle } from './store/persistentStoreBundle.js'
+import { createJsonDatabase } from './store/jsonDatabase.js'
 
 const config = getServerConfig()
-const stores = createPersistentStoreBundle({
+const database = createJsonDatabase({
   filePath: config.dataFilePath,
 })
 const app = await buildApp({
   config,
-  store: stores.matchStore,
-  botStore: stores.botStore,
-  userStore: stores.userStore,
+  store: database.matchStore,
+  botStore: database.botStore,
+  userStore: database.userStore,
+  dailyRunStore: database.dailyRunStore,
 })
 
 try {

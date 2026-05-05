@@ -22,6 +22,15 @@ it('renders the docs page', () => {
   expect(screen.getByText(/Quick guide \+ full reference/i)).toBeInTheDocument()
 })
 
+it('renders the leaderboard page', async () => {
+  const router = createMemoryRouter(routes, { initialEntries: ['/leaderboard'] })
+
+  render(<RouterProvider router={router} />)
+
+  expect(await screen.findByRole('heading', { name: 'Daily leaderboard' })).toBeInTheDocument()
+  expect(await screen.findByText('Rank')).toBeInTheDocument()
+})
+
 it('workshop layout surfaces setup, hides opponent code, and keeps tick events scrollable', () => {
   // 1) Ensure workshop-specific layout rules exist.
   expect(appCss).toMatch(/\.page--workshop\s*\{[\s\S]*max-width:\s*min\(1560px,\s*calc\(100vw - 40px\)\)/)
@@ -33,13 +42,13 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   const { container } = render(<RouterProvider router={router} />)
 
   expect(screen.getByText('Match setup')).toBeInTheDocument()
-  expect(screen.getByText('Server sandbox')).toBeInTheDocument()
+  expect(screen.queryByText('Server sandbox')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Randomize opponents' })).toBeInTheDocument()
-  expect(screen.getByRole('combobox', { name: 'Server sandbox mode' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Check mirror' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Run mirror' })).toBeInTheDocument()
+  expect(screen.queryByRole('combobox', { name: 'Server sandbox mode' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Check mirror' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Run mirror' })).not.toBeInTheDocument()
   expect(screen.queryByRole('textbox', { name: 'Server URL' })).not.toBeInTheDocument()
-  expect(screen.getByText(/runs locally in the browser worker/i)).toBeInTheDocument()
+  expect(screen.queryByText(/runs locally in the browser worker/i)).not.toBeInTheDocument()
   expect(screen.getAllByRole('option', { name: 'None (inactive)' })).toHaveLength(3)
   expect(screen.getByText(/Opponent slots can be set to None for Workshop-only local inspection/i)).toBeInTheDocument()
   expect(screen.getByText('Tick events')).toBeInTheDocument()
@@ -59,17 +68,6 @@ it('workshop layout surfaces setup, hides opponent code, and keeps tick events s
   expect(screen.queryByText(/Opponent code is read-only/i)).not.toBeInTheDocument()
   expect(screen.getByText('Slot 1 · BULLET')).toBeInTheDocument()
   expect(container.querySelectorAll('textarea')).toHaveLength(1)
-
-  fireEvent.change(screen.getByRole('combobox', { name: 'Server sandbox mode' }), {
-    target: { value: 'remote-http' },
-  })
-  expect(screen.getByRole('textbox', { name: 'Server URL' })).toBeInTheDocument()
-  expect(screen.getByRole('textbox', { name: 'Server username' })).toBeInTheDocument()
-  expect(screen.getByLabelText('Server password')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Check server' })).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Run on server' })).toBeInTheDocument()
 
   // 3) Ensure the tick events <pre> remains a scroll container in the empty state.
   const pre = Array.from(container.querySelectorAll('pre')).find((node) => node.textContent?.includes('Run a match to see events.'))

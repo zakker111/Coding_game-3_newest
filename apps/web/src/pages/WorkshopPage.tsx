@@ -24,6 +24,7 @@ import { initialPlaybackState, playbackReducer } from '../replay/playbackReducer
 import { getAppearanceColorMap, getBotsForPlayback, SLOT_IDS } from '../replay/interpolate'
 import { formatReplayLoadoutIssue, getReplayHeaderBotsBySlot, getReplayLoadoutIssuesBySlot } from '../replay/loadoutWarnings'
 import { ArenaCanvas, type ArenaRenderState } from '../ui/arena'
+import { getDefaultServerBaseUrl } from '../config'
 import {
   createServerSimulation,
   DEFAULT_SERVER_BASE_URL,
@@ -70,6 +71,7 @@ const OPPONENT_ASSIGNMENTS_KEY = 'nowt:workshop:opponents:v1'
 const SERVER_BASE_URL_KEY = 'nowt:workshop:serverBaseUrl:v1'
 const SERVER_MODE_KEY = 'nowt:workshop:serverMode:v1'
 const NONE_OPPONENT_ID = '__NONE__'
+const RANDOM_OPPONENT_ID = '__RANDOM__'
 
 type OpponentAssignments = {
   BOT2: string
@@ -196,9 +198,9 @@ function normalizeOpponentAssignments(prev: OpponentAssignments, poolIds: string
 function readServerBaseUrl(): string {
   try {
     const raw = localStorage.getItem(SERVER_BASE_URL_KEY)
-    return normalizeServerBaseUrl(raw ?? DEFAULT_SERVER_BASE_URL)
+    return normalizeServerBaseUrl(raw ?? getDefaultServerBaseUrl())
   } catch {
-    return DEFAULT_SERVER_BASE_URL
+    return getDefaultServerBaseUrl()
   }
 }
 
@@ -503,6 +505,7 @@ export function WorkshopPage() {
   const [serverPasswordInput, setServerPasswordInput] = React.useState('')
   const [serverBotsLoading, setServerBotsLoading] = React.useState(false)
   const [serverBots, setServerBots] = React.useState<ServerBotSummary[]>([])
+  const [serverOpponentOptions, setServerOpponentOptions] = React.useState<OpponentOption[]>([])
   const [selectedServerBotName, setSelectedServerBotName] = React.useState('bot1')
   const [selectedServerBotSourceText, setSelectedServerBotSourceText] = React.useState<string | null>(null)
   const [serverSaveBusy, setServerSaveBusy] = React.useState(false)
@@ -564,6 +567,11 @@ export function WorkshopPage() {
     return myBots.bots.find((b) => b.id === myBots.selectedBotId) ?? myBots.bots[0]
   }, [myBots])
 
+  const ownServerBots = React.useMemo(() => {
+    if (!serverUser) return []
+    return serverBots.filter((bot) => bot.ownerUsername === serverUser.username)
+  }, [serverBots, serverUser])
+
   const opponentPool: OpponentOption[] = React.useMemo(() => {
     const exampleOpponents: OpponentOption[] = EXAMPLE_OPPONENT_IDS.map((id) => ({
       id,
@@ -583,8 +591,8 @@ export function WorkshopPage() {
         loadout: b.loadout,
       }))
 
-    return [...exampleOpponents, ...localOpponents]
-  }, [myBots.bots, selectedMyBot.id])
+    return [...exampleOpponents, ...localOpponents, ...serverOpponentOptions]
+  }, [myBots.bots, selectedMyBot.id, serverOpponentOptions])
 
   const opponentPoolById = React.useMemo(() => {
     return new Map(opponentPool.map((o) => [o.id, o]))
@@ -680,28 +688,45 @@ export function WorkshopPage() {
   }, [selectedServerBotName, serverBots, serverUser])
 
   const selectedServerBotLoadout = React.useMemo(() => {
-    return selectedServerBotSourceText ? deriveLoadoutFromScriptOrDefault(selectedServerBotSourceText) : null
-  }, [selectedServerBotSourceText])
+    return selectedServerBot?.loadout ?? null
+  }, [selectedServerBot])
 
-  const remoteBot1UsesSavedServerSource =
-    serverSandboxMode === 'remote-http' && serverUser && selectedServerBot && selectedServerBotSourceText != null
+  const selectedServerLocalBotId = serverUser ? `server-${serverUser.username}-${selectedServerBotName}` : null
+  const selectedServerBotLoaded = selectedServerLocalBotId != null && selectedMyBot.id === selectedServerLocalBotId
 
   const serverBotDirty =
-    remoteBot1UsesSavedServerSource && selectedServerBotSourceText !== selectedMyBot.sourceText
+    Boolean(
+      selectedServerBotLoaded &&
+        selectedServerBot &&
+        (selectedMyBot.sourceText !== (selectedServerBotSourceText ?? '') ||
+          JSON.stringify(selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT) !== JSON.stringify(selectedServerBot.loadout))
+    )
 
   async function refreshRemoteServerState(baseUrl: string) {
     const ruleset = await fetchServerRuleset(baseUrl)
     const me = await fetchServerMe(baseUrl)
 
-    let bots: ServerBotSummary[] = []
-    if (me.user) {
-      const listed = await listServerBots(baseUrl, { owner: me.user.username })
-      bots = listed.bots
-    }
+    const listed = await listServerBots(baseUrl)
+    const bots = listed.bots
+    const opponentSources = await Promise.all(
+      bots
+        .filter((bot) => bot.ownerUsername !== 'builtin')
+        .map(async (bot) => {
+          const source = await fetchServerBotSource(baseUrl, bot.ownerUsername, bot.name)
+          return {
+            id: `server:${bot.botId}`,
+            displayName: `${bot.botId} (server)`,
+            sourceText: source.sourceText,
+            loadout: source.loadout,
+          }
+        })
+    )
 
     setServerUser(me.user)
     setServerBots(bots)
-    setSelectedServerBotName((prev) => (bots.some((bot) => bot.name === prev) ? prev : bots[0]?.name ?? 'bot1'))
+    setServerOpponentOptions(opponentSources)
+    const ownBots = me.user ? bots.filter((bot) => bot.ownerUsername === me.user?.username) : []
+    setSelectedServerBotName((prev) => (ownBots.some((bot) => bot.name === prev) ? prev : ownBots[0]?.name ?? 'bot1'))
     if (!me.user) {
       setSelectedServerBotSourceText(null)
     }
@@ -716,6 +741,15 @@ export function WorkshopPage() {
 
     return { ruleset, user: me.user, bots }
   }
+
+  React.useEffect(() => {
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    refreshRemoteServerState(baseUrl).catch(() => {
+      setServerUser(null)
+      setServerBots([])
+      setServerOpponentOptions([])
+    })
+  }, [serverBaseUrl])
 
   React.useEffect(() => {
     if (serverSandboxMode !== 'remote-http') return
@@ -1387,6 +1421,41 @@ export function WorkshopPage() {
     setMyBots((prev) => ({ ...prev, selectedBotId: id }))
   }
 
+  async function importServerBotAsBot1(bot: ServerBotSummary) {
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerBotsLoading(true)
+    setServerSaveNotice(null)
+
+    try {
+      const source = await fetchServerBotSource(baseUrl, bot.ownerUsername, bot.name)
+      const loadout = source.loadout
+      const localId = `server-${bot.ownerUsername}-${bot.name}`
+
+      setMyBots((prev) => {
+        const nextBot = {
+          id: localId,
+          name: bot.name,
+          sourceText: applyLoadoutHeaderDirectives(source.sourceText, loadout),
+          loadout,
+        }
+        const existing = prev.bots.some((entry) => entry.id === localId)
+        return {
+          version: 2,
+          selectedBotId: localId,
+          bots: existing
+            ? prev.bots.map((entry) => (entry.id === localId ? nextBot : entry))
+            : [...prev.bots.filter((entry) => entry.id !== localId), nextBot].slice(-MAX_LOCAL_BOTS),
+        }
+      })
+      setSelectedServerBotName(bot.name)
+      setServerSaveNotice({ tone: 'good', text: `Loaded ${bot.botId} into Workshop.` })
+    } catch (err) {
+      setServerSaveNotice({ tone: 'bad', text: err instanceof Error ? err.message : String(err) })
+    } finally {
+      setServerBotsLoading(false)
+    }
+  }
+
   function loadStarter() {
     const loadout = deriveLoadoutFromScriptOrDefault(starterSourceText)
 
@@ -1419,6 +1488,20 @@ export function WorkshopPage() {
   }
 
   function setOpponent(slot: keyof OpponentAssignments, id: string) {
+    if (id === RANDOM_OPPONENT_ID) {
+      const otherSlots = OPPONENT_SLOTS.filter((s) => s !== slot)
+      const usedByOtherSlots = new Set(otherSlots.map((s) => opponents[s]))
+      const candidates = opponentPoolIds.filter((candidate) => !usedByOtherSlots.has(candidate))
+      const nonce = readOpponentNonce()
+      const index = candidates.length ? ((seed >>> 0) ^ fnv1a32(`${slot}:${selectedMyBot.sourceText}:${nonce}`)) % candidates.length : -1
+
+      if (index >= 0) {
+        setOpponents((prev) => normalizeOpponentAssignments({ ...prev, [slot]: candidates[index] }, opponentPoolIds))
+      }
+      writeOpponentNonce((nonce + 1) >>> 0)
+      return
+    }
+
     setOpponents((prev) => normalizeOpponentAssignments({ ...prev, [slot]: id }, opponentPoolIds))
   }
 
@@ -1570,7 +1653,7 @@ export function WorkshopPage() {
   }
 
   async function handleSaveToServer() {
-    if (serverSandboxMode !== 'remote-http' || !serverUser) return
+    if (!serverUser || !selectedServerBotLoaded) return
 
     const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
     setServerSaveBusy(true)
@@ -1580,13 +1663,26 @@ export function WorkshopPage() {
     try {
       const saved = await saveServerBot(baseUrl, serverUser.username, selectedServerBotName, {
         sourceText: selectedMyBot.sourceText,
+        loadout: selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
         saveMessage: `Saved from ${selectedMyBot.name}`,
       })
 
-      const listed = await listServerBots(baseUrl, { owner: serverUser.username })
+      const listed = await listServerBots(baseUrl)
       setServerBots(listed.bots)
       const source = await fetchServerBotSource(baseUrl, serverUser.username, selectedServerBotName)
       setSelectedServerBotSourceText(source.sourceText)
+      setMyBots((prev) => ({
+        ...prev,
+        bots: prev.bots.map((bot) =>
+          bot.id === prev.selectedBotId
+            ? {
+                ...bot,
+                sourceText: applyLoadoutHeaderDirectives(source.sourceText, source.loadout),
+                loadout: source.loadout,
+              }
+            : bot,
+        ),
+      }))
       setServerSaveNotice({
         tone: 'good',
         text: `Saved ${selectedMyBot.name} to ${saved.botId}.`,
@@ -1620,15 +1716,13 @@ export function WorkshopPage() {
       : null
 
   const saveToServerDisabledReason =
-    serverSandboxMode !== 'remote-http'
-      ? 'Server save is available only in remote server mode.'
-      : serverConnectionState.kind !== 'ready'
-        ? 'Check the remote server first.'
-        : !serverUser
-          ? 'Sign in to the remote server before saving.'
-          : serverSaveBusy
-            ? 'Saving current BOT1 draft to the remote server…'
-            : null
+    !serverUser
+      ? 'Sign in to the server before saving.'
+      : !selectedServerBotLoaded
+        ? 'Select one of your server bots before saving.'
+      : serverSaveBusy
+        ? 'Saving current BOT1 draft to the remote server…'
+        : null
 
   const serverFinalBotsBySlot = React.useMemo(() => {
     if (!serverReplay) return null
@@ -1733,6 +1827,7 @@ export function WorkshopPage() {
     const usedByOtherSlots = new Set(otherSlots.map((s) => opponents[s]))
 
     return [
+      { id: RANDOM_OPPONENT_ID, displayName: 'Random bot', sourceText: '', loadout: EMPTY_LOADOUT },
       { id: NONE_OPPONENT_ID, displayName: 'None (inactive)', sourceText: '', loadout: EMPTY_LOADOUT },
       ...opponentPool.filter((o) => o.id === opponents[slot] || !usedByOtherSlots.has(o.id)),
     ]
@@ -1829,13 +1924,9 @@ export function WorkshopPage() {
             type="button"
             onClick={handleSaveToServer}
             disabled={Boolean(saveToServerDisabledReason) || serverSaveBusy}
-            title={saveToServerDisabledReason ?? 'Save the current BOT1 draft into the selected remote server bot'}
+            title={saveToServerDisabledReason ?? 'Save the current BOT1 draft into your selected server bot'}
           >
-            {serverSandboxMode === 'remote-http'
-              ? serverSaveBusy
-                ? 'Saving…'
-                : 'Save to server'
-              : 'Save'}
+            {serverSaveBusy ? 'Saving…' : 'Save bot'}
           </button>
         </div>
       </div>
@@ -1919,363 +2010,6 @@ export function WorkshopPage() {
               )}
             </section>
           ))}
-        </div>
-      </section>
-
-      <section className="panel" style={{ marginTop: 16 }}>
-        <div className="panel-title">Server sandbox</div>
-        <div className="muted" style={{ marginTop: 6 }}>
-          Run the current 4-slot setup through a server-style sandbox flow, inspect match status/results, and load the returned replay into the existing viewer.
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(320px, 1fr)', gap: 16, marginTop: 14 }}>
-          <section
-            style={{
-              padding: 14,
-              borderRadius: 12,
-              border: '1px solid rgba(148, 163, 184, 0.16)',
-              background: 'rgba(15, 23, 42, 0.24)',
-            }}
-          >
-            <label className="mini-field">
-              <div className="mini-label">Mode</div>
-              <select
-                aria-label="Server sandbox mode"
-                className="mini-input workshop-select"
-                value={serverSandboxMode}
-                onChange={(e) => setServerSandboxMode(e.target.value === 'remote-http' ? 'remote-http' : 'local-mirror')}
-              >
-                <option value="local-mirror">Local mirror (recommended)</option>
-                <option value="remote-http">Real server URL</option>
-              </select>
-            </label>
-
-            {serverSandboxMode === 'remote-http' ? (
-            <label className="mini-field">
-              <div className="mini-label">Server URL</div>
-              <input
-                aria-label="Server URL"
-                className="mini-input"
-                type="text"
-                value={serverBaseUrl}
-                onChange={(e) => setServerBaseUrl(e.target.value)}
-              />
-            </label>
-            ) : (
-              <div className="muted" style={{ marginTop: 10 }}>
-                Uses the same validation, source hashing, loadout normalization, deterministic replay generation, and match-summary shape as the server — but runs locally in the browser worker, so deployed users do not need localhost.
-              </div>
-            )}
-
-            {serverSandboxMode === 'remote-http' ? (
-              <div style={{ marginTop: 12, padding: 12, borderRadius: 10, border: '1px solid rgba(148, 163, 184, 0.16)', background: 'rgba(15, 23, 42, 0.32)' }}>
-                <div className="mini-label" style={{ marginBottom: 8 }}>Remote server session</div>
-
-                {serverUser ? (
-                  <>
-                    <div className="muted">
-                      Signed in as <strong style={{ color: 'var(--text)' }}>{serverUser.username}</strong>.
-                    </div>
-
-                    <div className="controls" style={{ marginTop: 10 }}>
-                      <button className="ui-button ui-button-secondary" type="button" onClick={handleCheckServer} disabled={serverConnectionState.kind === 'checking' || serverBotsLoading}>
-                        {serverBotsLoading ? 'Refreshing…' : 'Refresh server state'}
-                      </button>
-                      <button className="ui-button ui-button-secondary" type="button" onClick={handleServerLogout} disabled={serverAuthBusy}>
-                        {serverAuthBusy ? 'Signing out…' : 'Sign out'}
-                      </button>
-                    </div>
-
-                    <label className="mini-field" style={{ marginTop: 12 }}>
-                      <div className="mini-label">BOT1 server bot</div>
-                      <select
-                        aria-label="BOT1 server bot"
-                        className="mini-input workshop-select"
-                        value={selectedServerBotName}
-                        onChange={(e) => setSelectedServerBotName(e.target.value)}
-                        disabled={!serverBots.length || serverBotsLoading}
-                      >
-                        {serverBots.map((bot) => (
-                          <option key={bot.botId} value={bot.name}>
-                            {bot.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <div className="muted" style={{ marginTop: 8 }}>
-                      {selectedServerBot ? (
-                        <>
-                          Remote BOT1 source comes from <strong style={{ color: 'var(--text)' }}>{selectedServerBot.botId}</strong>
-                          {selectedServerBot.updatedAt ? ` · updated ${new Date(selectedServerBot.updatedAt).toLocaleString()}` : ''}
-                        </>
-                      ) : serverBotsLoading ? (
-                        'Loading saved server bots…'
-                      ) : (
-                        'No saved server bots available for this user.'
-                      )}
-                    </div>
-
-                    {selectedServerBotSourceText && selectedServerBotLoadout ? (
-                      <div className="muted" style={{ marginTop: 8 }}>
-                        Saved loadout: <strong style={{ color: 'var(--text)' }}>{selectedServerBotLoadout.map((mod) => formatLoadoutOptionValue(mod ?? null)).join(' · ')}</strong>
-                      </div>
-                    ) : null}
-
-                    {serverBotDirty ? (
-                      <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
-                        Current BOT1 editor changes are not saved to the selected server bot. Remote server runs use the last saved server source until you click <strong style={{ color: 'var(--text)' }}>Save to server</strong>.
-                      </div>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    <label className="mini-field">
-                      <div className="mini-label">Username</div>
-                      <input
-                        aria-label="Server username"
-                        className="mini-input"
-                        type="text"
-                        value={serverUsernameInput}
-                        onChange={(e) => setServerUsernameInput(e.target.value)}
-                      />
-                    </label>
-
-                    <label className="mini-field">
-                      <div className="mini-label">Password</div>
-                      <input
-                        aria-label="Server password"
-                        className="mini-input"
-                        type="password"
-                        value={serverPasswordInput}
-                        onChange={(e) => setServerPasswordInput(e.target.value)}
-                      />
-                    </label>
-
-                    <div className="controls" style={{ marginTop: 10 }}>
-                      <button className="ui-button ui-button-secondary" type="button" onClick={() => handleServerAuth('register')} disabled={serverAuthBusy}>
-                        {serverAuthBusy ? 'Working…' : 'Register'}
-                      </button>
-                      <button className="ui-button ui-button-secondary" type="button" onClick={() => handleServerAuth('login')} disabled={serverAuthBusy}>
-                        {serverAuthBusy ? 'Working…' : 'Sign in'}
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {serverAuthError ? (
-                  <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
-                    {serverAuthError}
-                  </div>
-                ) : null}
-
-                {serverSaveNotice ? (
-                  <div
-                    className="muted"
-                    style={{
-                      marginTop: 8,
-                      color: serverSaveNotice.tone === 'bad' ? '#fecaca' : 'rgba(134, 239, 172, 0.95)',
-                    }}
-                  >
-                    {serverSaveNotice.text}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="controls" style={{ marginTop: 12 }}>
-              <button className="ui-button ui-button-secondary" type="button" onClick={handleCheckServer} disabled={serverConnectionState.kind === 'checking'}>
-                {serverConnectionState.kind === 'checking'
-                  ? 'Checking…'
-                  : serverSandboxMode === 'local-mirror'
-                    ? 'Check mirror'
-                    : 'Check server'}
-              </button>
-              <button
-                className="ui-button"
-                type="button"
-                onClick={handleRunOnServer}
-                disabled={serverRunning || Boolean(serverRunDisabledReason)}
-                title={
-                  serverRunDisabledReason ??
-                  (serverSandboxMode === 'local-mirror'
-                    ? 'Run the current 4-slot setup through the local server mirror'
-                    : 'Run the current 4-slot setup on the server')
-                }
-              >
-                {serverRunning
-                  ? serverSandboxMode === 'local-mirror'
-                    ? 'Running mirror…'
-                    : 'Running on server…'
-                  : serverSandboxMode === 'local-mirror'
-                    ? 'Run mirror'
-                    : 'Run on server'}
-              </button>
-            </div>
-
-            <div
-              className="muted"
-              style={{
-                marginTop: 12,
-                color:
-                  serverConnectionState.kind === 'error'
-                    ? '#fecaca'
-                    : serverConnectionState.kind === 'ready'
-                      ? 'rgba(134, 239, 172, 0.95)'
-                      : undefined,
-              }}
-            >
-              {serverConnectionState.message}
-            </div>
-
-            {serverRunDisabledReason ? (
-              <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
-                {serverRunDisabledReason}
-              </div>
-            ) : null}
-
-            {serverRunError ? (
-              <div className="muted" style={{ marginTop: 8, color: '#fecaca' }}>
-                {serverRunError}
-              </div>
-            ) : null}
-          </section>
-
-          <section
-            style={{
-              padding: 14,
-              borderRadius: 12,
-              border: '1px solid rgba(148, 163, 184, 0.16)',
-              background: 'rgba(15, 23, 42, 0.24)',
-            }}
-          >
-            <div className="panel-title">Latest server result</div>
-            <div className="muted" style={{ marginTop: 10, lineHeight: 1.55 }}>
-              {serverMatch ? (
-                <>
-                  <div>Match: <strong style={{ color: 'var(--text)' }}>{serverMatch.matchId}</strong></div>
-                  <div>Status: <strong style={{ color: 'var(--text)' }}>{serverMatch.status}</strong></div>
-                  <div>Seed: <strong style={{ color: 'var(--text)' }}>{String(serverMatch.matchSeed)}</strong></div>
-                  <div>Tick cap: <strong style={{ color: 'var(--text)' }}>{serverMatch.tickCap}</strong></div>
-                  <div>End reason: <strong style={{ color: 'var(--text)' }}>{serverMatch.result?.endReason ?? 'unknown'}</strong></div>
-                  <div>Winner: <strong style={{ color: 'var(--text)' }}>{serverMatch.result?.winnerSlot ?? 'none'}</strong></div>
-                  <div>Survivors: <strong style={{ color: 'var(--text)' }}>{serverMatch.result?.survivors.length ?? 0}</strong></div>
-                  <div style={{ marginTop: 8 }}>
-                    Viewer source:{' '}
-                    <strong style={{ color: 'var(--text)' }}>
-                      {replaySource === 'server' ? 'server replay loaded' : serverReplay ? 'server replay available' : 'none'}
-                    </strong>
-                  </div>
-                  {serverMatch.participants.length ? (
-                    <div style={{ marginTop: 14 }}>
-                      <div className="mini-label" style={{ marginBottom: 8 }}>Final bot states</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-                        {serverMatch.participants.map((participant) => {
-                          const finalBot = serverFinalBotsBySlot?.[participant.slot]
-                          const loadoutIssues = participant.loadoutIssues.map((issue) => formatReplayLoadoutIssue(issue))
-
-                          return (
-                            <div
-                              key={participant.slot}
-                              style={{
-                                padding: 10,
-                                borderRadius: 10,
-                                border: '1px solid rgba(148, 163, 184, 0.16)',
-                                background:
-                                  serverMatch.result?.winnerSlot === participant.slot
-                                    ? 'rgba(20, 83, 45, 0.22)'
-                                    : 'rgba(15, 23, 42, 0.34)',
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-                                <strong style={{ color: 'var(--text)' }}>{participant.slot}</strong>
-                                <span
-                                  style={{
-                                    fontSize: 11,
-                                    color: finalBot?.alive ? 'rgba(134, 239, 172, 0.95)' : '#fecaca',
-                                  }}
-                                >
-                                  {serverMatch.result?.winnerSlot === participant.slot
-                                    ? 'winner'
-                                    : finalBot?.alive
-                                      ? 'alive'
-                                      : 'down'}
-                                </span>
-                              </div>
-                              <div style={{ marginTop: 4, color: 'var(--text)' }}>{participant.displayName}</div>
-                              <div style={{ marginTop: 6 }}>HP: <strong style={{ color: 'var(--text)' }}>{finalBot?.hp ?? '—'}</strong></div>
-                              <div>Ammo: <strong style={{ color: 'var(--text)' }}>{finalBot?.ammo ?? '—'}</strong></div>
-                              <div>Energy: <strong style={{ color: 'var(--text)' }}>{finalBot?.energy ?? '—'}</strong></div>
-                              <div style={{ marginTop: 6, fontSize: 12 }}>
-                                Loadout:{' '}
-                                <strong style={{ color: 'var(--text)' }}>
-                                  {participant.loadoutSnapshot.map((mod) => formatLoadoutOptionValue(mod ?? null)).join(' · ')}
-                                </strong>
-                              </div>
-                              <div style={{ marginTop: 6, fontSize: 11 }}>
-                                Source hash:{' '}
-                                <span style={{ color: 'var(--text)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>
-                                  {participant.sourceHash.slice(0, 12)}
-                                </span>
-                              </div>
-                              {loadoutIssues.length ? (
-                                <div style={{ marginTop: 8, color: '#fecaca', fontSize: 11, lineHeight: 1.45 }}>
-                                  {loadoutIssues.map((line) => (
-                                    <div key={`${participant.slot}-${line}`}>{line}</div>
-                                  ))}
-                                </div>
-                              ) : null}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                'Run a server sandbox match to inspect server-side results here.'
-              )}
-            </div>
-          </section>
-        </div>
-
-        <div style={{ marginTop: 16 }}>
-          <div className="panel-title">Server activity</div>
-          <div
-            style={{
-              marginTop: 8,
-              padding: 10,
-              borderRadius: 10,
-              background: 'rgba(0,0,0,0.35)',
-              overflow: 'auto',
-              maxHeight: 160,
-              fontFamily:
-                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-              fontSize: 12,
-              lineHeight: 1.55,
-            }}
-          >
-            {serverActivity.length ? (
-              serverActivity.map((entry) => (
-                <div
-                  key={entry.id}
-                  style={{
-                    marginBottom: 6,
-                    color:
-                      entry.tone === 'bad'
-                        ? '#fecaca'
-                        : entry.tone === 'good'
-                          ? 'rgba(134, 239, 172, 0.95)'
-                          : 'rgba(148, 163, 184, 0.95)',
-                  }}
-                >
-                  {entry.text}
-                </div>
-              ))
-            ) : (
-              <div className="muted">No server activity yet.</div>
-            )}
-          </div>
         </div>
       </section>
 
@@ -2667,6 +2401,60 @@ export function WorkshopPage() {
             <div className="muted" style={{ marginTop: 10 }}>
               Up to {MAX_LOCAL_BOTS} local bots.
             </div>
+
+            {serverUser ? (
+              <div style={{ marginTop: 12 }}>
+                <label className="mini-field">
+                  <div className="mini-label">Server bot 1/2/3</div>
+                  <select
+                    aria-label="Your server bots"
+                    className="mini-input workshop-select"
+                    value={selectedServerBot?.botId ?? ''}
+                    onChange={(e) => {
+                      const bot = ownServerBots.find((entry) => entry.botId === e.target.value)
+                      if (bot) void importServerBotAsBot1(bot)
+                    }}
+                    disabled={!ownServerBots.length || serverBotsLoading}
+                  >
+                    <option value="">
+                      {serverBotsLoading ? 'Loading server bots…' : ownServerBots.length ? 'Select server bot…' : 'No server bots'}
+                    </option>
+                    {ownServerBots.map((bot) => (
+                      <option key={bot.botId} value={bot.botId}>
+                        {bot.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="muted" style={{ marginTop: 8 }}>
+                  {selectedServerBot ? (
+                    <>
+                      Editing <strong style={{ color: 'var(--text)' }}>{selectedServerBot.botId}</strong> ·{' '}
+                      {selectedServerBotLoaded ? (serverBotDirty ? 'unsaved changes' : 'saved') : 'select to load into editor'}
+                    </>
+                  ) : (
+                    'Choose one of your three server bots to edit source and loadout.'
+                  )}
+                </div>
+
+                {serverSaveNotice ? (
+                  <div
+                    className="muted"
+                    style={{
+                      marginTop: 8,
+                      color: serverSaveNotice.tone === 'bad' ? '#fecaca' : 'rgba(134, 239, 172, 0.95)',
+                    }}
+                  >
+                    {serverSaveNotice.text}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="muted" style={{ marginTop: 12 }}>
+                Login first to load and save your server bots.
+              </div>
+            )}
 
             <div className="controls" style={{ marginTop: 10 }}>
               <button

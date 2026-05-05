@@ -67,13 +67,22 @@ describe('serverClient helpers', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            bots: [{ botId: 'alice/bot1', ownerUsername: 'alice', name: 'bot1', updatedAt: null, sourceHash: 'hash1' }],
+            bots: [
+              {
+                botId: 'alice/bot1',
+                ownerUsername: 'alice',
+                name: 'bot1',
+                updatedAt: null,
+                sourceHash: 'hash1',
+                loadout: ['BULLET', null, null],
+              },
+            ],
           }),
           { status: 200 },
         ),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ botId: 'alice/bot1', sourceText: 'WAIT 1\n' }), { status: 200 }),
+        new Response(JSON.stringify({ botId: 'alice/bot1', sourceText: 'WAIT 1\n', loadout: ['BULLET', null, null] }), { status: 200 }),
       )
 
     const listed = await listServerBots('http://127.0.0.1:3000', { owner: 'alice' }, fetchMock as any)
@@ -90,7 +99,9 @@ describe('serverClient helpers', () => {
       expect.objectContaining({ method: 'GET', credentials: 'include' }),
     )
     expect(listed.bots[0].botId).toBe('alice/bot1')
+    expect(listed.bots[0].loadout).toEqual(['BULLET', null, null])
     expect(source.sourceText).toBe('WAIT 1\n')
+    expect(source.loadout).toEqual(['BULLET', null, null])
   })
 
   it('saves a bot source and surfaces server-side errors', async () => {
@@ -102,6 +113,7 @@ describe('serverClient helpers', () => {
           name: 'bot1',
           updatedAt: '2026-04-07T00:00:00.000Z',
           sourceHash: 'hash1',
+          loadout: ['BULLET', null, null],
         }),
         { status: 200 },
       ),
@@ -111,7 +123,7 @@ describe('serverClient helpers', () => {
       'http://127.0.0.1:3000',
       'alice',
       'bot1',
-      { sourceText: 'WAIT 1\n', saveMessage: 'sync' },
+      { sourceText: 'WAIT 1\n', loadout: ['BULLET', null, null], saveMessage: 'sync' },
       successFetch as any,
     )
 
@@ -126,7 +138,7 @@ describe('serverClient helpers', () => {
     )
 
     await expect(
-      saveServerBot('http://127.0.0.1:3000', 'alice', 'bot1', { sourceText: 'WAIT 1\n' }, failingFetch as any),
+      saveServerBot('http://127.0.0.1:3000', 'alice', 'bot1', { sourceText: 'WAIT 1\n', loadout: ['BULLET', null, null] }, failingFetch as any),
     ).rejects.toThrow('authentication is required')
   })
 })

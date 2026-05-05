@@ -31,6 +31,40 @@ function createValidPayload() {
   }
 }
 
+test('default admin account exists with starter bots', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const loginResponse = await app.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: {
+      username: 'admin',
+      password: 'admin',
+    },
+  })
+
+  assert.equal(loginResponse.statusCode, 200)
+  await registerUser(app, 'alice', 'password123')
+  assert.equal(loginResponse.json().user.username, 'admin')
+
+  const botsResponse = await app.inject({
+    method: 'GET',
+    url: '/api/bots?owner=admin',
+    headers: {
+      cookie: loginResponse.headers['set-cookie'],
+    },
+  })
+
+  assert.equal(botsResponse.statusCode, 200)
+  assert.deepEqual(
+    botsResponse.json().bots.map((bot) => bot.botId),
+    ['admin/bot1', 'admin/bot2', 'admin/bot3']
+  )
+})
+
 test('auth register/login/logout establishes and clears the session', async (t) => {
   const app = await buildApp()
   t.after(async () => {
@@ -187,6 +221,7 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
     },
     payload: {
       sourceText: 'WAIT 1\r\n',
+      loadout: ['BULLET', 'ARMOR', null],
       saveMessage: 'first save',
     },
   })
@@ -205,6 +240,11 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
   })
   assert.equal(metadataResponse.statusCode, 200)
   assert.equal(metadataResponse.json().sourceHash, saved.sourceHash)
+  assert.deepEqual(metadataResponse.json().loadout, ['BULLET', 'ARMOR', null])
+  assert.equal(metadataResponse.json().rankedEnabled, true)
+  assert.equal(metadataResponse.json().rankedStatus, 'active')
+  assert.equal(metadataResponse.json().rankedPoints, 0)
+  assert.equal(typeof metadataResponse.json().lastSubmittedAt, 'string')
 
   const sourceResponse = await app.inject({
     method: 'GET',
@@ -217,6 +257,7 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
   assert.deepEqual(sourceResponse.json(), {
     botId: 'alice/bot1',
     sourceText: 'WAIT 1\n',
+    loadout: ['BULLET', 'ARMOR', null],
   })
 
   const versionsResponse = await app.inject({
@@ -247,6 +288,42 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
     sourceHash: saved.sourceHash,
     sourceText: 'WAIT 1\n',
   })
+})
+
+test('saving a dropped bot marks it pending for ranked resubmission', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+  const cookie = await registerUser(app, 'alice', 'password123')
+
+  const dropped = app.botStore.updateRankedStatus('alice', 'bot1', {
+    rankedStatus: 'dropped',
+    rankedPoints: 1,
+    lastRankedRunId: 'd_000001',
+    droppedAt: '2026-05-05T00:00:00.000Z',
+    dropReason: 'below_daily_cut',
+  })
+  assert.equal(dropped.rankedStatus, 'dropped')
+
+  const saveResponse = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/alice/bot1',
+    headers: {
+      cookie,
+    },
+    payload: {
+      sourceText: 'WAIT 2\n',
+      loadout: ['BULLET', null, null],
+    },
+  })
+
+  assert.equal(saveResponse.statusCode, 200)
+  const saved = saveResponse.json()
+  assert.equal(saved.rankedStatus, 'pending')
+  assert.equal(saved.rankedPoints, 1)
+  assert.equal(saved.lastRankedRunId, 'd_000001')
+  assert.equal(saved.dropReason, 'below_daily_cut')
 })
 
 test('saving the same bot source dedupes version history by source hash', async (t) => {
@@ -372,7 +449,7 @@ test('GET /api/bots/:owner/:name returns 404 for unknown bots', async (t) => {
   assert.equal(response.json().error.code, 'BOT_NOT_FOUND')
 })
 
-test('GET /api/bots requires authentication for user-owned bot reads', async (t) => {
+test('GET /api/bots allows public reads of user-owned bots for testing', async (t) => {
   const app = await buildApp()
   t.after(async () => {
     await app.close()
@@ -385,8 +462,11 @@ test('GET /api/bots requires authentication for user-owned bot reads', async (t)
     url: '/api/bots?owner=alice',
   })
 
-  assert.equal(unauthenticated.statusCode, 401)
-  assert.equal(unauthenticated.json().error.code, 'AUTH_REQUIRED')
+  assert.equal(unauthenticated.statusCode, 200)
+  assert.deepEqual(
+    unauthenticated.json().bots.map((bot) => bot.botId),
+    ['alice/bot1', 'alice/bot2', 'alice/bot3']
+  )
 })
 
 test('PUT /api/bots enforces the three-bot cap for new bot creation', async (t) => {
@@ -411,7 +491,7 @@ test('PUT /api/bots enforces the three-bot cap for new bot creation', async (t) 
   assert.equal(response.json().error.code, 'MAX_BOTS_REACHED')
 })
 
-test('version history endpoints require the authenticated owner for user bots', async (t) => {
+test('version history endpoints allow public reads for testing other bots', async (t) => {
   const app = await buildApp()
   t.after(async () => {
     await app.close()
@@ -437,8 +517,8 @@ test('version history endpoints require the authenticated owner for user bots', 
     method: 'GET',
     url: '/api/bots/alice/bot1/versions',
   })
-  assert.equal(unauthenticated.statusCode, 401)
-  assert.equal(unauthenticated.json().error.code, 'AUTH_REQUIRED')
+  assert.equal(unauthenticated.statusCode, 200)
+  assert.equal(unauthenticated.json().versions.length, 2)
 
   const bobCookie = await registerUser(app, 'bob', 'password123')
   const wrongOwner = await app.inject({
@@ -448,8 +528,8 @@ test('version history endpoints require the authenticated owner for user bots', 
       cookie: bobCookie,
     },
   })
-  assert.equal(wrongOwner.statusCode, 403)
-  assert.equal(wrongOwner.json().error.code, 'FORBIDDEN')
+  assert.equal(wrongOwner.statusCode, 200)
+  assert.equal(wrongOwner.json().sourceText, 'WAIT 2\n')
 
   const ownerResponse = await app.inject({
     method: 'GET',
@@ -525,7 +605,7 @@ test('POST /api/simulations rejects oversized source with actionable details', a
       host: '127.0.0.1',
       port: 3000,
       maxTickCap: 600,
-      maxSourceChars: 8,
+      maxSourceChars: 2000,
       maxSourceLines: 400,
       bodyLimit: 262144,
     },
@@ -535,7 +615,7 @@ test('POST /api/simulations rejects oversized source with actionable details', a
   })
 
   const payload = createValidPayload()
-  payload.participants[0].sourceText = 'WAIT 1234\n'
+  payload.participants[0].sourceText = `${'WAIT 1\n'.repeat(300)}`
 
   const response = await app.inject({
     method: 'POST',
@@ -640,6 +720,11 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.equal(match.participants.length, 4)
   assert.equal(match.participants[0].displayName, 'Alpha')
   assert.ok(typeof match.participants[0].sourceHash === 'string')
+  assert.equal(match.result.placements.length, 4)
+  assert.deepEqual(
+    match.result.placements.map((placement) => placement.points),
+    [3, 2, 1, 0]
+  )
 
   const replayResponse = await app.inject({
     method: 'GET',
@@ -652,4 +737,145 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.ok(Array.isArray(replay.state))
   assert.ok(Array.isArray(replay.events))
   assert.equal(Object.prototype.hasOwnProperty.call(replay.state[0].bots[0], 'targetMineId'), true)
+})
+
+test('POST /api/runs/daily creates deterministic daily matches and leaderboard', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const loginResponse = await app.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: {
+      username: 'admin',
+      password: 'admin',
+    },
+  })
+  assert.equal(loginResponse.statusCode, 200)
+  await registerUser(app, 'alice', 'password123')
+
+  const saveAdminBot = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/admin/bot1',
+    headers: {
+      cookie: loginResponse.headers['set-cookie'],
+    },
+    payload: {
+      sourceText: 'WAIT 1\n',
+      loadout: ['BULLET', 'ARMOR', null],
+    },
+  })
+  assert.equal(saveAdminBot.statusCode, 200)
+
+  const createResponse = await app.inject({
+    method: 'POST',
+    url: '/api/runs/daily',
+    headers: {
+      cookie: loginResponse.headers['set-cookie'],
+    },
+    payload: {
+      runDate: '2026-05-04',
+      seed: 'daily-seed',
+      tickCap: 20,
+      maxRounds: 1,
+    },
+  })
+
+  assert.equal(createResponse.statusCode, 201)
+  const run = createResponse.json()
+  assert.equal(run.runId, 'd_000001')
+  assert.equal(run.status, 'complete')
+  assert.equal(run.runDate, '2026-05-04')
+  assert.equal(run.rulesetVersion, '0.2.0')
+  assert.equal(run.matchIds.length, 15)
+  assert.equal(run.summary.matchCount, 15)
+  assert.equal(run.summary.leaderboard.length, 6)
+  assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 10))
+  assert.ok(run.summary.leaderboard.every((entry) => typeof entry.wins === 'number'))
+  assert.ok(run.summary.leaderboard.every((entry) => typeof entry.averagePoints === 'number'))
+
+  const runResponse = await app.inject({
+    method: 'GET',
+    url: `/api/runs/${run.runId}`,
+  })
+  assert.equal(runResponse.statusCode, 200)
+  assert.equal(runResponse.json().runId, run.runId)
+
+  const latestRunResponse = await app.inject({
+    method: 'GET',
+    url: '/api/runs/latest',
+  })
+  assert.equal(latestRunResponse.statusCode, 200)
+  assert.equal(latestRunResponse.json().runId, run.runId)
+
+  const runMatchesResponse = await app.inject({
+    method: 'GET',
+    url: `/api/runs/${run.runId}/matches`,
+  })
+  assert.equal(runMatchesResponse.statusCode, 200)
+  const runMatches = runMatchesResponse.json()
+  assert.equal(runMatches.runId, run.runId)
+  assert.equal(runMatches.matches.length, 15)
+  assert.equal(runMatches.matches[0].kind, 'daily')
+  assert.equal(runMatches.matches[0].dailyRunId, run.runId)
+  assert.equal(Object.prototype.hasOwnProperty.call(runMatches.matches[0], 'replayStored'), false)
+  assert.equal(runMatches.matches[0].participants.length, 4)
+  assert.deepEqual(
+    runMatches.matches[0].result.placements.map((placement) => placement.points),
+    [3, 2, 1, 0]
+  )
+  const adminParticipant = runMatches.matches
+    .flatMap((match) => match.participants)
+    .find((participant) => participant.displayName === 'admin/bot1')
+  assert.deepEqual(adminParticipant?.loadoutSnapshot, ['BULLET', 'ARMOR', null])
+
+  const listMatchesResponse = await app.inject({
+    method: 'GET',
+    url: `/api/matches?runId=${run.runId}&kind=daily`,
+  })
+  assert.equal(listMatchesResponse.statusCode, 200)
+  assert.equal(listMatchesResponse.json().matches.length, 15)
+
+  const replayResponse = await app.inject({
+    method: 'GET',
+    url: `/api/matches/${run.matchIds[0]}/replay`,
+  })
+  assert.equal(replayResponse.statusCode, 200)
+  assert.equal(replayResponse.json().schemaVersion, '0.2.0')
+  assert.equal(replayResponse.json().bots.length, 4)
+})
+
+test('POST /api/runs/daily requires admin login', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/runs/daily',
+    payload: {
+      runDate: '2026-05-04',
+    },
+  })
+
+  assert.equal(response.statusCode, 403)
+  assert.equal(response.json().error.code, 'ADMIN_REQUIRED')
+})
+
+test('GET /api/runs/:runId returns 404 for unknown daily runs', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'GET',
+    url: '/api/runs/d_999999',
+  })
+
+  assert.equal(response.statusCode, 404)
+  assert.equal(response.json().error.code, 'DAILY_RUN_NOT_FOUND')
 })

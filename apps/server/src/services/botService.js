@@ -1,3 +1,5 @@
+import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
+
 import { createSourceSnapshot } from './sourceText.js'
 
 const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
@@ -62,6 +64,7 @@ export function createBotService({ store, config }) {
       if (ownerUsername === 'builtin') return
 
       const starterSource = store.getBotSource('builtin', 'bot0')?.sourceText ?? 'WAIT 1\n'
+      const starterLoadout = normalizeLoadout(store.getBotSource('builtin', 'bot0')?.loadout ?? EMPTY_LOADOUT).loadout
 
       for (const name of STARTER_BOT_NAMES) {
         if (store.getBot(ownerUsername, name)) continue
@@ -71,6 +74,7 @@ export function createBotService({ store, config }) {
           name,
           sourceText: sourceTextSnapshot,
           sourceHash,
+          loadout: starterLoadout,
           saveMessage: 'starter bot',
         })
       }
@@ -82,7 +86,6 @@ export function createBotService({ store, config }) {
       const textQuery = typeof query.q === 'string' ? query.q : undefined
 
       if (ownerUsername) {
-        authorizeOwnerRead(ownerUsername, currentUser)
         return {
           bots: store.listBots({
             ownerUsernames: [ownerUsername],
@@ -91,31 +94,18 @@ export function createBotService({ store, config }) {
         }
       }
 
-      const bots = [
-        ...store.listBots({
-          ownerUsernames: ['builtin'],
-          query: textQuery,
-        }),
-      ]
-
-      if (currentUser) {
-        bots.push(
-          ...store.listBots({
-            ownerUsernames: [currentUser.username],
+      return {
+        bots: sortBots(
+          store.listBots({
             query: textQuery,
           })
-        )
-      }
-
-      return {
-        bots: sortBots(bots),
+        ),
       }
     },
 
     getBot(owner, name, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
       const bot = store.getBot(ownerUsername, botName)
       if (!bot) {
         throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', {
@@ -129,7 +119,6 @@ export function createBotService({ store, config }) {
     getBotSource(owner, name, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
       const source = store.getBotSource(ownerUsername, botName)
       if (!source) {
         throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', {
@@ -171,6 +160,7 @@ export function createBotService({ store, config }) {
       }
 
       const { sourceTextSnapshot, sourceHash } = createSourceSnapshot(body.sourceText, config)
+      const { loadout } = normalizeLoadout(body.loadout)
       const saveMessage = normalizeSaveMessage(body.saveMessage)
       const existingBot = store.getBot(ownerUsername, botName)
 
@@ -186,6 +176,7 @@ export function createBotService({ store, config }) {
         name: botName,
         sourceText: sourceTextSnapshot,
         sourceHash,
+        loadout,
         saveMessage,
       })
     },
@@ -193,7 +184,6 @@ export function createBotService({ store, config }) {
     listVersions(owner, name, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
       const versions = store.listVersions(ownerUsername, botName)
       if (!versions) {
         throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', {
@@ -207,7 +197,6 @@ export function createBotService({ store, config }) {
     getVersionSource(owner, name, sourceHash, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
 
       if (typeof sourceHash !== 'string' || sourceHash.trim() === '') {
         throw createHttpError(400, 'INVALID_REQUEST', 'sourceHash must be a non-empty string', {

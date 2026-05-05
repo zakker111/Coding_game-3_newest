@@ -19,18 +19,78 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ## Unreleased
 
-- Workshop-only inactive opponent slots:
-  - BOT2..BOT4 can be set to `None (inactive)` in the React Workshop for local inspection runs
-  - randomize still fills opponent slots with real bots only
-  - the inactive-slot affordance is local Workshop UX, not part of the server match contract
-- Phase 8A sandbox server runner:
-  - new `apps/server` workspace app
-  - `GET /api/ruleset`
-  - `POST /api/simulations`
-  - `GET /api/matches/:matchId`
-  - `GET /api/matches/:matchId/replay`
-  - in-memory match/replay storage for the MVP slice
-  - root convenience commands: `pnpm dev:server`, `pnpm start:server`, `pnpm test:server`
+No unreleased changes.
+
+---
+
+## 0.0.6 — 2026-05-05T04:30:00Z
+
+> Marketing version: **0.06** (SemVer: `0.0.6`).
+
+### Added
+- Public `/leaderboard` page backed by `GET /api/runs/latest`.
+- User bot management workflow in Workshop:
+  - select one of the authenticated user’s 3 server bots
+  - edit source/loadout
+  - save source+loadout
+  - show saved/unsaved status
+- Daily runs now use saved user/server bots only for rankings.
+- Placement-based daily points:
+  - 1st: 3 points
+  - 2nd: 2 points
+  - 3rd: 1 point
+  - 4th: 0 points
+  - leaderboard includes points, wins, matches played, and average points.
+- Bot language helpers:
+  - `TARGET_NEAREST_POWERUP`
+  - `TARGET_LOWEST_AMMO`
+  - `TARGET_LOWEST_ENERGY`
+  - `ENEMY_IN_RANGE()`
+  - `AMMO_LOW()`
+  - `ENERGY_LOW()`
+  - `HEALTH_LOW()`
+  - `HAS_POWERUP_TARGET()`
+  - `SET_MOVE_TO_CENTER`
+  - `SET_MOVE_TO_CORNER`
+  - `SET_MOVE_AWAY_FROM_BOT <BOT_TARGET>`
+  - `CIRCLE_TARGET`
+  - `HOLD_SECTOR <SECTOR>`
+- New modules:
+  - `SNIPER`
+  - `ROCKET`
+  - `TELEPORT`
+
+### Fixed
+- Workshop server bot selector now falls back only to the authenticated user’s own bots, preventing another user’s bot from being selected in the user bot management panel.
+- Persistent-store regression coverage now proves registered username/password login survives server rebuilds.
+
+### Changed
+- Workspace package versions bumped to `0.0.6`.
+- Bot coding docs and deploy mirrors synced for the new helpers/modules.
+
+---
+
+## 0.0.5 — 2026-05-05T00:25:00Z
+
+> Marketing version: **0.05** (SemVer: `0.0.5`).
+
+### Added
+- Minimal landing-page login flow.
+- Default server admin account (`admin` / `admin`) with starter bots.
+- Admin-only `/admin` server sandbox for running daily games and inspecting points/matches.
+- Server daily runs:
+  - schedule every deterministic 4-bot combination from eligible saved/builtin bots
+  - persist daily runs and match references
+  - expose daily run/match APIs
+  - include leaderboard points and matches played
+
+### Changed
+- Frontend/server boundary cleanup:
+  - frontend server URL selection now lives in `apps/web/src/config.ts`
+  - `serverClient` focuses on API calls only
+  - backend app setup wires services through explicit local variables
+- Persistent server storage now batches writes during daily runs so all-bot schedules complete quickly.
+- Workspace package versions bumped to `0.0.5`.
 
 ---
 
