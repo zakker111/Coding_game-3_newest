@@ -26,9 +26,74 @@ Recently completed (this merge set)
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
 Next slice
+- Add ranked lifecycle controls so daily runs stay small:
+  - ranked bot status (`active` / `pending` / `dropped`)
+  - active daily cutoff (`rankedActiveLimit`, recommended default: `20`)
+  - dropped bots excluded from future ranked runs
+  - saving a dropped bot marks it `pending` for the next daily run
+  - after daily scoring, top `rankedActiveLimit` bots become/remain `active`; lower-ranked eligible bots become `dropped`
+  - keep this admin-controlled first, then add user-facing resubmit details later
 - Add polished example bots for `SNIPER`, `ROCKET`, and `TELEPORT`.
 - Add a repeatable admin/dev seed flow for demo users and bot concepts.
 - Balance the new module numbers after running daily leagues.
+
+### Ranked lifecycle plan (next backend/admin slice)
+
+Goal: keep daily ranked runs bounded while still letting users improve and re-upload bots.
+
+Recommended bot fields:
+
+```js
+{
+  rankedEnabled: true,
+  rankedStatus: 'active', // 'active' | 'pending' | 'dropped'
+  rankedPoints: 0,
+  lastRankedRunId: null,
+  lastSubmittedAt: null,
+  droppedAt: null,
+  dropReason: null
+}
+```
+
+Initial/default behavior:
+- New starter user bots begin as `active`.
+- Daily eligibility includes saved user/server bots where:
+  - `rankedEnabled === true`
+  - `rankedStatus` is `active` or `pending`
+- Built-in bots remain excluded from ranked daily runs.
+
+Daily run size control:
+- Add `rankedActiveLimit` to daily run input/config.
+- Recommended early default: `20`.
+- If more eligible bots exist than the limit, select deterministically:
+  1. `pending` bots first
+  2. then `active` bots by previous `rankedPoints` descending
+  3. then `botId` ascending
+  4. take the first `rankedActiveLimit`
+
+After daily scoring:
+- Top `rankedActiveLimit` bots in the run become/remain `active`.
+- Lower-ranked eligible bots become `dropped`.
+- Store their latest `rankedPoints`, `lastRankedRunId`, `droppedAt`, and `dropReason = 'below_daily_cut'`.
+
+Resubmission loop:
+- When a user saves a dropped bot, automatically set:
+  - `rankedStatus = 'pending'`
+  - `rankedEnabled = true`
+  - `lastSubmittedAt = now`
+- That bot is included in the next daily run.
+- If it places above the cutoff, it returns to `active`; otherwise it drops again.
+
+Admin-first controls:
+- Keep ranked controls admin-only for now.
+- Add `/admin` controls later for:
+  - `rankedActiveLimit`
+  - activate/drop/reset bot status
+  - ranked bot status table
+
+Publishing recommendation:
+- Keep `POST /api/runs/daily` admin-triggered and synchronous while `rankedActiveLimit` is low.
+- Move to queued/background processing only when daily run runtime becomes too high.
 
 ### Status board
 
