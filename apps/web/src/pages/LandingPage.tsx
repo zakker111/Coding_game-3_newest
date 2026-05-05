@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { getDefaultServerBaseUrl } from '../config'
 import { loginServerUser, registerServerUser } from '../serverClient'
@@ -45,14 +46,56 @@ export function LandingPage() {
 
   return (
     <div className="landing">
-      <div className="landing-card panel">
-        <h1 className="title">Nowt</h1>
-        <p className="subtitle">
-          A deterministic bot-fighting coding game. Write bots, run matches, and inspect replays tick-by-tick.
-        </p>
-        <p className="muted" style={{ marginTop: 6 }}>
-          v{formatMarketingVersion(__APP_VERSION__)}
-        </p>
+      <div className="landing-card">
+        <section className="landing-hero panel">
+          <div>
+            <div className="landing-kicker">Deterministic bot arena · v{formatMarketingVersion(__APP_VERSION__)}</div>
+            <h1 className="title">Write the bot. Watch the fight.</h1>
+            <p className="subtitle">
+              Nowt is a coding game where your tiny script controls a combat bot. Save loadouts, run daily matches, and inspect every tick of the replay.
+            </p>
+            <div className="landing-actions">
+              <Link className="ui-button" to="/workshop">
+                Open Workshop
+              </Link>
+              <Link className="ui-button ui-button-secondary" to="/leaderboard">
+                View leaderboard
+              </Link>
+              <Link className="ui-button ui-button-secondary" to="/docs">
+                Learn bot code
+              </Link>
+            </div>
+          </div>
+          <div className="landing-score-card" aria-label="Game summary">
+            <div>
+              <span>Modules</span>
+              <strong>10</strong>
+            </div>
+            <div>
+              <span>Daily scoring</span>
+              <strong>3 / 2 / 1 / 0</strong>
+            </div>
+            <div>
+              <span>Replay</span>
+              <strong>Tick by tick</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-feature-grid" aria-label="Game features">
+          <div className="landing-feature panel">
+            <strong>Code simply</strong>
+            <span>Use readable instructions like <code>TARGET_CLOSEST</code>, <code>USE_SLOT1 TARGET</code>, and <code>HEALTH_LOW()</code>.</span>
+          </div>
+          <div className="landing-feature panel">
+            <strong>Build loadouts</strong>
+            <span>Pick weapons and tools like bullet, sniper, rocket, shield, mine, repair drone, and teleport.</span>
+          </div>
+          <div className="landing-feature panel">
+            <strong>Compete daily</strong>
+            <span>Saved server bots enter ranked daily matches and earn points from placements.</span>
+          </div>
+        </section>
 
         <form className="landing-login panel" onSubmit={(event) => handleAuth(event, 'login')}>
           <div>

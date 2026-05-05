@@ -184,17 +184,80 @@ a:hover {
 }
 
 .landing {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  justify-items: center;
 }
 
 .landing-card {
   width: 100%;
-  max-width: 860px;
+  max-width: 1040px;
+  display: grid;
+  gap: 16px;
 }
 
-.landing-features {
-  background: rgba(255, 255, 255, 0.02);
+.landing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 24px;
+  align-items: center;
+  padding: 28px;
+}
+
+.landing-kicker {
+  color: var(--accent-hover);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.landing-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.landing-score-card {
+  display: grid;
+  gap: 10px;
+}
+
+.landing-score-card > div {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.landing-score-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.landing-score-card strong {
+  font-size: 18px;
+}
+
+.landing-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.landing-feature {
+  display: grid;
+  gap: 8px;
+}
+
+.landing-feature span {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.landing-feature code {
+  color: var(--text);
 }
 
 .landing-login {
@@ -287,6 +350,11 @@ a:hover {
 }
 
 @media (max-width: 860px) {
+  .landing-hero,
+  .landing-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .admin-grid {
     grid-template-columns: minmax(0, 1fr);
   }
