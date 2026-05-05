@@ -4,7 +4,6 @@ import {
   createServerDailyRun,
   fetchServerDailyRunMatches,
   fetchServerMe,
-  getDefaultServerBaseUrl,
   listServerDailyRuns,
   loginServerUser,
   logoutServerUser,
@@ -12,6 +11,7 @@ import {
   type ServerDailyRunMatch,
   type ServerUser,
 } from '../serverClient'
+import { getDefaultServerBaseUrl } from '../config'
 
 function today() {
   return new Date().toISOString().slice(0, 10)

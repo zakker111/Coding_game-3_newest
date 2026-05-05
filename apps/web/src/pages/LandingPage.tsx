@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getDefaultServerBaseUrl, loginServerUser } from '../serverClient'
+import { getDefaultServerBaseUrl } from '../config'
+import { loginServerUser } from '../serverClient'
 
 function formatMarketingVersion(version: string) {
   const m = /^0\.0\.(\d+)$/.exec(version)

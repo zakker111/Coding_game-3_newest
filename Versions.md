@@ -19,18 +19,31 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 
 ## Unreleased
 
-- Workshop-only inactive opponent slots:
-  - BOT2..BOT4 can be set to `None (inactive)` in the React Workshop for local inspection runs
-  - randomize still fills opponent slots with real bots only
-  - the inactive-slot affordance is local Workshop UX, not part of the server match contract
-- Phase 8A sandbox server runner:
-  - new `apps/server` workspace app
-  - `GET /api/ruleset`
-  - `POST /api/simulations`
-  - `GET /api/matches/:matchId`
-  - `GET /api/matches/:matchId/replay`
-  - in-memory match/replay storage for the MVP slice
-  - root convenience commands: `pnpm dev:server`, `pnpm start:server`, `pnpm test:server`
+No unreleased changes.
+
+---
+
+## 0.0.5 — 2026-05-05T00:25:00Z
+
+> Marketing version: **0.05** (SemVer: `0.0.5`).
+
+### Added
+- Minimal landing-page login flow.
+- Default server admin account (`admin` / `admin`) with starter bots.
+- Admin-only `/admin` server sandbox for running daily games and inspecting points/matches.
+- Server daily runs:
+  - schedule every deterministic 4-bot combination from eligible saved/builtin bots
+  - persist daily runs and match references
+  - expose daily run/match APIs
+  - include leaderboard points and matches played
+
+### Changed
+- Frontend/server boundary cleanup:
+  - frontend server URL selection now lives in `apps/web/src/config.ts`
+  - `serverClient` focuses on API calls only
+  - backend app setup wires services through explicit local variables
+- Persistent server storage now batches writes during daily runs so all-bot schedules complete quickly.
+- Workspace package versions bumped to `0.0.5`.
 
 ---
 

@@ -47,6 +47,7 @@ export async function buildApp({
   app.decorate('botStore', botStore)
   app.decorate('userStore', userStore)
   app.decorate('dailyRunStore', dailyRunStore)
+
   const authService = createAuthService({
     store: userStore,
   })
@@ -54,33 +55,25 @@ export async function buildApp({
     store: botStore,
     config,
   })
+  const simulationService = createSimulationService({
+    store,
+    config,
+  })
 
-  app.decorate(
-    'authService',
-    authService
-  )
+  app.decorate('authService', authService)
+  app.decorate('simulationService', simulationService)
+  app.decorate('botService', botService)
   authService.ensureDefaultAdmin()
-  app.decorate(
-    'simulationService',
-    createSimulationService({
-      store,
-      config,
-    })
-  )
   if (typeof botStore.getBot === 'function' && typeof botStore.saveBot === 'function') {
     botService.ensureStarterBots('admin')
   }
-  app.decorate(
-    'botService',
-    botService
-  )
   app.decorate(
     'dailyRunService',
     createDailyRunService({
       store: dailyRunStore,
       botStore,
       matchStore: store,
-      simulationService: app.simulationService,
+      simulationService,
       config,
     })
   )

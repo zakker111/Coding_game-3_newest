@@ -274,13 +274,3 @@ export async function fetchServerDailyRunMatches(
     fetchImpl,
   )
 }
-
-export function getDefaultServerBaseUrl() {
-  if (typeof window === 'undefined') return 'http://127.0.0.1:3000'
-  const { protocol, hostname } = window.location
-  const cosineMatch = /^(\d+)-(.+\.cosine\.computer)$/.exec(hostname)
-  if (cosineMatch) {
-    return `${protocol}//3000-${cosineMatch[2]}`
-  }
-  return 'http://127.0.0.1:3000'
-}
