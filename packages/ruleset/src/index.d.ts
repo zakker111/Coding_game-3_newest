@@ -4,7 +4,18 @@ export const LOADOUT_SLOT_COUNT: 3
 
 export const EMPTY_LOADOUT: [null, null, null]
 
-export const MODULE_IDS: readonly ['BULLET', 'SAW', 'SHIELD', 'ARMOR', 'GRENADE', 'MINE', 'REPAIR_DRONE']
+export const MODULE_IDS: readonly [
+  'BULLET',
+  'SAW',
+  'SHIELD',
+  'ARMOR',
+  'GRENADE',
+  'MINE',
+  'REPAIR_DRONE',
+  'SNIPER',
+  'ROCKET',
+  'TELEPORT',
+]
 
 export type ModuleId = (typeof MODULE_IDS)[number]
 

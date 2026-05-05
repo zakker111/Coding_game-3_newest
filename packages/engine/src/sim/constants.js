@@ -46,6 +46,13 @@ export const GRENADE_DAMAGE_CENTER = 18
 export const GRENADE_DAMAGE_ADJACENT = 10
 export const GRENADE_AMMO_COST = 6
 export const GRENADE_COOLDOWN_TICKS = 8
+export const SNIPER_DAMAGE = 25
+export const SNIPER_AMMO_COST = 4
+export const SNIPER_COOLDOWN_TICKS = 10
+export const ROCKET_AMMO_COST = 8
+export const ROCKET_COOLDOWN_TICKS = 12
+export const TELEPORT_ENERGY_COST = 30
+export const TELEPORT_COOLDOWN_TICKS = 14
 
 export const MINE_ARM_TICKS = 2
 export const MINE_FUSE_TICKS = 18

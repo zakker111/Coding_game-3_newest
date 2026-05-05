@@ -11,6 +11,13 @@ import {
   BOT_HALF_SIZE,
   BULLET_AMMO_COST,
   BULLET_COOLDOWN_TICKS,
+  SNIPER_DAMAGE,
+  SNIPER_AMMO_COST,
+  SNIPER_COOLDOWN_TICKS,
+  ROCKET_AMMO_COST,
+  ROCKET_COOLDOWN_TICKS,
+  TELEPORT_ENERGY_COST,
+  TELEPORT_COOLDOWN_TICKS,
   GRENADE_AMMO_COST,
   GRENADE_COOLDOWN_TICKS,
   MINE_AMMO_COST,
@@ -386,6 +393,49 @@ export function runMatchToReplay(params) {
               grenadeCounter = r.grenadeCounter
             }
 
+            continue
+          }
+
+          if (mod === 'ROCKET') {
+            const r = attemptUseGrenade(bot, slotIndex, eff.target, bots, grenades, ++grenadeCounter, tickEvents, {
+              moduleId: 'ROCKET',
+              ammoCost: ROCKET_AMMO_COST,
+              cause: 'FIRE_ROCKET',
+              eventType: 'ROCKET_SPAWN',
+            })
+
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+              grenadeCounter--
+            } else {
+              grenades = r.grenades
+              bot.slotCooldowns[slotIndex] = ROCKET_COOLDOWN_TICKS
+              grenadeCounter = r.grenadeCounter
+            }
+
+            continue
+          }
+
+          if (mod === 'SNIPER') {
+            const r = attemptUseSniper(bot, slotIndex, eff.target, bots, tickEvents)
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+            } else {
+              bot.slotCooldowns[slotIndex] = SNIPER_COOLDOWN_TICKS
+            }
+            continue
+          }
+
+          if (mod === 'TELEPORT') {
+            const r = attemptUseTeleport(bot, slotIndex, eff.target, tickEvents)
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+            } else {
+              bot.slotCooldowns[slotIndex] = TELEPORT_COOLDOWN_TICKS
+            }
             continue
           }
 
@@ -843,6 +893,18 @@ function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
       if (mod === 'GRENADE') {
         if (bot.slotCooldowns[idx] > 0) return false
         return bot.ammo >= GRENADE_AMMO_COST
+      }
+      if (mod === 'ROCKET') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= ROCKET_AMMO_COST
+      }
+      if (mod === 'SNIPER') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= SNIPER_AMMO_COST
+      }
+      if (mod === 'TELEPORT') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.energy >= TELEPORT_ENERGY_COST
       }
       if (mod === 'MINE') {
         if (bot.slotCooldowns[idx] > 0) return false
@@ -1383,6 +1445,20 @@ function resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, clea
     return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
   }
 
+  if (target.kind === 'BOT_AWAY') {
+    const botTarget = resolveBotTargetToken(bot, target.token, bots)
+
+    if (!botTarget || !botTarget.alive) {
+      if (clearGoalOnInvalid) bot.vm.moveGoal = null
+      return null
+    }
+
+    const dx = bot.pos.x - botTarget.pos.x
+    const dy = bot.pos.y - botTarget.pos.y
+    const scaled = scaleDeltaToMaxLen(dx, dy, speed)
+    return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
+  }
+
   if (target.kind === 'POWERUP') {
     const loc = findClosestPowerupLoc(powerupState, bot.pos, target.type)
     if (!loc) {
@@ -1403,6 +1479,28 @@ function resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, clea
     const dx = goalPos.x - bot.pos.x
     const dy = goalPos.y - bot.pos.y
 
+    const scaled = scaleDeltaToMaxLen(dx, dy, speed)
+    return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
+  }
+
+  if (target.kind === 'NEAREST_CORNER') {
+    const corners = [
+      { x: BOT_CENTER_MIN, y: BOT_CENTER_MIN },
+      { x: BOT_CENTER_MAX, y: BOT_CENTER_MIN },
+      { x: BOT_CENTER_MIN, y: BOT_CENTER_MAX },
+      { x: BOT_CENTER_MAX, y: BOT_CENTER_MAX },
+    ]
+    const goal = corners
+      .slice()
+      .sort((a, b) => {
+        const da = manhattan(bot.pos, a)
+        const db = manhattan(bot.pos, b)
+        if (da !== db) return da - db
+        if (a.y !== b.y) return a.y - b.y
+        return a.x - b.x
+      })[0]
+    const dx = goal.x - bot.pos.x
+    const dy = goal.y - bot.pos.y
     const scaled = scaleDeltaToMaxLen(dx, dy, speed)
     return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
   }
@@ -1519,8 +1617,21 @@ function resolveBotTargetToken(bot, token, bots) {
   if (token === 'CLOSEST_BOT') return findClosestLivingBot(bot.botId, bot.pos, bots)
 
   if (token === 'LOWEST_HEALTH_BOT') return findLowestHealthLivingBot(bot.botId, bots)
+  if (token === 'LOWEST_AMMO_BOT') return findLowestResourceLivingBot(bot.botId, bots, 'ammo')
+  if (token === 'LOWEST_ENERGY_BOT') return findLowestResourceLivingBot(bot.botId, bots, 'energy')
 
   return null
+}
+
+function findLowestResourceLivingBot(fromId, bots, field) {
+  /** @type {any | null} */
+  let best = null
+  for (const b of bots) {
+    if (!b.alive) continue
+    if (b.botId === fromId) continue
+    if (!best || b[field] < best[field] || (b[field] === best[field] && b.botId < best.botId)) best = b
+  }
+  return best
 }
 
 function findClosestLivingBot(fromId, fromPos, bots) {
@@ -1604,11 +1715,15 @@ function attemptUseBullet(bot, slotIndex, targetToken, bots, bullets, nextBullet
   }
 }
 
-function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGrenadeId, tickEvents) {
+function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGrenadeId, tickEvents, options = {}) {
   if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
-  if (bot.loadout[slotIndex] !== 'GRENADE') return { ok: false, reason: 'NO_MODULE' }
+  const moduleId = options.moduleId ?? 'GRENADE'
+  const ammoCost = options.ammoCost ?? GRENADE_AMMO_COST
+  const cause = options.cause ?? 'THROW_GRENADE'
+  const eventType = options.eventType ?? 'GRENADE_SPAWN'
+  if (bot.loadout[slotIndex] !== moduleId) return { ok: false, reason: 'NO_MODULE' }
   if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
-  if (bot.ammo < GRENADE_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+  if (bot.ammo < ammoCost) return { ok: false, reason: 'NO_AMMO' }
 
   const isBotKind =
     targetToken === 'TARGET' ||
@@ -1628,19 +1743,19 @@ function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGren
   const grenadeId = `G${nextGrenadeId}`
   grenade.grenadeId = grenadeId
 
-  bot.ammo -= GRENADE_AMMO_COST
+  bot.ammo -= ammoCost
 
   tickEvents.push({
     type: 'RESOURCE_DELTA',
     botId: bot.botId,
-    ammoDelta: -GRENADE_AMMO_COST,
+    ammoDelta: -ammoCost,
     energyDelta: 0,
     healthDelta: 0,
-    cause: 'THROW_GRENADE',
+    cause,
   })
 
   tickEvents.push({
-    type: 'GRENADE_SPAWN',
+    type: eventType,
     grenadeId,
     ownerBotId: bot.botId,
     pos: clonePos(grenade.pos),
@@ -1655,6 +1770,95 @@ function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGren
     grenades: [...grenades, grenade],
     grenadeCounter: nextGrenadeId,
   }
+}
+
+function attemptUseSniper(bot, slotIndex, targetToken, bots, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'SNIPER') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < SNIPER_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+
+  const isBotKind =
+    targetToken === 'TARGET' ||
+    targetToken === 'CLOSEST_BOT' ||
+    targetToken === 'LOWEST_HEALTH_BOT' ||
+    targetToken === 'LOWEST_AMMO_BOT' ||
+    targetToken === 'LOWEST_ENERGY_BOT' ||
+    targetToken === 'BOT1' ||
+    targetToken === 'BOT2' ||
+    targetToken === 'BOT3' ||
+    targetToken === 'BOT4'
+
+  if (!isBotKind) return { ok: false, reason: 'INVALID_TARGET_KIND' }
+  const targetBot = resolveBotTargetToken(bot, targetToken, bots)
+  if (!targetBot || !targetBot.alive) return { ok: false, reason: 'INVALID_TARGET' }
+
+  bot.ammo -= SNIPER_AMMO_COST
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -SNIPER_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'FIRE_SNIPER',
+  })
+
+  const shielded = targetBot.shieldActive ? SNIPER_DAMAGE - Math.floor(SNIPER_DAMAGE / 2) : SNIPER_DAMAGE
+  const damage = targetBot.armorEquipped ? applyArmorMitigation(shielded) : shielded
+  targetBot.lastDamageByBotId = bot.botId
+  targetBot.hp = Math.max(0, targetBot.hp - damage)
+
+  tickEvents.push({
+    type: 'SNIPER_HIT',
+    ownerBotId: bot.botId,
+    targetBotId: targetBot.botId,
+    damage,
+  })
+  tickEvents.push({
+    type: 'DAMAGE',
+    victimBotId: targetBot.botId,
+    amount: damage,
+    source: 'SNIPER',
+    sourceBotId: bot.botId,
+    kind: 'SNIPER_HIT',
+  })
+  if (targetBot.hp <= 0 && targetBot.alive) {
+    targetBot.alive = false
+    tickEvents.push({ type: 'BOT_DIED', victimBotId: targetBot.botId, creditedBotId: bot.botId })
+  }
+  return { ok: true }
+}
+
+function attemptUseTeleport(bot, slotIndex, targetToken, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'TELEPORT') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.energy < TELEPORT_ENERGY_COST) return { ok: false, reason: 'NO_ENERGY' }
+
+  let destination = null
+  const sectorMatch = /^SECTOR_?([1-9])$/i.exec(String(targetToken))
+  if (sectorMatch) destination = locToWorld({ sector: Number(sectorMatch[1]), zone: 0 })
+  if (targetToken === 'TARGET') {
+    destination = resolvePointGoalPos(bot.vm?.moveGoal)
+  }
+  if (!destination) return { ok: false, reason: 'INVALID_TARGET_KIND' }
+
+  const fromPos = clonePos(bot.pos)
+  bot.energy -= TELEPORT_ENERGY_COST
+  bot.pos = {
+    x: Math.max(BOT_CENTER_MIN, Math.min(BOT_CENTER_MAX, destination.x)),
+    y: Math.max(BOT_CENTER_MIN, Math.min(BOT_CENTER_MAX, destination.y)),
+  }
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: 0,
+    energyDelta: -TELEPORT_ENERGY_COST,
+    healthDelta: 0,
+    cause: 'TELEPORT',
+  })
+  tickEvents.push({ type: 'BOT_TELEPORT', botId: bot.botId, fromPos, toPos: clonePos(bot.pos) })
+  return { ok: true }
 }
 
 function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEvents) {

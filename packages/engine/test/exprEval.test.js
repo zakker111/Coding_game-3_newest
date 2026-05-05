@@ -132,6 +132,8 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
     cooldownRemaining(slot) {
       return slot === 1 ? 2 : 0
     },
+    hasTargetPowerup: true,
+    vars: { HEALTH: 40, AMMO: 20, ENERGY: 30 },
   }
 
   assert.deepStrictEqual(evalExpr('SECTOR() == 1 && ZONE() == 2', ctx), { ok: true, value: true })
@@ -166,6 +168,10 @@ test('evalExpr: extended built-ins (sector/zone/dist/powerups/bumps)', () => {
   })
 
   assert.deepStrictEqual(evalExpr('HAS_MODULE(SLOT1) && COOLDOWN_REMAINING(SLOT1) == 2', ctx), {
+    ok: true,
+    value: true,
+  })
+  assert.deepStrictEqual(evalExpr('ENEMY_IN_RANGE() && AMMO_LOW() && ENERGY_LOW() && HEALTH_LOW() && HAS_POWERUP_TARGET()', ctx), {
     ok: true,
     value: true,
   })
