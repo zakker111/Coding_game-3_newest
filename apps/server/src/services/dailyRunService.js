@@ -2,7 +2,6 @@ import { RULESET_VERSION } from '@coding-game/ruleset'
 
 const DEFAULT_TICK_CAP = 600
 const DEFAULT_MAX_ROUNDS = 1
-const DEFAULT_PLACEMENT_POINTS = [3, 2, 1, 0]
 const SLOT_IDS = ['BOT1', 'BOT2', 'BOT3', 'BOT4']
 
 function createHttpError(statusCode, code, message, details) {
@@ -112,49 +111,22 @@ function buildParticipants(botStore, bots) {
   })
 }
 
-function scoreMatch(match) {
-  const pointsByBotId = {}
-  const participantBySlot = new Map(match.participants.map((participant) => [participant.slot, participant]))
-  const aliveSlots = new Set((match.result?.survivors ?? []).map((survivor) => survivor.slot))
-
-  if (match.result?.winnerSlot) {
-    for (const participant of match.participants) {
-      pointsByBotId[participant.displayName] =
-        participant.slot === match.result.winnerSlot ? DEFAULT_PLACEMENT_POINTS[0] : DEFAULT_PLACEMENT_POINTS[3]
-    }
-    return pointsByBotId
-  }
-
-  if (aliveSlots.size > 0) {
-    const tiedPoints =
-      DEFAULT_PLACEMENT_POINTS.slice(0, aliveSlots.size).reduce((sum, points) => sum + points, 0) / aliveSlots.size
-    for (const participant of match.participants) {
-      pointsByBotId[participant.displayName] = aliveSlots.has(participant.slot) ? tiedPoints : DEFAULT_PLACEMENT_POINTS[3]
-    }
-    return pointsByBotId
-  }
-
-  for (const slot of SLOT_IDS) {
-    const participant = participantBySlot.get(slot)
-    if (participant) {
-      pointsByBotId[participant.displayName] = DEFAULT_PLACEMENT_POINTS[3]
-    }
-  }
-  return pointsByBotId
-}
-
 function summarizeRun(matches) {
   const pointsByBotId = {}
   const matchesByBotId = {}
+  const winsByBotId = {}
 
   for (const match of matches) {
-    for (const participant of match.participants) {
-      matchesByBotId[participant.displayName] = (matchesByBotId[participant.displayName] ?? 0) + 1
-    }
-
-    const matchPoints = scoreMatch(match)
-    for (const [botId, points] of Object.entries(matchPoints)) {
-      pointsByBotId[botId] = (pointsByBotId[botId] ?? 0) + points
+    const participantBySlot = new Map(match.participants.map((participant) => [participant.slot, participant]))
+    for (const placement of match.result?.placements ?? []) {
+      const participant = participantBySlot.get(placement.slot)
+      if (!participant) continue
+      const botId = participant.displayName
+      matchesByBotId[botId] = (matchesByBotId[botId] ?? 0) + 1
+      pointsByBotId[botId] = (pointsByBotId[botId] ?? 0) + placement.points
+      if (placement.rank === 1) {
+        winsByBotId[botId] = (winsByBotId[botId] ?? 0) + 1
+      }
     }
   }
 
@@ -163,6 +135,8 @@ function summarizeRun(matches) {
       botId,
       matchesPlayed,
       points: pointsByBotId[botId] ?? 0,
+      wins: winsByBotId[botId] ?? 0,
+      averagePoints: matchesPlayed > 0 ? (pointsByBotId[botId] ?? 0) / matchesPlayed : 0,
     }))
     .sort((a, b) => {
       if (b.points !== a.points) return b.points - a.points

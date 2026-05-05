@@ -5,6 +5,7 @@ import { createSourceSnapshot } from './sourceText.js'
 
 const SLOT_IDS = ['BOT1', 'BOT2', 'BOT3', 'BOT4']
 const DISPLAY_NAME_MAX_LENGTH = 80
+const PLACEMENT_POINTS = [3, 2, 1, 0]
 
 function createHttpError(statusCode, code, message, details) {
   return Object.assign(new Error(message), {
@@ -124,6 +125,7 @@ function normalizeParticipants(input, config, compileSource) {
 
 function summarizeResult(replay) {
   const finalState = replay.state[replay.tickCap] ?? replay.state[replay.state.length - 1] ?? { bots: [] }
+  const finalBotsBySlot = new Map(finalState.bots.map((bot) => [bot.botId, bot]))
   const survivors = finalState.bots
     .filter((bot) => bot.alive)
     .map((bot) => ({
@@ -146,10 +148,34 @@ function summarizeResult(replay) {
     endReason = replay.tickCap >= 0 ? 'TICK_CAP' : null
   }
 
+  const placements = SLOT_IDS.map((slot) => {
+    const bot = finalBotsBySlot.get(slot)
+    return {
+      slot,
+      alive: Boolean(bot?.alive),
+      hp: bot?.hp ?? 0,
+      ammo: bot?.ammo ?? 0,
+      energy: bot?.energy ?? 0,
+    }
+  })
+    .sort((a, b) => {
+      if (a.alive !== b.alive) return a.alive ? -1 : 1
+      if (b.hp !== a.hp) return b.hp - a.hp
+      if (b.ammo !== a.ammo) return b.ammo - a.ammo
+      if (b.energy !== a.energy) return b.energy - a.energy
+      return SLOT_IDS.indexOf(a.slot) - SLOT_IDS.indexOf(b.slot)
+    })
+    .map((entry, index) => ({
+      ...entry,
+      rank: index + 1,
+      points: PLACEMENT_POINTS[index] ?? 0,
+    }))
+
   return {
     endReason,
-    winnerSlot: survivors.length === 1 ? survivors[0].slot : null,
+    winnerSlot: placements[0]?.slot ?? null,
     survivors,
+    placements,
   }
 }
 

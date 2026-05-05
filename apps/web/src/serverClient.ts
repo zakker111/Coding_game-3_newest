@@ -56,6 +56,8 @@ export type ServerDailyRunSummary = {
     botId: string
     points: number
     matchesPlayed: number
+    wins: number
+    averagePoints: number
   }>
 }
 
@@ -87,6 +89,15 @@ export type ServerDailyRunMatch = {
   result: {
     endReason: string | null
     winnerSlot: string | null
+    placements?: Array<{
+      slot: string
+      rank: number
+      points: number
+      alive: boolean
+      hp: number
+      ammo: number
+      energy: number
+    }>
   } | null
   participants: Array<{
     slot: string

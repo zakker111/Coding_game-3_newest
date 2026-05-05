@@ -205,7 +205,9 @@ export function AdminServerPage() {
                   <div className="admin-table-row" key={entry.botId}>
                     <span>{index + 1}. {entry.botId}</span>
                     <span>{entry.points} pts</span>
+                    <span>{entry.wins} wins</span>
                     <span>{entry.matchesPlayed} matches</span>
+                    <span>{entry.averagePoints.toFixed(2)} avg</span>
                   </div>
                 ))}
               </div>
@@ -221,6 +223,16 @@ export function AdminServerPage() {
                       <div className="muted">{match.participants.map((participant) => participant.displayName).join(' vs ')}</div>
                     </div>
                     <div className="muted">Winner: {formatWinner(match)}</div>
+                    {match.result?.placements?.length ? (
+                      <div className="muted">
+                        {match.result.placements
+                          .map((placement) => {
+                            const participant = match.participants.find((entry) => entry.slot === placement.slot)
+                            return `#${placement.rank} ${participant?.displayName ?? placement.slot} (${placement.points} pts)`
+                          })
+                          .join(' · ')}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

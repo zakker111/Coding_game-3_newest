@@ -680,6 +680,11 @@ test('POST /api/simulations creates a match and replay can be fetched', async (t
   assert.equal(match.participants.length, 4)
   assert.equal(match.participants[0].displayName, 'Alpha')
   assert.ok(typeof match.participants[0].sourceHash === 'string')
+  assert.equal(match.result.placements.length, 4)
+  assert.deepEqual(
+    match.result.placements.map((placement) => placement.points),
+    [3, 2, 1, 0]
+  )
 
   const replayResponse = await app.inject({
     method: 'GET',
@@ -748,6 +753,8 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(run.summary.matchCount, 15)
   assert.equal(run.summary.leaderboard.length, 6)
   assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 10))
+  assert.ok(run.summary.leaderboard.every((entry) => typeof entry.wins === 'number'))
+  assert.ok(run.summary.leaderboard.every((entry) => typeof entry.averagePoints === 'number'))
 
   const runResponse = await app.inject({
     method: 'GET',
@@ -768,6 +775,10 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
   assert.equal(runMatches.matches[0].replayStored, false)
   assert.equal(runMatches.matches[0].participants.length, 4)
+  assert.deepEqual(
+    runMatches.matches[0].result.placements.map((placement) => placement.points),
+    [3, 2, 1, 0]
+  )
   const adminParticipant = runMatches.matches
     .flatMap((match) => match.participants)
     .find((participant) => participant.displayName === 'admin/bot1')
