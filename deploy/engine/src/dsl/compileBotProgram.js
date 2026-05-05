@@ -398,9 +398,12 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'TARGET_CLOSEST') return { kind: 'TARGET_CLOSEST' }
 
   if (op === 'TARGET_LOWEST_HEALTH') return { kind: 'TARGET_LOWEST_HEALTH' }
+  if (op === 'TARGET_LOWEST_AMMO') return { kind: 'TARGET_LOWEST_AMMO' }
+  if (op === 'TARGET_LOWEST_ENERGY') return { kind: 'TARGET_LOWEST_ENERGY' }
 
   if (op === 'TARGET_CLOSEST_BULLET') return { kind: 'TARGET_CLOSEST_BULLET' }
   if (op === 'TARGET_CLOSEST_MINE') return { kind: 'TARGET_CLOSEST_MINE' }
+  if (op === 'TARGET_NEAREST_POWERUP') return { kind: 'TARGET_NEAREST_POWERUP' }
 
   if (op === 'TARGET_NEXT') return { kind: 'TARGET_NEXT' }
 
@@ -492,6 +495,27 @@ function parseSimpleInstruction(line, lineNo, errors) {
   }
 
   if (op === 'SET_MOVE_TO_TARGET') return { kind: 'SET_MOVE_TO_TARGET' }
+  if (op === 'SET_MOVE_TO_CENTER') return { kind: 'SET_MOVE_TO_CENTER' }
+  if (op === 'SET_MOVE_TO_CORNER') return { kind: 'SET_MOVE_TO_CORNER' }
+  if (op === 'CIRCLE_TARGET') return { kind: 'ORBIT_TARGET' }
+
+  if (op === 'SET_MOVE_AWAY_FROM_BOT') {
+    const token = parts[1]
+    if (!token || parts.length !== 2) {
+      errors.push({ line: lineNo, message: 'SET_MOVE_AWAY_FROM_BOT expects exactly 1 bot target token' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'SET_MOVE_AWAY_FROM_BOT', target: normalizeTargetToken(token) }
+  }
+
+  if (op === 'HOLD_SECTOR') {
+    const sector = parseSector(parts[1])
+    if (!sector || parts.length !== 2) {
+      errors.push({ line: lineNo, message: 'HOLD_SECTOR expects a sector number 1..9' })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'HOLD_SECTOR', sector }
+  }
 
   if (op === 'SET_MOVE_TO_ZONE') {
     const zone = parseZone(parts[1])

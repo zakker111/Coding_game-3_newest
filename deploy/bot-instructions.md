@@ -195,6 +195,8 @@ Tie-break rule for “closest” / “lowest health”: **lowest bot id wins**.
 | `SET_TARGET <BOT>` | `targetBotId = <BOT>` |
 | `TARGET_CLOSEST` | Set `targetBotId` to closest alive bot. |
 | `TARGET_LOWEST_HEALTH` | Set `targetBotId` to alive bot with lowest health. |
+| `TARGET_LOWEST_AMMO` | Set `targetBotId` to alive bot with lowest ammo. |
+| `TARGET_LOWEST_ENERGY` | Set `targetBotId` to alive bot with lowest energy. |
 | `TARGET_NEXT` | Advance target to next bot (details in engine/rules). |
 | `TARGET_NEXT_IF_DEAD` | Like `TARGET_NEXT`, but only if current target is dead/invalid. |
 
@@ -225,6 +227,7 @@ Bots have global knowledge of powerup locations.
 | Instruction | Effect |
 |---|---|
 | `TARGET_POWERUP <TYPE>` | `targetPowerupType = <TYPE>` |
+| `TARGET_NEAREST_POWERUP` | `targetPowerupType = ANY`; movement resolves to nearest available powerup. |
 
 Powerup target invalidation:
 - `targetPowerupType` is a **type preference**, not an instance.
@@ -318,10 +321,15 @@ When a goal is set, the bot attempts to move toward it every tick (unless an imm
 | `SET_MOVE_TO_SECTOR <SECTOR>` | Set point goal: sector center. |
 | `SET_MOVE_TO_SECTOR <SECTOR> ZONE <ZONE>` | Set point goal: zone center. |
 | `SET_MOVE_TO_ZONE <ZONE>` | Deterministic sugar: uses `SECTOR()` at execution time (see §1). |
+| `SET_MOVE_TO_CENTER` | Set point goal: arena center (`SECTOR 5`). |
+| `SET_MOVE_TO_CORNER` | Set point goal: nearest arena corner. |
 | `SET_MOVE_TO_BOT <BOT_TARGET>` | Follow a bot. If `<BOT_TARGET>` is `CLOSEST_BOT` or `LOWEST_HEALTH_BOT`, it re-resolves each tick. If `TARGET`, follows `targetBotId`. If `BOT1..BOT4`, follows that bot until it dies. |
+| `SET_MOVE_AWAY_FROM_BOT <BOT_TARGET>` | Move away from the resolved bot target each tick. |
 | `SET_MOVE_TO_POWERUP <TYPE>` | Re-resolves each tick to closest powerup of that type; clears when picked up; clears if none exist. |
 | `SET_MOVE_TO_TARGET` | Follow `MOVE_TO_TARGET` resolution every tick. |
 | `ORBIT_TARGET` | Set a persistent orbit goal around the current bot target. Current first version: clockwise orbit with a fixed default radius band; if no valid bot target exists, the goal clears and no movement occurs. |
+| `CIRCLE_TARGET` | Alias of `ORBIT_TARGET`. |
+| `HOLD_SECTOR <SECTOR>` | Alias of `SET_MOVE_TO_SECTOR <SECTOR>`. |
 | `CLEAR_MOVE` | Clear current movement goal. |
 `CLEAR_MOVE` clears any active movement goal and leaves the bot stationary unless a later move instruction or goal is set.
 
@@ -385,6 +393,7 @@ Future-proofing note:
 
 Target kinds accepted by `USE_SLOTn`:
 - bot targets: `BOT1..BOT4`, `TARGET`, `CLOSEST_BOT`, `LOWEST_HEALTH_BOT`
+- resource bot targets: `LOWEST_AMMO_BOT`, `LOWEST_ENERGY_BOT`
 - location targets: `SECTOR <SECTOR>`, `SECTOR <SECTOR> ZONE <ZONE>`
 - `SELF`, `NONE`
 
@@ -401,8 +410,11 @@ Wrong target kind:
 Current engine module behavior when used via `USE_SLOTn` / `FIRE_SLOTn`:
 - **BULLET**: fires only at bot targets (`<BOT_TARGET>`); non-bot targets are `INVALID_TARGET_KIND` no-ops.
 - **GRENADE**: throws only at bot targets (`<BOT_TARGET>`); non-bot targets are `INVALID_TARGET_KIND` no-ops. Grenades travel as projectiles, then explode after a short fuse and deal AoE damage in the destination sector and adjacent sectors.
+- **SNIPER**: fires only at bot targets. Instant hitscan damage, higher ammo cost, long cooldown.
+- **ROCKET**: fires only at bot targets. Uses the explosive projectile path and emits `ROCKET_SPAWN`; explosion damage is resolved by the grenade-style AoE simulation.
 - **MINE**: places only with `NONE`; any other target kind is an `INVALID_TARGET_KIND` no-op. Current engine behavior places the mine in the bot’s current sector, arms it after a short delay, and detonates when an enemy enters that sector or when its fuse expires.
 - **REPAIR_DRONE**: spawns only with `SELF`; any other target kind is an `INVALID_TARGET_KIND` no-op. Current engine behavior spawns an owner-only orbiting heal drone, drains owner energy each tick while the drone is active, allows `STOP_SLOTn` dismissal, and exposes the active count via `DRONE_COUNT()`.
+- **TELEPORT**: spends energy and jumps to a sector target token such as `SECTOR_5`. Long cooldown.
 - **SAW**: same as `SAW ON` (target ignored).
 - **SHIELD**: same as `SHIELD ON` (target ignored).
 - **ARMOR**: passive module; `USE_SLOTn ...` and `STOP_SLOTn` are deterministic no-ops.
@@ -490,6 +502,11 @@ Powerups (global knowledge):
 - `DIST_TO_CLOSEST_POWERUP(<TYPE>)` → int (none exist → `999`)
 - `DIST_TO_CLOSEST_POWERUP(ANY)` → int (distance to nearest powerup of any type; none exist → `999`)
 - `HAS_TARGET_POWERUP()` → bool
+- `HAS_POWERUP_TARGET()` → bool (alias of `HAS_TARGET_POWERUP()`)
+- `ENEMY_IN_RANGE()` → bool (true when at least one enemy is within the default close-range band)
+- `AMMO_LOW()` → bool (`AMMO < 25`)
+- `ENERGY_LOW()` → bool (`ENERGY < 35`)
+- `HEALTH_LOW()` → bool (`HEALTH < 50`)
 
 Powerups (by location):
 - `POWERUP_IN_SECTOR(<TYPE>, <SECTOR>)` → bool
