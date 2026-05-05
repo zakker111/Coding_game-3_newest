@@ -687,14 +687,19 @@ export function WorkshopPage() {
   }, [selectedServerBotName, serverBots, serverUser])
 
   const selectedServerBotLoadout = React.useMemo(() => {
-    return selectedServerBotSourceText ? deriveLoadoutFromScriptOrDefault(selectedServerBotSourceText) : null
-  }, [selectedServerBotSourceText])
+    return selectedServerBot?.loadout ?? null
+  }, [selectedServerBot])
 
-  const remoteBot1UsesSavedServerSource =
-    serverSandboxMode === 'remote-http' && serverUser && selectedServerBot && selectedServerBotSourceText != null
+  const selectedServerLocalBotId = serverUser ? `server-${serverUser.username}-${selectedServerBotName}` : null
+  const selectedServerBotLoaded = selectedServerLocalBotId != null && selectedMyBot.id === selectedServerLocalBotId
 
   const serverBotDirty =
-    remoteBot1UsesSavedServerSource && selectedServerBotSourceText !== selectedMyBot.sourceText
+    Boolean(
+      selectedServerBotLoaded &&
+        selectedServerBot &&
+        (selectedMyBot.sourceText !== (selectedServerBotSourceText ?? '') ||
+          JSON.stringify(selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT) !== JSON.stringify(selectedServerBot.loadout))
+    )
 
   async function refreshRemoteServerState(baseUrl: string) {
     const ruleset = await fetchServerRuleset(baseUrl)
@@ -1632,7 +1637,7 @@ export function WorkshopPage() {
   }
 
   async function handleSaveToServer() {
-    if (!serverUser) return
+    if (!serverUser || !selectedServerBotLoaded) return
 
     const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
     setServerSaveBusy(true)
@@ -1650,6 +1655,18 @@ export function WorkshopPage() {
       setServerBots(listed.bots)
       const source = await fetchServerBotSource(baseUrl, serverUser.username, selectedServerBotName)
       setSelectedServerBotSourceText(source.sourceText)
+      setMyBots((prev) => ({
+        ...prev,
+        bots: prev.bots.map((bot) =>
+          bot.id === prev.selectedBotId
+            ? {
+                ...bot,
+                sourceText: applyLoadoutHeaderDirectives(source.sourceText, source.loadout),
+                loadout: source.loadout,
+              }
+            : bot,
+        ),
+      }))
       setServerSaveNotice({
         tone: 'good',
         text: `Saved ${selectedMyBot.name} to ${saved.botId}.`,
@@ -1685,6 +1702,8 @@ export function WorkshopPage() {
   const saveToServerDisabledReason =
     !serverUser
       ? 'Sign in to the server before saving.'
+      : !selectedServerBotLoaded
+        ? 'Select one of your server bots before saving.'
       : serverSaveBusy
         ? 'Saving current BOT1 draft to the remote server…'
         : null
@@ -2367,28 +2386,53 @@ export function WorkshopPage() {
             </div>
 
             {serverUser ? (
-              <label className="mini-field" style={{ marginTop: 12 }}>
-                <div className="mini-label">Your server bots</div>
-                <select
-                  aria-label="Your server bots"
-                  className="mini-input workshop-select"
-                  value=""
-                  onChange={(e) => {
-                    const bot = ownServerBots.find((entry) => entry.botId === e.target.value)
-                    if (bot) void importServerBotAsBot1(bot)
-                  }}
-                  disabled={!ownServerBots.length || serverBotsLoading}
-                >
-                  <option value="">
-                    {serverBotsLoading ? 'Loading server bots…' : ownServerBots.length ? 'Load server bot…' : 'No server bots'}
-                  </option>
-                  {ownServerBots.map((bot) => (
-                    <option key={bot.botId} value={bot.botId}>
-                      {bot.botId}
+              <div style={{ marginTop: 12 }}>
+                <label className="mini-field">
+                  <div className="mini-label">Server bot 1/2/3</div>
+                  <select
+                    aria-label="Your server bots"
+                    className="mini-input workshop-select"
+                    value={selectedServerBot?.botId ?? ''}
+                    onChange={(e) => {
+                      const bot = ownServerBots.find((entry) => entry.botId === e.target.value)
+                      if (bot) void importServerBotAsBot1(bot)
+                    }}
+                    disabled={!ownServerBots.length || serverBotsLoading}
+                  >
+                    <option value="">
+                      {serverBotsLoading ? 'Loading server bots…' : ownServerBots.length ? 'Select server bot…' : 'No server bots'}
                     </option>
-                  ))}
-                </select>
-              </label>
+                    {ownServerBots.map((bot) => (
+                      <option key={bot.botId} value={bot.botId}>
+                        {bot.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="muted" style={{ marginTop: 8 }}>
+                  {selectedServerBot ? (
+                    <>
+                      Editing <strong style={{ color: 'var(--text)' }}>{selectedServerBot.botId}</strong> ·{' '}
+                      {selectedServerBotLoaded ? (serverBotDirty ? 'unsaved changes' : 'saved') : 'select to load into editor'}
+                    </>
+                  ) : (
+                    'Choose one of your three server bots to edit source and loadout.'
+                  )}
+                </div>
+
+                {serverSaveNotice ? (
+                  <div
+                    className="muted"
+                    style={{
+                      marginTop: 8,
+                      color: serverSaveNotice.tone === 'bad' ? '#fecaca' : 'rgba(134, 239, 172, 0.95)',
+                    }}
+                  >
+                    {serverSaveNotice.text}
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <div className="muted" style={{ marginTop: 12 }}>
                 Login first to load and save your server bots.
