@@ -110,9 +110,22 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
     dailyRunStore: dailyStores.dailyRunStore,
   })
 
+  const adminLoginResponse = await dailyApp.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: {
+      username: 'admin',
+      password: 'admin',
+    },
+  })
+  assert.equal(adminLoginResponse.statusCode, 200)
+
   const dailyRunResponse = await dailyApp.inject({
     method: 'POST',
     url: '/api/runs/daily',
+    headers: {
+      cookie: adminLoginResponse.headers['set-cookie'],
+    },
     payload: {
       runDate: '2026-05-04',
       seed: 'persistent-daily',

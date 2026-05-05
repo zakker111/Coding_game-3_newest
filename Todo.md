@@ -418,6 +418,19 @@ QA checklist
 
 Goal: connect the existing Workshop UI to the shipped sandbox server runner while preserving the current local run path.
 
+Shipped daily/admin baseline:
+- [x] Default `admin` / `admin` account is created on server boot.
+- [x] Landing page has a minimal login form.
+- [x] `/admin` shows a minimal server sandbox for daily runs, daily matches, and points.
+- [x] `POST /api/runs/daily` is admin-only.
+- [x] Daily runs schedule all eligible saved/builtin bots across deterministic 4-bot combinations.
+- [x] Daily run leaderboard includes points and matches played.
+
+Still open:
+- [ ] Save/edit per-bot loadouts on the server and use those loadouts in daily runs.
+- [ ] Add a normal user-facing account/bot management flow beyond the minimal admin tools.
+- [ ] Add a Workshop “run on server” flow for the current local setup.
+
 Concrete tasks
 - [ ] Add a Workshop control/path for running a match through the server.
 - [ ] Serialize the current 4-bot setup into the `/api/simulations` request shape:

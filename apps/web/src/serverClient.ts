@@ -46,6 +46,63 @@ export type ServerSaveBotRequest = {
   saveMessage?: string
 }
 
+export type ServerDailyRunSummary = {
+  matchCount: number
+  leaderboard: Array<{
+    botId: string
+    points: number
+    matchesPlayed: number
+  }>
+}
+
+export type ServerDailyRun = {
+  runId: string
+  status: string
+  runDate: string
+  runSeed: string | number
+  rulesetVersion: string
+  maxRounds: number
+  tickCap: number
+  matchIds: string[]
+  summary: ServerDailyRunSummary | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ServerDailyRunListResponse = {
+  runs: ServerDailyRun[]
+}
+
+export type ServerDailyRunMatch = {
+  matchId: string
+  kind: string
+  dailyRunId?: string
+  status: string
+  matchSeed: string | number
+  tickCap: number
+  result: {
+    endReason: string | null
+    winnerSlot: string | null
+  } | null
+  participants: Array<{
+    slot: string
+    displayName: string
+    sourceHash: string
+  }>
+}
+
+export type ServerDailyRunMatchesResponse = {
+  runId: string
+  matches: ServerDailyRunMatch[]
+}
+
+export type ServerCreateDailyRunRequest = {
+  runDate?: string
+  seed?: string | number
+  tickCap?: number
+  maxRounds?: number
+}
+
 function buildApiUrl(baseUrl: string, path: string) {
   return `${normalizeServerBaseUrl(baseUrl)}${path}`
 }
@@ -183,4 +240,47 @@ export async function saveServerBot(
     },
     fetchImpl,
   )
+}
+
+export async function listServerDailyRuns(baseUrl: string, fetchImpl?: FetchLike): Promise<ServerDailyRunListResponse> {
+  return requestJson<ServerDailyRunListResponse>(baseUrl, '/api/runs', { method: 'GET' }, fetchImpl)
+}
+
+export async function createServerDailyRun(
+  baseUrl: string,
+  body: ServerCreateDailyRunRequest,
+  fetchImpl?: FetchLike,
+): Promise<ServerDailyRun> {
+  return requestJson<ServerDailyRun>(
+    baseUrl,
+    '/api/runs/daily',
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    fetchImpl,
+  )
+}
+
+export async function fetchServerDailyRunMatches(
+  baseUrl: string,
+  runId: string,
+  fetchImpl?: FetchLike,
+): Promise<ServerDailyRunMatchesResponse> {
+  return requestJson<ServerDailyRunMatchesResponse>(
+    baseUrl,
+    `/api/runs/${encodeURIComponent(runId)}/matches`,
+    { method: 'GET' },
+    fetchImpl,
+  )
+}
+
+export function getDefaultServerBaseUrl() {
+  if (typeof window === 'undefined') return 'http://127.0.0.1:3000'
+  const { protocol, hostname } = window.location
+  const cosineMatch = /^(\d+)-(.+\.cosine\.computer)$/.exec(hostname)
+  if (cosineMatch) {
+    return `${protocol}//3000-${cosineMatch[2]}`
+  }
+  return 'http://127.0.0.1:3000'
 }

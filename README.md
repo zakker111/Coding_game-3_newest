@@ -21,6 +21,7 @@ Then open the printed URL (usually http://localhost:5173).
 
 - `/` is the landing page
 - `/workshop` runs a deterministic local match and lets you inspect the replay (play/pause/step/scrub)
+- `/admin` is the minimal server sandbox for admin-only daily runs and points.
 
 To run tests:
 
@@ -29,9 +30,9 @@ pnpm test          # apps/web
 pnpm -C packages/engine test
 ```
 
-## Running the server MVP (Phase 8A)
+## Running the server MVP
 
-The first server slice is a deterministic sandbox runner under `apps/server`.
+The server under `apps/server` includes the deterministic sandbox runner, simple auth/bot storage, and an admin-triggered daily run loop.
 
 Start it locally:
 
@@ -51,8 +52,18 @@ Current scope:
 - `POST /api/simulations`
 - `GET /api/matches/:matchId`
 - `GET /api/matches/:matchId/replay`
+- `POST /api/auth/login` / `POST /api/auth/register` / `GET /api/me`
+- `GET /api/bots` plus bot source save/load/version endpoints
+- `POST /api/runs/daily` (admin-only)
+- `GET /api/runs`, `GET /api/runs/:runId`, `GET /api/runs/:runId/matches`
 
-This Phase 8A slice accepts inline participant snapshots (`slot`, `displayName`, `sourceText`, `loadout`), runs the shared deterministic engine in-process, and stores matches/replays in memory. Auth, persistent bot storage, and daily scheduling are still follow-on server work.
+The server accepts inline participant snapshots for sandbox simulations. Daily runs use the saved/builtin bot list, schedule every deterministic 4-bot combination for the run, store the resulting daily matches, and publish a simple points leaderboard.
+
+Default local admin:
+- username: `admin`
+- password: `admin`
+
+The web landing page includes a minimal login form; when logged in as `admin`, use `/admin` to run daily games and inspect server-side matches/points.
 
 ## QA (Phase 1)
 

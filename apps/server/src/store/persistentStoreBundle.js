@@ -66,6 +66,8 @@ export function createPersistentStoreBundle({ filePath }) {
 
   const state = readState(filePath)
   const builtinBots = new Map()
+  let transactionDepth = 0
+  let transactionDirty = false
 
   for (const builtin of loadBuiltinExampleBots()) {
     builtinBots.set(botKey(builtin.ownerUsername, builtin.name), {
@@ -78,7 +80,24 @@ export function createPersistentStoreBundle({ filePath }) {
   }
 
   function persist() {
+    if (transactionDepth > 0) {
+      transactionDirty = true
+      return
+    }
     writeState(filePath, state)
+  }
+
+  function transact(fn) {
+    transactionDepth += 1
+    try {
+      return fn()
+    } finally {
+      transactionDepth -= 1
+      if (transactionDepth === 0 && transactionDirty) {
+        transactionDirty = false
+        writeState(filePath, state)
+      }
+    }
   }
 
   function findUserBot(ownerUsername, name) {
@@ -408,6 +427,8 @@ export function createPersistentStoreBundle({ filePath }) {
     listRuns() {
       return cloneRecord([...state.dailyRuns].sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
     },
+
+    transact,
   }
 
   return {

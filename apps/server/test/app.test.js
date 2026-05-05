@@ -31,6 +31,39 @@ function createValidPayload() {
   }
 }
 
+test('default admin account exists with starter bots', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const loginResponse = await app.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: {
+      username: 'admin',
+      password: 'admin',
+    },
+  })
+
+  assert.equal(loginResponse.statusCode, 200)
+  assert.equal(loginResponse.json().user.username, 'admin')
+
+  const botsResponse = await app.inject({
+    method: 'GET',
+    url: '/api/bots?owner=admin',
+    headers: {
+      cookie: loginResponse.headers['set-cookie'],
+    },
+  })
+
+  assert.equal(botsResponse.statusCode, 200)
+  assert.deepEqual(
+    botsResponse.json().bots.map((bot) => bot.botId),
+    ['admin/bot1', 'admin/bot2', 'admin/bot3']
+  )
+})
+
 test('auth register/login/logout establishes and clears the session', async (t) => {
   const app = await buildApp()
   t.after(async () => {
@@ -525,7 +558,7 @@ test('POST /api/simulations rejects oversized source with actionable details', a
       host: '127.0.0.1',
       port: 3000,
       maxTickCap: 600,
-      maxSourceChars: 8,
+      maxSourceChars: 2000,
       maxSourceLines: 400,
       bodyLimit: 262144,
     },
@@ -535,7 +568,7 @@ test('POST /api/simulations rejects oversized source with actionable details', a
   })
 
   const payload = createValidPayload()
-  payload.participants[0].sourceText = 'WAIT 1234\n'
+  payload.participants[0].sourceText = `${'WAIT 1\n'.repeat(300)}`
 
   const response = await app.inject({
     method: 'POST',
@@ -660,9 +693,22 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     await app.close()
   })
 
+  const loginResponse = await app.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: {
+      username: 'admin',
+      password: 'admin',
+    },
+  })
+  assert.equal(loginResponse.statusCode, 200)
+
   const createResponse = await app.inject({
     method: 'POST',
     url: '/api/runs/daily',
+    headers: {
+      cookie: loginResponse.headers['set-cookie'],
+    },
     payload: {
       runDate: '2026-05-04',
       seed: 'daily-seed',
@@ -677,10 +723,10 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(run.status, 'complete')
   assert.equal(run.runDate, '2026-05-04')
   assert.equal(run.rulesetVersion, '0.2.0')
-  assert.equal(run.matchIds.length, 35)
-  assert.equal(run.summary.matchCount, 35)
-  assert.equal(run.summary.leaderboard.length, 7)
-  assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 20))
+  assert.equal(run.matchIds.length, 210)
+  assert.equal(run.summary.matchCount, 210)
+  assert.equal(run.summary.leaderboard.length, 10)
+  assert.ok(run.summary.leaderboard.every((entry) => entry.matchesPlayed === 84))
 
   const runResponse = await app.inject({
     method: 'GET',
@@ -696,7 +742,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatchesResponse.statusCode, 200)
   const runMatches = runMatchesResponse.json()
   assert.equal(runMatches.runId, run.runId)
-  assert.equal(runMatches.matches.length, 35)
+  assert.equal(runMatches.matches.length, 210)
   assert.equal(runMatches.matches[0].kind, 'daily')
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
   assert.equal(runMatches.matches[0].participants.length, 4)
@@ -706,7 +752,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     url: `/api/matches?runId=${run.runId}&kind=daily`,
   })
   assert.equal(listMatchesResponse.statusCode, 200)
-  assert.equal(listMatchesResponse.json().matches.length, 35)
+  assert.equal(listMatchesResponse.json().matches.length, 210)
 
   const replayResponse = await app.inject({
     method: 'GET',
@@ -714,6 +760,24 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   })
   assert.equal(replayResponse.statusCode, 200)
   assert.equal(replayResponse.json().matchSeed, 'daily-seed:round:0:match:0')
+})
+
+test('POST /api/runs/daily requires admin login', async (t) => {
+  const app = await buildApp()
+  t.after(async () => {
+    await app.close()
+  })
+
+  const response = await app.inject({
+    method: 'POST',
+    url: '/api/runs/daily',
+    payload: {
+      runDate: '2026-05-04',
+    },
+  })
+
+  assert.equal(response.statusCode, 403)
+  assert.equal(response.json().error.code, 'ADMIN_REQUIRED')
 })
 
 test('GET /api/runs/:runId returns 404 for unknown daily runs', async (t) => {

@@ -98,7 +98,7 @@ Status: ✅ done
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: 🚧 Phase 8A shipped; Phase 8B is next
+Status: 🚧 Phase 8A shipped; daily admin sandbox baseline shipped; server-backed Workshop polish is next
 
 Phase 8A shipped:
 - `apps/server` workspace app.
@@ -106,10 +106,14 @@ Phase 8A shipped:
 - Match metadata + replay retrieval over HTTP.
 - Server-side source limits, compile-error responses, loadout normalization, and match lifecycle coverage.
 - Auth, starter user bots, bot save/load, and source version history are present as the first submissions baseline.
+- Default `admin` account is bootstrapped (`admin` / `admin`) with starter bots.
+- Daily runs can be triggered by admin, schedule all eligible saved/builtin bots across deterministic 4-bot combinations, and produce match/points summaries.
+- Landing page has a minimal login form; `/admin` exposes the server sandbox/daily leaderboard.
 
 Phase 8B next:
 - Add Workshop “run on server” flow.
 - POST current bot source/loadout snapshots to `/api/simulations`.
+- Persist/save per-bot loadouts so daily runs use edited loadouts instead of default-empty loadouts.
 - Fetch `/api/matches/:matchId/replay`.
 - Render the server replay in the existing viewer.
 - Show actionable server errors in the UI.

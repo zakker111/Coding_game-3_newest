@@ -228,54 +228,58 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         })
       }
 
-      const run = store.createRun({
-        runDate,
-        runSeed,
-        rulesetVersion: RULESET_VERSION,
-        maxRounds,
-        tickCap,
-      })
+      const runDaily = () => {
+        const run = store.createRun({
+          runDate,
+          runSeed,
+          rulesetVersion: RULESET_VERSION,
+          maxRounds,
+          tickCap,
+        })
 
-      store.markRunning(run.runId)
+        store.markRunning(run.runId)
 
-      try {
-        const matches = []
-        const matchIds = []
+        try {
+          const matches = []
+          const matchIds = []
 
-        for (let round = 0; round < maxRounds; round += 1) {
-          const roundBots = deterministicShuffle(eligibleBots, `${String(runSeed)}:round:${round}`)
-          const groups = deterministicShuffle(createFourBotCombinations(roundBots), `${String(runSeed)}:round:${round}:groups`)
+          for (let round = 0; round < maxRounds; round += 1) {
+            const roundBots = deterministicShuffle(eligibleBots, `${String(runSeed)}:round:${round}`)
+            const groups = deterministicShuffle(createFourBotCombinations(roundBots), `${String(runSeed)}:round:${round}:groups`)
 
-          for (let index = 0; index < groups.length; index += 1) {
-            const group = groups[index]
-            const match = simulationService.createSimulation(
-              {
-                seed: `${String(runSeed)}:round:${round}:match:${index}`,
-                tickCap,
-                participants: buildParticipants(botStore, group),
-              },
-              {
-                kind: 'daily',
-                dailyRunId: run.runId,
-              }
-            )
+            for (let index = 0; index < groups.length; index += 1) {
+              const group = groups[index]
+              const match = simulationService.createSimulation(
+                {
+                  seed: `${String(runSeed)}:round:${round}:match:${index}`,
+                  tickCap,
+                  participants: buildParticipants(botStore, group),
+                },
+                {
+                  kind: 'daily',
+                  dailyRunId: run.runId,
+                }
+              )
 
-            matches.push(match)
-            matchIds.push(match.matchId)
+              matches.push(match)
+              matchIds.push(match.matchId)
+            }
           }
-        }
 
-        return store.markComplete(run.runId, {
-          matchIds,
-          summary: summarizeRun(matches),
-        })
-      } catch (error) {
-        store.markFailed(run.runId, {
-          code: error?.code ?? 'DAILY_RUN_FAILED',
-          message: error instanceof Error ? error.message : String(error),
-        })
-        throw error
+          return store.markComplete(run.runId, {
+            matchIds,
+            summary: summarizeRun(matches),
+          })
+        } catch (error) {
+          store.markFailed(run.runId, {
+            code: error?.code ?? 'DAILY_RUN_FAILED',
+            message: error instanceof Error ? error.message : String(error),
+          })
+          throw error
+        }
       }
+
+      return typeof store.transact === 'function' ? store.transact(runDaily) : runDaily()
     },
   }
 }
