@@ -45,6 +45,9 @@ export default function App() {
           >
             Workshop
           </NavLink>
+          <NavLink className={({ isActive }) => (isActive ? 'active' : undefined)} to="/leaderboard">
+            Leaderboard
+          </NavLink>
           {isAdmin ? (
             <NavLink className={({ isActive }) => (isActive ? 'active' : undefined)} to="/admin">
               Server

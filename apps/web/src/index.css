@@ -260,12 +260,42 @@ a:hover {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
+.leaderboard-table {
+  display: grid;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) repeat(4, auto);
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.leaderboard-row--header {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.leaderboard-row--mine {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+}
+
 @media (max-width: 860px) {
   .admin-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .admin-table-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .leaderboard-row {
     grid-template-columns: minmax(0, 1fr);
   }
 }

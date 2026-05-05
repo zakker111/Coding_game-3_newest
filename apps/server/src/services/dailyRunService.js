@@ -169,6 +169,14 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
       return run
     },
 
+    getLatestRun() {
+      const run = store.listRuns()[0] ?? null
+      if (!run) {
+        throw createHttpError(404, 'DAILY_RUN_NOT_FOUND', 'No daily runs found')
+      }
+      return run
+    },
+
     getRunMatches(runId) {
       const run = this.getRun(runId)
       return {

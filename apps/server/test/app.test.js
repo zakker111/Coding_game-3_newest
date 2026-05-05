@@ -763,6 +763,13 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runResponse.statusCode, 200)
   assert.equal(runResponse.json().runId, run.runId)
 
+  const latestRunResponse = await app.inject({
+    method: 'GET',
+    url: '/api/runs/latest',
+  })
+  assert.equal(latestRunResponse.statusCode, 200)
+  assert.equal(latestRunResponse.json().runId, run.runId)
+
   const runMatchesResponse = await app.inject({
     method: 'GET',
     url: `/api/runs/${run.runId}/matches`,

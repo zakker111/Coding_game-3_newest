@@ -9,6 +9,8 @@ function createHttpError(statusCode, code, message, details) {
 export async function registerDailyRunRoutes(app) {
   app.get('/api/runs', async () => app.dailyRunService.listRuns())
 
+  app.get('/api/runs/latest', async () => app.dailyRunService.getLatestRun())
+
   app.post('/api/runs/daily', async (request, reply) => {
     if (request.currentUser?.username !== 'admin') {
       throw createHttpError(403, 'ADMIN_REQUIRED', 'admin login is required to run daily games')

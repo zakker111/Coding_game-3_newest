@@ -22,6 +22,15 @@ it('renders the docs page', () => {
   expect(screen.getByText(/Quick guide \+ full reference/i)).toBeInTheDocument()
 })
 
+it('renders an empty leaderboard state before a daily run exists', async () => {
+  const router = createMemoryRouter(routes, { initialEntries: ['/leaderboard'] })
+
+  render(<RouterProvider router={router} />)
+
+  expect(await screen.findByRole('heading', { name: 'Daily leaderboard' })).toBeInTheDocument()
+  expect(await screen.findByText(/No daily results yet/i)).toBeInTheDocument()
+})
+
 it('workshop layout surfaces setup, hides opponent code, and keeps tick events scrollable', () => {
   // 1) Ensure workshop-specific layout rules exist.
   expect(appCss).toMatch(/\.page--workshop\s*\{[\s\S]*max-width:\s*min\(1560px,\s*calc\(100vw - 40px\)\)/)

@@ -261,6 +261,10 @@ export async function listServerDailyRuns(baseUrl: string, fetchImpl?: FetchLike
   return requestJson<ServerDailyRunListResponse>(baseUrl, '/api/runs', { method: 'GET' }, fetchImpl)
 }
 
+export async function fetchLatestServerDailyRun(baseUrl: string, fetchImpl?: FetchLike): Promise<ServerDailyRun> {
+  return requestJson<ServerDailyRun>(baseUrl, '/api/runs/latest', { method: 'GET' }, fetchImpl)
+}
+
 export async function createServerDailyRun(
   baseUrl: string,
   body: ServerCreateDailyRunRequest,

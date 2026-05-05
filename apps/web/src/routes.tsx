@@ -5,6 +5,7 @@ import NotFound from './NotFound'
 import { AdminServerPage } from './pages/AdminServerPage'
 import { DocsPage } from './pages/DocsPage'
 import { LandingPage } from './pages/LandingPage'
+import { LeaderboardPage } from './pages/LeaderboardPage'
 import { WorkshopPage } from './pages/WorkshopPage'
 
 export const routes: RouteObject[] = [
@@ -13,6 +14,7 @@ export const routes: RouteObject[] = [
     element: <App />,
     children: [
       { index: true, element: <LandingPage /> },
+      { path: 'leaderboard', element: <LeaderboardPage /> },
       { path: 'admin', element: <AdminServerPage /> },
       { path: 'workshop', element: <WorkshopPage /> },
       { path: 'docs', element: <DocsPage /> },
