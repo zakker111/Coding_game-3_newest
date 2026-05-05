@@ -780,7 +780,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatches.matches.length, 15)
   assert.equal(runMatches.matches[0].kind, 'daily')
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
-  assert.equal(runMatches.matches[0].replayStored, false)
+  assert.equal(Object.prototype.hasOwnProperty.call(runMatches.matches[0], 'replayStored'), false)
   assert.equal(runMatches.matches[0].participants.length, 4)
   assert.deepEqual(
     runMatches.matches[0].result.placements.map((placement) => placement.points),
@@ -802,8 +802,9 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     method: 'GET',
     url: `/api/matches/${run.matchIds[0]}/replay`,
   })
-  assert.equal(replayResponse.statusCode, 404)
-  assert.equal(replayResponse.json().error.code, 'REPLAY_NOT_FOUND')
+  assert.equal(replayResponse.statusCode, 200)
+  assert.equal(replayResponse.json().schemaVersion, '0.2.0')
+  assert.equal(replayResponse.json().bots.length, 4)
 })
 
 test('POST /api/runs/daily requires admin login', async (t) => {

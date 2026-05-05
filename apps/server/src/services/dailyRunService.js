@@ -249,7 +249,6 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
                 {
                   kind: 'daily',
                   dailyRunId: run.runId,
-                  persistReplay: false,
                 }
               )
 
