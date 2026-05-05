@@ -1,4 +1,5 @@
 import { loadBuiltinExampleBots } from '../services/exampleBots.js'
+import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
 
 function cloneRecord(record) {
   return record == null ? null : structuredClone(record)
@@ -17,6 +18,7 @@ export function createInMemoryBotStore() {
       createdAt: null,
       updatedAt: null,
       sourceHash: null,
+      loadout: normalizeLoadout(builtin.loadout ?? EMPTY_LOADOUT).loadout,
       versions: [],
     })
   }
@@ -46,6 +48,7 @@ export function createInMemoryBotStore() {
           name: bot.name,
           updatedAt: bot.updatedAt,
           sourceHash: bot.sourceHash,
+          loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
         })
       }
 
@@ -76,6 +79,7 @@ export function createInMemoryBotStore() {
         name: bot.name,
         updatedAt: bot.updatedAt,
         sourceHash: bot.sourceHash,
+        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
       })
     },
 
@@ -85,10 +89,11 @@ export function createInMemoryBotStore() {
       return cloneRecord({
         botId: bot.botId,
         sourceText: bot.sourceText,
+        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
       })
     },
 
-    saveBot({ ownerUsername, name, sourceText, sourceHash, saveMessage }) {
+    saveBot({ ownerUsername, name, sourceText, sourceHash, loadout, saveMessage }) {
       const key = botKey(ownerUsername, name)
       const existing = bots.get(key)
       const timestamp = new Date().toISOString()
@@ -109,6 +114,7 @@ export function createInMemoryBotStore() {
         botId: `${ownerUsername}/${name}`,
         sourceText,
         sourceHash,
+        loadout: normalizeLoadout(loadout ?? existing?.loadout ?? EMPTY_LOADOUT).loadout,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
         versions,
@@ -121,6 +127,7 @@ export function createInMemoryBotStore() {
         name: next.name,
         updatedAt: next.updatedAt,
         sourceHash: next.sourceHash,
+        loadout: next.loadout,
       })
     },
 

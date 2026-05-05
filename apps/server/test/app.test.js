@@ -220,6 +220,7 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
     },
     payload: {
       sourceText: 'WAIT 1\r\n',
+      loadout: ['BULLET', 'ARMOR', null],
       saveMessage: 'first save',
     },
   })
@@ -238,6 +239,7 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
   })
   assert.equal(metadataResponse.statusCode, 200)
   assert.equal(metadataResponse.json().sourceHash, saved.sourceHash)
+  assert.deepEqual(metadataResponse.json().loadout, ['BULLET', 'ARMOR', null])
 
   const sourceResponse = await app.inject({
     method: 'GET',
@@ -250,6 +252,7 @@ test('PUT /api/bots/:owner/:name saves latest source and versions can be fetched
   assert.deepEqual(sourceResponse.json(), {
     botId: 'alice/bot1',
     sourceText: 'WAIT 1\n',
+    loadout: ['BULLET', 'ARMOR', null],
   })
 
   const versionsResponse = await app.inject({
@@ -706,6 +709,19 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   })
   assert.equal(loginResponse.statusCode, 200)
 
+  const saveAdminBot = await app.inject({
+    method: 'PUT',
+    url: '/api/bots/admin/bot1',
+    headers: {
+      cookie: loginResponse.headers['set-cookie'],
+    },
+    payload: {
+      sourceText: 'WAIT 1\n',
+      loadout: ['BULLET', 'ARMOR', null],
+    },
+  })
+  assert.equal(saveAdminBot.statusCode, 200)
+
   const createResponse = await app.inject({
     method: 'POST',
     url: '/api/runs/daily',
@@ -750,6 +766,10 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
   assert.equal(runMatches.matches[0].replayStored, false)
   assert.equal(runMatches.matches[0].participants.length, 4)
+  const adminParticipant = runMatches.matches
+    .flatMap((match) => match.participants)
+    .find((participant) => participant.displayName === 'admin/bot1')
+  assert.deepEqual(adminParticipant?.loadoutSnapshot, ['BULLET', 'ARMOR', null])
 
   const listMatchesResponse = await app.inject({
     method: 'GET',

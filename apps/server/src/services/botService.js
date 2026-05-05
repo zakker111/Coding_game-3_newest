@@ -1,3 +1,5 @@
+import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
+
 import { createSourceSnapshot } from './sourceText.js'
 
 const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
@@ -62,6 +64,7 @@ export function createBotService({ store, config }) {
       if (ownerUsername === 'builtin') return
 
       const starterSource = store.getBotSource('builtin', 'bot0')?.sourceText ?? 'WAIT 1\n'
+      const starterLoadout = normalizeLoadout(store.getBotSource('builtin', 'bot0')?.loadout ?? EMPTY_LOADOUT).loadout
 
       for (const name of STARTER_BOT_NAMES) {
         if (store.getBot(ownerUsername, name)) continue
@@ -71,6 +74,7 @@ export function createBotService({ store, config }) {
           name,
           sourceText: sourceTextSnapshot,
           sourceHash,
+          loadout: starterLoadout,
           saveMessage: 'starter bot',
         })
       }
@@ -156,6 +160,7 @@ export function createBotService({ store, config }) {
       }
 
       const { sourceTextSnapshot, sourceHash } = createSourceSnapshot(body.sourceText, config)
+      const { loadout } = normalizeLoadout(body.loadout)
       const saveMessage = normalizeSaveMessage(body.saveMessage)
       const existingBot = store.getBot(ownerUsername, botName)
 
@@ -171,6 +176,7 @@ export function createBotService({ store, config }) {
         name: botName,
         sourceText: sourceTextSnapshot,
         sourceHash,
+        loadout,
         saveMessage,
       })
     },

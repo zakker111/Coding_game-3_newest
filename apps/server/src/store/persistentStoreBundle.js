@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { randomBytes } from 'node:crypto'
+import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
 
 import { loadBuiltinExampleBots } from '../services/exampleBots.js'
 
@@ -75,6 +76,7 @@ export function createPersistentStoreBundle({ filePath }) {
       createdAt: null,
       updatedAt: null,
       sourceHash: null,
+      loadout: normalizeLoadout(builtin.loadout ?? EMPTY_LOADOUT).loadout,
       versions: [],
     })
   }
@@ -178,6 +180,7 @@ export function createPersistentStoreBundle({ filePath }) {
           name: bot.name,
           updatedAt: bot.updatedAt,
           sourceHash: bot.sourceHash,
+          loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
         })
       }
 
@@ -202,6 +205,7 @@ export function createPersistentStoreBundle({ filePath }) {
         name: bot.name,
         updatedAt: bot.updatedAt,
         sourceHash: bot.sourceHash,
+        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
       })
     },
 
@@ -211,10 +215,11 @@ export function createPersistentStoreBundle({ filePath }) {
       return cloneRecord({
         botId: bot.botId,
         sourceText: bot.sourceText,
+        loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
       })
     },
 
-    saveBot({ ownerUsername, name, sourceText, sourceHash, saveMessage }) {
+    saveBot({ ownerUsername, name, sourceText, sourceHash, loadout, saveMessage }) {
       const existing = findUserBot(ownerUsername, name)
       const timestamp = new Date().toISOString()
       const versions = existing?.versions ? [...existing.versions] : []
@@ -234,6 +239,7 @@ export function createPersistentStoreBundle({ filePath }) {
         botId: `${ownerUsername}/${name}`,
         sourceText,
         sourceHash,
+        loadout: normalizeLoadout(loadout ?? existing?.loadout ?? EMPTY_LOADOUT).loadout,
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
         versions,
@@ -253,6 +259,7 @@ export function createPersistentStoreBundle({ filePath }) {
         name: next.name,
         updatedAt: next.updatedAt,
         sourceHash: next.sourceHash,
+        loadout: next.loadout,
       })
     },
 

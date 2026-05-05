@@ -107,7 +107,7 @@ function buildParticipants(botStore, bots) {
       slot: SLOT_IDS[index],
       displayName: bot.botId,
       sourceText: source.sourceText,
-      loadout: [null, null, null],
+      loadout: source.loadout,
     }
   })
 }

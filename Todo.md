@@ -426,13 +426,13 @@ Shipped daily/admin baseline:
 - [x] `POST /api/runs/daily` is admin-only.
 - [x] Daily runs schedule all eligible saved/builtin bots across deterministic 4-bot combinations.
 - [x] Daily run leaderboard includes points and matches played.
+- [x] Server bots persist explicit loadouts and daily runs use saved bot loadouts.
 
 Still open:
 - [ ] Security hardening: move beyond the current simple local JSON database defaults before production.
   - User passwords should be stored with production-grade password hashing/encryption policy.
   - Sessions should use secure cookie settings and expiry.
   - The default `admin` / `admin` account must be removed or forced to rotate before public deployment.
-- [ ] Save/edit per-bot loadouts on the server and use those loadouts in daily runs.
 - [ ] Add a normal user-facing account/bot management flow beyond the minimal admin tools.
 - [ ] Add a Workshop “run on server” flow for the current local setup.
 

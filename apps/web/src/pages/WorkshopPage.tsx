@@ -711,7 +711,7 @@ export function WorkshopPage() {
             id: `server:${bot.botId}`,
             displayName: `${bot.botId} (server)`,
             sourceText: source.sourceText,
-            loadout: deriveLoadoutFromScriptOrDefault(source.sourceText),
+            loadout: source.loadout,
           }
         })
     )
@@ -1421,7 +1421,7 @@ export function WorkshopPage() {
 
     try {
       const source = await fetchServerBotSource(baseUrl, bot.ownerUsername, bot.name)
-      const loadout = deriveLoadoutFromScriptOrDefault(source.sourceText)
+      const loadout = source.loadout
       const localId = `server-${bot.ownerUsername}-${bot.name}`
 
       setMyBots((prev) => {
@@ -1642,6 +1642,7 @@ export function WorkshopPage() {
     try {
       const saved = await saveServerBot(baseUrl, serverUser.username, selectedServerBotName, {
         sourceText: selectedMyBot.sourceText,
+        loadout: selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
         saveMessage: `Saved from ${selectedMyBot.name}`,
       })
 

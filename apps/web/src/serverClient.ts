@@ -1,4 +1,5 @@
 import { normalizeServerBaseUrl } from './serverSimulation'
+import type { Loadout } from '@coding-game/ruleset'
 
 type FetchLike = typeof fetch
 
@@ -30,6 +31,7 @@ export type ServerBotSummary = {
   name: string
   updatedAt: string | null
   sourceHash: string | null
+  loadout: Loadout
 }
 
 export type ServerBotListResponse = {
@@ -39,10 +41,12 @@ export type ServerBotListResponse = {
 export type ServerBotSourceResponse = {
   botId: string
   sourceText: string
+  loadout: Loadout
 }
 
 export type ServerSaveBotRequest = {
   sourceText: string
+  loadout: Loadout
   saveMessage?: string
 }
 
