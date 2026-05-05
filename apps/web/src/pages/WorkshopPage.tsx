@@ -566,6 +566,11 @@ export function WorkshopPage() {
     return myBots.bots.find((b) => b.id === myBots.selectedBotId) ?? myBots.bots[0]
   }, [myBots])
 
+  const ownServerBots = React.useMemo(() => {
+    if (!serverUser) return []
+    return serverBots.filter((bot) => bot.ownerUsername === serverUser.username)
+  }, [serverBots, serverUser])
+
   const opponentPool: OpponentOption[] = React.useMemo(() => {
     const exampleOpponents: OpponentOption[] = EXAMPLE_OPPONENT_IDS.map((id) => ({
       id,
@@ -1407,6 +1412,41 @@ export function WorkshopPage() {
 
   function selectBotAsBot1(id: string) {
     setMyBots((prev) => ({ ...prev, selectedBotId: id }))
+  }
+
+  async function importServerBotAsBot1(bot: ServerBotSummary) {
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerBotsLoading(true)
+    setServerSaveNotice(null)
+
+    try {
+      const source = await fetchServerBotSource(baseUrl, bot.ownerUsername, bot.name)
+      const loadout = deriveLoadoutFromScriptOrDefault(source.sourceText)
+      const localId = `server-${bot.ownerUsername}-${bot.name}`
+
+      setMyBots((prev) => {
+        const nextBot = {
+          id: localId,
+          name: bot.name,
+          sourceText: applyLoadoutHeaderDirectives(source.sourceText, loadout),
+          loadout,
+        }
+        const existing = prev.bots.some((entry) => entry.id === localId)
+        return {
+          version: 2,
+          selectedBotId: localId,
+          bots: existing
+            ? prev.bots.map((entry) => (entry.id === localId ? nextBot : entry))
+            : [...prev.bots.filter((entry) => entry.id !== localId), nextBot].slice(-MAX_LOCAL_BOTS),
+        }
+      })
+      setSelectedServerBotName(bot.name)
+      setServerSaveNotice({ tone: 'good', text: `Loaded ${bot.botId} into Workshop.` })
+    } catch (err) {
+      setServerSaveNotice({ tone: 'bad', text: err instanceof Error ? err.message : String(err) })
+    } finally {
+      setServerBotsLoading(false)
+    }
   }
 
   function loadStarter() {
@@ -2324,6 +2364,35 @@ export function WorkshopPage() {
             <div className="muted" style={{ marginTop: 10 }}>
               Up to {MAX_LOCAL_BOTS} local bots.
             </div>
+
+            {serverUser ? (
+              <label className="mini-field" style={{ marginTop: 12 }}>
+                <div className="mini-label">Your server bots</div>
+                <select
+                  aria-label="Your server bots"
+                  className="mini-input workshop-select"
+                  value=""
+                  onChange={(e) => {
+                    const bot = ownServerBots.find((entry) => entry.botId === e.target.value)
+                    if (bot) void importServerBotAsBot1(bot)
+                  }}
+                  disabled={!ownServerBots.length || serverBotsLoading}
+                >
+                  <option value="">
+                    {serverBotsLoading ? 'Loading server bots…' : ownServerBots.length ? 'Load server bot…' : 'No server bots'}
+                  </option>
+                  {ownServerBots.map((bot) => (
+                    <option key={bot.botId} value={bot.botId}>
+                      {bot.botId}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <div className="muted" style={{ marginTop: 12 }}>
+                Login first to load and save your server bots.
+              </div>
+            )}
 
             <div className="controls" style={{ marginTop: 10 }}>
               <button

@@ -64,7 +64,11 @@ export function AdminServerPage() {
     try {
       const result = await loginServerUser(baseUrl, { username, password })
       setUser(result.user)
-      setNotice(`Logged in as ${result.user.username}`)
+      setNotice(
+        result.user.username === 'admin'
+          ? `Logged in as ${result.user.username}`
+          : 'Logged in, but daily run controls require admin.'
+      )
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

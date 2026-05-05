@@ -35,7 +35,7 @@ export function LandingPage() {
           ? await registerServerUser(getDefaultServerBaseUrl(), body)
           : await loginServerUser(getDefaultServerBaseUrl(), body)
       setLoginNotice(`${mode === 'register' ? 'Created account' : 'Logged in'} as ${result.user.username}`)
-      nav('/workshop')
+      nav(result.user.username === 'admin' ? '/admin' : '/workshop')
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : String(err))
     } finally {
