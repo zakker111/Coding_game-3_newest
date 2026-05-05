@@ -199,7 +199,13 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
       const run = this.getRun(runId)
       return {
         runId,
-        matches: run.matchIds.map((matchId) => matchStore.getMatch(matchId)).filter(Boolean),
+        matches: run.matchIds
+          .map((matchId) => matchStore.getMatch(matchId))
+          .filter(Boolean)
+          .map((match) => ({
+            ...match,
+            ...(match.persistReplay === false ? { replayStored: false } : {}),
+          })),
       }
     },
 
@@ -258,6 +264,7 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
                 {
                   kind: 'daily',
                   dailyRunId: run.runId,
+                  persistReplay: false,
                 }
               )
 

@@ -11,6 +11,7 @@ function buildMatchResponse(match) {
     matchId: match.matchId,
     kind: match.kind,
     ...(match.dailyRunId ? { dailyRunId: match.dailyRunId } : {}),
+    ...(match.persistReplay === false ? { replayStored: false } : {}),
     status: match.status,
     matchSeed: match.matchSeed,
     tickCap: match.tickCap,

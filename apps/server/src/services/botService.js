@@ -82,7 +82,6 @@ export function createBotService({ store, config }) {
       const textQuery = typeof query.q === 'string' ? query.q : undefined
 
       if (ownerUsername) {
-        authorizeOwnerRead(ownerUsername, currentUser)
         return {
           bots: store.listBots({
             ownerUsernames: [ownerUsername],
@@ -115,7 +114,6 @@ export function createBotService({ store, config }) {
     getBot(owner, name, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
       const bot = store.getBot(ownerUsername, botName)
       if (!bot) {
         throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', {
@@ -129,7 +127,6 @@ export function createBotService({ store, config }) {
     getBotSource(owner, name, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
       const source = store.getBotSource(ownerUsername, botName)
       if (!source) {
         throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', {
@@ -193,7 +190,6 @@ export function createBotService({ store, config }) {
     listVersions(owner, name, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
       const versions = store.listVersions(ownerUsername, botName)
       if (!versions) {
         throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', {
@@ -207,7 +203,6 @@ export function createBotService({ store, config }) {
     getVersionSource(owner, name, sourceHash, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')
-      authorizeOwnerRead(ownerUsername, currentUser)
 
       if (typeof sourceHash !== 'string' || sourceHash.trim() === '') {
         throw createHttpError(400, 'INVALID_REQUEST', 'sourceHash must be a non-empty string', {

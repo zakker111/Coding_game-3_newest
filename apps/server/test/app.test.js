@@ -405,7 +405,7 @@ test('GET /api/bots/:owner/:name returns 404 for unknown bots', async (t) => {
   assert.equal(response.json().error.code, 'BOT_NOT_FOUND')
 })
 
-test('GET /api/bots requires authentication for user-owned bot reads', async (t) => {
+test('GET /api/bots allows public reads of user-owned bots for testing', async (t) => {
   const app = await buildApp()
   t.after(async () => {
     await app.close()
@@ -418,8 +418,11 @@ test('GET /api/bots requires authentication for user-owned bot reads', async (t)
     url: '/api/bots?owner=alice',
   })
 
-  assert.equal(unauthenticated.statusCode, 401)
-  assert.equal(unauthenticated.json().error.code, 'AUTH_REQUIRED')
+  assert.equal(unauthenticated.statusCode, 200)
+  assert.deepEqual(
+    unauthenticated.json().bots.map((bot) => bot.botId),
+    ['alice/bot1', 'alice/bot2', 'alice/bot3']
+  )
 })
 
 test('PUT /api/bots enforces the three-bot cap for new bot creation', async (t) => {
@@ -444,7 +447,7 @@ test('PUT /api/bots enforces the three-bot cap for new bot creation', async (t) 
   assert.equal(response.json().error.code, 'MAX_BOTS_REACHED')
 })
 
-test('version history endpoints require the authenticated owner for user bots', async (t) => {
+test('version history endpoints allow public reads for testing other bots', async (t) => {
   const app = await buildApp()
   t.after(async () => {
     await app.close()
@@ -470,8 +473,8 @@ test('version history endpoints require the authenticated owner for user bots', 
     method: 'GET',
     url: '/api/bots/alice/bot1/versions',
   })
-  assert.equal(unauthenticated.statusCode, 401)
-  assert.equal(unauthenticated.json().error.code, 'AUTH_REQUIRED')
+  assert.equal(unauthenticated.statusCode, 200)
+  assert.equal(unauthenticated.json().versions.length, 2)
 
   const bobCookie = await registerUser(app, 'bob', 'password123')
   const wrongOwner = await app.inject({
@@ -481,8 +484,8 @@ test('version history endpoints require the authenticated owner for user bots', 
       cookie: bobCookie,
     },
   })
-  assert.equal(wrongOwner.statusCode, 403)
-  assert.equal(wrongOwner.json().error.code, 'FORBIDDEN')
+  assert.equal(wrongOwner.statusCode, 200)
+  assert.equal(wrongOwner.json().sourceText, 'WAIT 2\n')
 
   const ownerResponse = await app.inject({
     method: 'GET',
@@ -745,6 +748,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(runMatches.matches.length, 210)
   assert.equal(runMatches.matches[0].kind, 'daily')
   assert.equal(runMatches.matches[0].dailyRunId, run.runId)
+  assert.equal(runMatches.matches[0].replayStored, false)
   assert.equal(runMatches.matches[0].participants.length, 4)
 
   const listMatchesResponse = await app.inject({
@@ -758,8 +762,8 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     method: 'GET',
     url: `/api/matches/${run.matchIds[0]}/replay`,
   })
-  assert.equal(replayResponse.statusCode, 200)
-  assert.equal(replayResponse.json().matchSeed, 'daily-seed:round:0:match:0')
+  assert.equal(replayResponse.statusCode, 404)
+  assert.equal(replayResponse.json().error.code, 'REPLAY_NOT_FOUND')
 })
 
 test('POST /api/runs/daily requires admin login', async (t) => {

@@ -205,7 +205,7 @@ export function createSimulationService({
 
         return store.markComplete(match.matchId, {
           result,
-          replay,
+          replay: meta.persistReplay === false ? null : replay,
         })
       } catch (error) {
         store.markFailed(match.matchId, {
