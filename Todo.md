@@ -11,6 +11,11 @@ Primary specs (authoritative for `rulesetVersion = 0.2.0`, `schemaVersion = 0.2.
 ## Current status
 
 Recently completed (this merge set)
+- Public leaderboard page and latest daily run API shipped.
+- Server bot management in Workshop now edits/saves the authenticated user’s own server bots.
+- Daily rankings now use saved user/server bots only.
+- Placement scoring shipped: 3/2/1/0 points with wins, matches played, and average points.
+- Bot language helpers and new `SNIPER` / `ROCKET` / `TELEPORT` modules shipped.
 - `schemaVersion = 0.2.0` end-to-end (engine output + deploy artifacts + sample/mock replays).
 - Deploy Workshop build tag bumped to **v0.3.5**.
 - Example bots updated with locked loadout header directives (`;@slot1/2/3`).
@@ -21,13 +26,9 @@ Recently completed (this merge set)
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
 Next slice
-- Phase 8B is now the active slice: server-backed Workshop simulations using the existing `apps/server` sandbox runner.
-- Prioritize:
-  - Workshop “run on server” flow
-  - POST current source/loadout snapshots to `/api/simulations`
-  - fetch and render `/api/matches/:matchId/replay`
-  - clear UI handling for server validation/compile errors
-- Keep durable replay storage, rate limiting, and daily scheduling explicitly deferred until the server-backed Workshop path is stable.
+- Add polished example bots for `SNIPER`, `ROCKET`, and `TELEPORT`.
+- Add a repeatable admin/dev seed flow for demo users and bot concepts.
+- Balance the new module numbers after running daily leagues.
 
 ### Status board
 

@@ -725,7 +725,8 @@ export function WorkshopPage() {
     setServerUser(me.user)
     setServerBots(bots)
     setServerOpponentOptions(opponentSources)
-    setSelectedServerBotName((prev) => (bots.some((bot) => bot.name === prev) ? prev : bots[0]?.name ?? 'bot1'))
+    const ownBots = me.user ? bots.filter((bot) => bot.ownerUsername === me.user?.username) : []
+    setSelectedServerBotName((prev) => (ownBots.some((bot) => bot.name === prev) ? prev : ownBots[0]?.name ?? 'bot1'))
     if (!me.user) {
       setSelectedServerBotSourceText(null)
     }

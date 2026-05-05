@@ -7,7 +7,7 @@ This repo already has a working end-to-end local loop:
 
 ---
 
-## Current slice: Phase 8B server-backed Workshop simulations
+## Current slice: Phase 9 release hardening + gameplay expansion
 
 Goals:
 - Connect the existing Workshop UI to the already-shipped sandbox server runner.
@@ -98,7 +98,7 @@ Status: ✅ done
 
 ## Phase 8 — Server: daily runner + submissions
 
-Status: 🚧 Phase 8A shipped; daily admin sandbox baseline shipped; server-backed Workshop polish is next
+Status: ✅ done
 
 Phase 8A shipped:
 - `apps/server` workspace app.
@@ -107,16 +107,22 @@ Phase 8A shipped:
 - Server-side source limits, compile-error responses, loadout normalization, and match lifecycle coverage.
 - Auth, starter user bots, bot save/load, and source version history are present as the first submissions baseline.
 - Default `admin` account is bootstrapped (`admin` / `admin`) with starter bots.
-- Daily runs can be triggered by admin, schedule all eligible saved/builtin bots across deterministic 4-bot combinations, and produce match/points summaries.
+- Daily runs can be triggered by admin, schedule saved user/server bots across deterministic 4-bot combinations, and produce placement-points summaries.
 - Landing page has a minimal login form; `/admin` exposes the server sandbox/daily leaderboard.
+- `/leaderboard` exposes the latest daily run to players.
+- Workshop can manage the authenticated user’s 3 server bots and save source+loadout.
 
-Phase 8B next:
-- Add Workshop “run on server” flow.
-- POST current bot source/loadout snapshots to `/api/simulations`.
-- Persist/save per-bot loadouts so daily runs use edited loadouts instead of default-empty loadouts.
-- Fetch `/api/matches/:matchId/replay`.
-- Render the server replay in the existing viewer.
-- Show actionable server errors in the UI.
+## Phase 9 — Gameplay expansion
+
+Status: 🚧 started
+
+Shipped:
+- Bot helper instructions/expressions for powerups, low resources, movement, and targeting.
+- `SNIPER`, `ROCKET`, and `TELEPORT` modules.
+
+Next:
+- Balance pass for new module costs/damage/cooldowns.
+- Add polished built-in example bots using the new modules.
 
 Still deferred inside Phase 8:
 - Production-grade auth/session hardening + rate limiting.

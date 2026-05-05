@@ -23,6 +23,53 @@ No unreleased changes.
 
 ---
 
+## 0.0.6 — 2026-05-05T04:30:00Z
+
+> Marketing version: **0.06** (SemVer: `0.0.6`).
+
+### Added
+- Public `/leaderboard` page backed by `GET /api/runs/latest`.
+- User bot management workflow in Workshop:
+  - select one of the authenticated user’s 3 server bots
+  - edit source/loadout
+  - save source+loadout
+  - show saved/unsaved status
+- Daily runs now use saved user/server bots only for rankings.
+- Placement-based daily points:
+  - 1st: 3 points
+  - 2nd: 2 points
+  - 3rd: 1 point
+  - 4th: 0 points
+  - leaderboard includes points, wins, matches played, and average points.
+- Bot language helpers:
+  - `TARGET_NEAREST_POWERUP`
+  - `TARGET_LOWEST_AMMO`
+  - `TARGET_LOWEST_ENERGY`
+  - `ENEMY_IN_RANGE()`
+  - `AMMO_LOW()`
+  - `ENERGY_LOW()`
+  - `HEALTH_LOW()`
+  - `HAS_POWERUP_TARGET()`
+  - `SET_MOVE_TO_CENTER`
+  - `SET_MOVE_TO_CORNER`
+  - `SET_MOVE_AWAY_FROM_BOT <BOT_TARGET>`
+  - `CIRCLE_TARGET`
+  - `HOLD_SECTOR <SECTOR>`
+- New modules:
+  - `SNIPER`
+  - `ROCKET`
+  - `TELEPORT`
+
+### Fixed
+- Workshop server bot selector now falls back only to the authenticated user’s own bots, preventing another user’s bot from being selected in the user bot management panel.
+- Persistent-store regression coverage now proves registered username/password login survives server rebuilds.
+
+### Changed
+- Workspace package versions bumped to `0.0.6`.
+- Bot coding docs and deploy mirrors synced for the new helpers/modules.
+
+---
+
 ## 0.0.5 — 2026-05-05T00:25:00Z
 
 > Marketing version: **0.05** (SemVer: `0.0.5`).

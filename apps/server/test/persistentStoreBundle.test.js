@@ -158,6 +158,17 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
   assert.equal(meResponse.statusCode, 200)
   assert.equal(meResponse.json().user.username, 'alice')
 
+  const loginAfterRebuildResponse = await secondApp.inject({
+    method: 'POST',
+    url: '/api/auth/login',
+    payload: {
+      username: 'alice',
+      password: 'password123',
+    },
+  })
+  assert.equal(loginAfterRebuildResponse.statusCode, 200)
+  assert.equal(loginAfterRebuildResponse.json().user.username, 'alice')
+
   const botSourceResponse = await secondApp.inject({
     method: 'GET',
     url: '/api/bots/alice/bot1/source',

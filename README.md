@@ -21,6 +21,7 @@ Then open the printed URL (usually http://localhost:5173).
 
 - `/` is the landing page
 - `/workshop` runs a deterministic local match and lets you inspect the replay (play/pause/step/scrub)
+- `/leaderboard` shows the latest daily run rankings.
 - `/admin` is the minimal server sandbox for admin-only daily runs and points.
 
 To run tests:
@@ -55,9 +56,9 @@ Current scope:
 - `POST /api/auth/login` / `POST /api/auth/register` / `GET /api/me`
 - `GET /api/bots` plus bot source save/load/version endpoints
 - `POST /api/runs/daily` (admin-only)
-- `GET /api/runs`, `GET /api/runs/:runId`, `GET /api/runs/:runId/matches`
+- `GET /api/runs`, `GET /api/runs/latest`, `GET /api/runs/:runId`, `GET /api/runs/:runId/matches`
 
-The server accepts inline participant snapshots for sandbox simulations. Daily runs use the saved/builtin bot list, schedule every deterministic 4-bot combination for the run, store the resulting daily matches, and publish a simple points leaderboard.
+The server accepts inline participant snapshots for sandbox simulations. Daily runs use saved user/server bots, schedule every deterministic 4-bot combination for the run, store the resulting daily matches, and publish a placement-points leaderboard.
 
 Default local admin:
 - username: `admin`
@@ -154,6 +155,7 @@ Notes:
 - Arena is a **3×3 grid of sectors** (1–9). Each sector has **4 zones** (2×2). Bots have continuous world positions (`pos = {x,y}` in a 192×192 arena) and a **16×16 hitbox** (centered at `pos`); sector/zone are UI/rules regions derived from `pos`.
   - Bots do **not** move anchor-to-anchor or snap to sector/zone centers; only powerups use anchor locations for compact encoding.
 - Module/loadout note (rulesetVersion `0.2.0` in `packages/engine`): bots have an explicit 3-slot `loadout` in the match input (`[slot1, slot2, slot3]`). If omitted, it defaults to all-empty (`[null, null, null]`) and is deterministically normalized (see `Ruleset.md` §1.1.1).
+- Current module catalog includes `BULLET`, `SAW`, `SHIELD`, `ARMOR`, `GRENADE`, `MINE`, `REPAIR_DRONE`, `SNIPER`, `ROCKET`, and `TELEPORT`.
 - Powerups (`HEALTH|AMMO|ENERGY`) spawn at deterministic anchors (seeded RNG) every **10–20 ticks** and are picked up when a bot’s AABB overlaps the anchor point.
 - Matches end by rules: last bot alive, or `tickCap`, or `STALEMATE` (no bot-vs-bot damage for a configured window) — see `Ruleset.md`.
 - Matches are fully replayable from `(rulesetVersion, matchSeed, bot source snapshots, loadouts)`.
