@@ -1,20 +1,31 @@
 {
   "version": 1,
-  "nextUserId": 2,
-  "nextMatchId": 1,
+  "nextUserId": 3,
+  "nextMatchId": 16,
   "users": [
     {
       "id": "u_000001",
       "username": "admin",
-      "passwordHash": "c779d5f789b36d0d81bea2a6bdbbe666:f3de6426cf546a0dc39947334701105c13d266b391f6d737d004253be1229a1f5a33dfb2c26656f0eb2f6cbe4f6ec9de47a0505e91e54f761b7c00970d91b549",
-      "createdAt": "2026-05-05T02:51:02.701Z"
+      "passwordHash": "2ebb7f09879a080f4356f34b29cbff37:6b4261f8a8e2018a0cc964f57d183f5c0f0ed160526cf1312e5953be3d08c2fc9c1441c5e90d6a11464689177a7b55e54bac6dc74e5e23f12af369eca4f7947a",
+      "createdAt": "2026-05-05T03:18:22.096Z"
+    },
+    {
+      "id": "u_000002",
+      "username": "alice",
+      "passwordHash": "11d73ac9d858dbbfdfa2ae0f45fad2d3:3a49a2097035a7a64fc7da729dcb78c47170a71fe05a4894b8b08fa4bd6bee4a0259ca3cf471c4e81fb6c7e525a7447d11b530df3ece50e093dab8a7020b4965",
+      "createdAt": "2026-05-05T03:18:57.411Z"
     }
   ],
   "sessions": [
     {
-      "sessionId": "7eefcac898a0878c4afb82bfbd92057ebf7bc48c21d43ea8",
+      "sessionId": "ddd4edf715f32e8abe8f8d92f75e14d932fc54e0c8f00649",
       "userId": "u_000001",
-      "createdAt": "2026-05-05T02:51:31.999Z"
+      "createdAt": "2026-05-05T03:18:57.306Z"
+    },
+    {
+      "sessionId": "955b1d0c9350b1b492a25a8d33c35a0b81c838f1df2ad633",
+      "userId": "u_000002",
+      "createdAt": "2026-05-05T03:18:57.412Z"
     }
   ],
   "bots": [
@@ -29,13 +40,13 @@
         null,
         null
       ],
-      "createdAt": "2026-05-05T02:51:02.704Z",
-      "updatedAt": "2026-05-05T02:51:02.704Z",
+      "createdAt": "2026-05-05T03:18:22.100Z",
+      "updatedAt": "2026-05-05T03:18:22.100Z",
       "versions": [
         {
           "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
           "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
-          "createdAt": "2026-05-05T02:51:02.704Z",
+          "createdAt": "2026-05-05T03:18:22.100Z",
           "saveMessage": "starter bot"
         }
       ]
@@ -44,26 +55,21 @@
       "ownerUsername": "admin",
       "name": "bot2",
       "botId": "admin/bot2",
-      "sourceText": "WAIT 1\n",
-      "sourceHash": "3cedbf4503f50200dfda7f29574578956ba654477274b0d7d033e80c74fc6238",
+      "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+      "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
       "loadout": [
-        "SAW",
-        "SHIELD",
+        null,
+        null,
         null
       ],
-      "createdAt": "2026-05-05T02:51:02.704Z",
-      "updatedAt": "2026-05-05T02:51:32.011Z",
+      "createdAt": "2026-05-05T03:18:22.101Z",
+      "updatedAt": "2026-05-05T03:18:22.101Z",
       "versions": [
         {
           "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
           "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
-          "createdAt": "2026-05-05T02:51:02.704Z",
+          "createdAt": "2026-05-05T03:18:22.101Z",
           "saveMessage": "starter bot"
-        },
-        {
-          "sourceHash": "3cedbf4503f50200dfda7f29574578956ba654477274b0d7d033e80c74fc6238",
-          "sourceText": "WAIT 1\n",
-          "createdAt": "2026-05-05T02:51:32.011Z"
         }
       ]
     },
@@ -78,18 +84,1605 @@
         null,
         null
       ],
-      "createdAt": "2026-05-05T02:51:02.705Z",
-      "updatedAt": "2026-05-05T02:51:02.705Z",
+      "createdAt": "2026-05-05T03:18:22.101Z",
+      "updatedAt": "2026-05-05T03:18:22.101Z",
       "versions": [
         {
           "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
           "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
-          "createdAt": "2026-05-05T02:51:02.705Z",
+          "createdAt": "2026-05-05T03:18:22.101Z",
+          "saveMessage": "starter bot"
+        }
+      ]
+    },
+    {
+      "ownerUsername": "alice",
+      "name": "bot1",
+      "botId": "alice/bot1",
+      "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+      "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+      "loadout": [
+        null,
+        null,
+        null
+      ],
+      "createdAt": "2026-05-05T03:18:57.412Z",
+      "updatedAt": "2026-05-05T03:18:57.412Z",
+      "versions": [
+        {
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "createdAt": "2026-05-05T03:18:57.412Z",
+          "saveMessage": "starter bot"
+        }
+      ]
+    },
+    {
+      "ownerUsername": "alice",
+      "name": "bot2",
+      "botId": "alice/bot2",
+      "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+      "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+      "loadout": [
+        null,
+        null,
+        null
+      ],
+      "createdAt": "2026-05-05T03:18:57.413Z",
+      "updatedAt": "2026-05-05T03:18:57.413Z",
+      "versions": [
+        {
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "createdAt": "2026-05-05T03:18:57.413Z",
+          "saveMessage": "starter bot"
+        }
+      ]
+    },
+    {
+      "ownerUsername": "alice",
+      "name": "bot3",
+      "botId": "alice/bot3",
+      "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+      "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+      "loadout": [
+        null,
+        null,
+        null
+      ],
+      "createdAt": "2026-05-05T03:18:57.413Z",
+      "updatedAt": "2026-05-05T03:18:57.413Z",
+      "versions": [
+        {
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "sourceText": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "createdAt": "2026-05-05T03:18:57.413Z",
           "saveMessage": "starter bot"
         }
       ]
     }
   ],
-  "matches": [],
-  "dailyRuns": []
+  "matches": [
+    {
+      "matchId": "m_000001",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.430Z",
+      "updatedAt": "2026-05-05T03:18:57.506Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:0",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000002",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.507Z",
+      "updatedAt": "2026-05-05T03:18:57.511Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:1",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000003",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.512Z",
+      "updatedAt": "2026-05-05T03:18:57.515Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:2",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000004",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.516Z",
+      "updatedAt": "2026-05-05T03:18:57.518Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:3",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000005",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.519Z",
+      "updatedAt": "2026-05-05T03:18:57.520Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:4",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000006",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.521Z",
+      "updatedAt": "2026-05-05T03:18:57.523Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:5",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000007",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.524Z",
+      "updatedAt": "2026-05-05T03:18:57.526Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:6",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000008",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.527Z",
+      "updatedAt": "2026-05-05T03:18:57.529Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:7",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000009",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.530Z",
+      "updatedAt": "2026-05-05T03:18:57.531Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:8",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000010",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.532Z",
+      "updatedAt": "2026-05-05T03:18:57.610Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:9",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000011",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.611Z",
+      "updatedAt": "2026-05-05T03:18:57.612Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:10",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000012",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.612Z",
+      "updatedAt": "2026-05-05T03:18:57.613Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:11",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000013",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.614Z",
+      "updatedAt": "2026-05-05T03:18:57.615Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:12",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000014",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.616Z",
+      "updatedAt": "2026-05-05T03:18:57.617Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:13",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "admin/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    },
+    {
+      "matchId": "m_000015",
+      "kind": "daily",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.618Z",
+      "updatedAt": "2026-05-05T03:18:57.619Z",
+      "result": {
+        "endReason": "TICK_CAP",
+        "winnerSlot": null,
+        "survivors": [
+          {
+            "slot": "BOT1",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT2",
+            "hp": 92,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT3",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          },
+          {
+            "slot": "BOT4",
+            "hp": 98,
+            "ammo": 100,
+            "energy": 100,
+            "alive": true
+          }
+        ]
+      },
+      "replay": null,
+      "error": null,
+      "dailyRunId": "d_000001",
+      "persistReplay": false,
+      "matchSeed": "saved-only:round:0:match:14",
+      "tickCap": 20,
+      "participants": [
+        {
+          "slot": "BOT1",
+          "displayName": "admin/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT2",
+          "displayName": "admin/bot3",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT3",
+          "displayName": "alice/bot2",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        },
+        {
+          "slot": "BOT4",
+          "displayName": "alice/bot1",
+          "sourceTextSnapshot": ";@slot1 BULLET\n;@slot2 EMPTY\n;@slot3 EMPTY\n; bot0 — Aggressive Skirmisher (starter)\n; Loadout: SLOT1=BULLET\n; Summary: chase+shoot the closest bot; avoid bump-lock; detour for HEALTH/AMMO when low; dodge enemy bullets when threatened.\n\nLABEL LOOP\n\n; If we're about to collide, sidestep within our current sector.\n; (Use a slightly larger threshold than the bot hitbox to avoid repeated bumps.)\nIF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF\n\n; If enemy bullets are nearby, dodge for a tick to reduce face-tanking.\nIF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS\n\n; Heal when hurt (clear bot target so MOVE_TO_TARGET prefers the powerup).\n; (Thresholds are tuned so this behavior is visible in short Workshop runs.)\nIF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) GOTO HEAL\n\n; Resupply when low (and we aren't currently healing).\n; (Ammo drains slowly with the current cooldown, so use a higher threshold for demos.)\nIF (AMMO < 80 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY\n\n; Otherwise pick a fight.\nTARGET_CLOSEST\nSET_MOVE_TO_TARGET\nIF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET\nGOTO LOOP\n\nLABEL BACKOFF\n; Break pursuit and step to the opposite zone in our current sector.\nCLEAR_MOVE\nIF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4\nIF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3\nIF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2\nIF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1\nWAIT 2\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL DODGE_BULLETS\n; Quick evasive step: pick the closest bullet, then move away from it for 1 tick.\nCLEAR_MOVE\nTARGET_CLOSEST_BULLET\nIF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET\nWAIT 1\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL HEAL\nCLEAR_TARGET_BOT\nTARGET_POWERUP HEALTH\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n\nLABEL RESUPPLY\nCLEAR_TARGET_BOT\nTARGET_POWERUP AMMO\nSET_MOVE_TO_TARGET\nWAIT 3\nCLEAR_MOVE\nGOTO LOOP\n",
+          "sourceHash": "786ecaa73920021f254979a149de2a3f00ebf5ab109b39628d28ec0746d6cb79",
+          "loadoutSnapshot": [
+            null,
+            null,
+            null
+          ],
+          "loadoutIssues": []
+        }
+      ]
+    }
+  ],
+  "dailyRuns": [
+    {
+      "runId": "d_000001",
+      "status": "complete",
+      "createdAt": "2026-05-05T03:18:57.424Z",
+      "updatedAt": "2026-05-05T03:18:57.619Z",
+      "matchIds": [
+        "m_000001",
+        "m_000002",
+        "m_000003",
+        "m_000004",
+        "m_000005",
+        "m_000006",
+        "m_000007",
+        "m_000008",
+        "m_000009",
+        "m_000010",
+        "m_000011",
+        "m_000012",
+        "m_000013",
+        "m_000014",
+        "m_000015"
+      ],
+      "summary": {
+        "matchCount": 15,
+        "leaderboard": [
+          {
+            "botId": "admin/bot1",
+            "matchesPlayed": 10,
+            "points": 15
+          },
+          {
+            "botId": "admin/bot2",
+            "matchesPlayed": 10,
+            "points": 15
+          },
+          {
+            "botId": "admin/bot3",
+            "matchesPlayed": 10,
+            "points": 15
+          },
+          {
+            "botId": "alice/bot1",
+            "matchesPlayed": 10,
+            "points": 15
+          },
+          {
+            "botId": "alice/bot2",
+            "matchesPlayed": 10,
+            "points": 15
+          },
+          {
+            "botId": "alice/bot3",
+            "matchesPlayed": 10,
+            "points": 15
+          }
+        ]
+      },
+      "error": null,
+      "runDate": "2026-05-05",
+      "runSeed": "saved-only",
+      "rulesetVersion": "0.2.0",
+      "maxRounds": 1,
+      "tickCap": 20
+    }
+  ]
 }
