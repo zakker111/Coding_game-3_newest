@@ -420,6 +420,7 @@ Goal: connect the existing Workshop UI to the shipped sandbox server runner whil
 
 Shipped daily/admin baseline:
 - [x] Default `admin` / `admin` account is created on server boot.
+- [x] Simple JSON database layer persists users, sessions, user bots, matches, and daily runs.
 - [x] Landing page has a minimal login form.
 - [x] `/admin` shows a minimal server sandbox for daily runs, daily matches, and points.
 - [x] `POST /api/runs/daily` is admin-only.
@@ -427,6 +428,10 @@ Shipped daily/admin baseline:
 - [x] Daily run leaderboard includes points and matches played.
 
 Still open:
+- [ ] Security hardening: move beyond the current simple local JSON database defaults before production.
+  - User passwords should be stored with production-grade password hashing/encryption policy.
+  - Sessions should use secure cookie settings and expiry.
+  - The default `admin` / `admin` account must be removed or forced to rotate before public deployment.
 - [ ] Save/edit per-bot loadouts on the server and use those loadouts in daily runs.
 - [ ] Add a normal user-facing account/bot management flow beyond the minimal admin tools.
 - [ ] Add a Workshop “run on server” flow for the current local setup.

@@ -5,10 +5,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { buildApp } from '../src/app.js'
-import { createPersistentStoreBundle } from '../src/store/persistentStoreBundle.js'
+import { createJsonDatabase } from '../src/store/jsonDatabase.js'
 
 function createStores(filePath) {
-  return createPersistentStoreBundle({ filePath })
+  return createJsonDatabase({ filePath })
 }
 
 async function registerUser(app, username = 'alice', password = 'password123') {
