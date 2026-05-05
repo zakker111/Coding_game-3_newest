@@ -90,24 +90,12 @@ export function createBotService({ store, config }) {
         }
       }
 
-      const bots = [
-        ...store.listBots({
-          ownerUsernames: ['builtin'],
-          query: textQuery,
-        }),
-      ]
-
-      if (currentUser) {
-        bots.push(
-          ...store.listBots({
-            ownerUsernames: [currentUser.username],
+      return {
+        bots: sortBots(
+          store.listBots({
             query: textQuery,
           })
-        )
-      }
-
-      return {
-        bots: sortBots(bots),
+        ),
       }
     },
 
