@@ -29,9 +29,14 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     fs: {
       allow: [repoRoot],
     },
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
+    allowedHosts: true,
   },
   preview: {
     allowedHosts: ['4173-uknkc4ygdpnmvktw.cosine.computer'],

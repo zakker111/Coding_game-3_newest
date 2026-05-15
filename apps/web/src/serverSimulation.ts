@@ -106,6 +106,7 @@ type MirrorRunnerDeps = {
 
 export function normalizeServerBaseUrl(baseUrl: string): string {
   const trimmed = String(baseUrl ?? '').trim().replace(/\/+$/g, '')
+  if (trimmed === '' && typeof window !== 'undefined') return ''
   return trimmed || DEFAULT_SERVER_BASE_URL
 }
 

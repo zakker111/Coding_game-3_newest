@@ -234,9 +234,13 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
           const matches = []
           const matchIds = []
 
+          const maxMatchesPerRun = config.maxMatchesPerRun ?? Infinity
+          let totalMatches = 0
+
           for (let round = 0; round < maxRounds; round += 1) {
             const roundBots = deterministicShuffle(eligibleBots, `${String(runSeed)}:round:${round}`)
-            const groups = deterministicShuffle(createFourBotCombinations(roundBots), `${String(runSeed)}:round:${round}:groups`)
+            const allGroups = deterministicShuffle(createFourBotCombinations(roundBots), `${String(runSeed)}:round:${round}:groups`)
+            const groups = allGroups.slice(0, maxMatchesPerRun - totalMatches)
 
             for (let index = 0; index < groups.length; index += 1) {
               const group = groups[index]
@@ -254,7 +258,10 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
 
               matches.push(match)
               matchIds.push(match.matchId)
+              totalMatches += 1
             }
+
+            if (totalMatches >= maxMatchesPerRun) break
           }
 
           return store.markComplete(run.runId, {

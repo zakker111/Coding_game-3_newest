@@ -7,5 +7,5 @@ export function getDefaultServerBaseUrl() {
   if (cosineMatch) {
     return `${protocol}//3000-${cosineMatch[2]}`
   }
-  return DEFAULT_SERVER_BASE_URL
+  return ''
 }
