@@ -22,3 +22,26 @@ try {
   console.error(error)
   process.exitCode = 1
 }
+
+if (config.dailyRunIntervalMinutes > 0) {
+  const intervalMs = config.dailyRunIntervalMinutes * 60 * 1000
+  console.log(`Auto daily runs enabled: every ${config.dailyRunIntervalMinutes} minute(s)`)
+
+  function runScheduledDaily() {
+    const today = new Date().toISOString().slice(0, 10)
+    try {
+      app.dailyRunService.createRun({
+        runDate: today,
+        seed: `daily:${today}:${Date.now()}`,
+        tickCap: 120,
+        maxRounds: 1,
+      })
+      console.log(`[auto-daily] Completed scheduled daily run for ${today}`)
+    } catch (error) {
+      console.error(`[auto-daily] Failed:`, error?.message ?? error)
+    }
+  }
+
+  runScheduledDaily()
+  setInterval(runScheduledDaily, intervalMs)
+}

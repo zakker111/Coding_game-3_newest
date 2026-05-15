@@ -4,6 +4,8 @@ const DEFAULT_MAX_SOURCE_LINES = 400
 const DEFAULT_BODY_LIMIT = 262144
 const DEFAULT_DATA_FILE = '.nowt/server-state.json'
 const DEFAULT_MAX_MATCHES_PER_RUN = 100
+const DEFAULT_RANKED_ACTIVE_LIMIT = 20
+const DEFAULT_DAILY_RUN_INTERVAL_MINUTES = 0
 
 function parseIntEnv(value, fallback, name) {
   if (value == null || value === '') return fallback
@@ -35,6 +37,16 @@ export function getServerConfig(env = process.env) {
       env.NOWT_SERVER_MAX_MATCHES_PER_RUN,
       DEFAULT_MAX_MATCHES_PER_RUN,
       'NOWT_SERVER_MAX_MATCHES_PER_RUN'
+    ),
+    rankedActiveLimit: parseIntEnv(
+      env.NOWT_SERVER_RANKED_ACTIVE_LIMIT,
+      DEFAULT_RANKED_ACTIVE_LIMIT,
+      'NOWT_SERVER_RANKED_ACTIVE_LIMIT'
+    ),
+    dailyRunIntervalMinutes: parseIntEnv(
+      env.NOWT_SERVER_DAILY_RUN_INTERVAL_MINUTES,
+      DEFAULT_DAILY_RUN_INTERVAL_MINUTES,
+      'NOWT_SERVER_DAILY_RUN_INTERVAL_MINUTES'
     ),
   }
 

@@ -207,10 +207,22 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         })
       }
       const maxRounds = validatePositiveInt(input.maxRounds, DEFAULT_MAX_ROUNDS, 'maxRounds')
-      const eligibleBots = deterministicShuffle(
-        botStore.listBots().filter((bot) => bot.ownerUsername !== 'builtin'),
-        runSeed
+      const rankedActiveLimit = config.rankedActiveLimit ?? 20
+      const allUserBots = botStore.listBots().filter((bot) => bot.ownerUsername !== 'builtin')
+      const rankedCandidates = allUserBots.filter(
+        (bot) => bot.rankedEnabled !== false && (bot.rankedStatus === 'active' || bot.rankedStatus === 'pending')
       )
+
+      const pendingBots = rankedCandidates.filter((bot) => bot.rankedStatus === 'pending')
+      const activeBots = rankedCandidates
+        .filter((bot) => bot.rankedStatus === 'active')
+        .sort((a, b) => {
+          if ((b.rankedPoints ?? 0) !== (a.rankedPoints ?? 0)) return (b.rankedPoints ?? 0) - (a.rankedPoints ?? 0)
+          return a.botId.localeCompare(b.botId)
+        })
+      const selectedBots = [...pendingBots, ...activeBots].slice(0, rankedActiveLimit)
+
+      const eligibleBots = deterministicShuffle(selectedBots, runSeed)
 
       if (eligibleBots.length < SLOT_IDS.length) {
         throw createHttpError(409, 'NOT_ENOUGH_BOTS', 'Daily runs require at least four eligible bots', {
@@ -264,9 +276,24 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
             if (totalMatches >= maxMatchesPerRun) break
           }
 
+          const summary = summarizeRun(matches)
+
+          for (let rank = 0; rank < summary.leaderboard.length; rank += 1) {
+            const entry = summary.leaderboard[rank]
+            const identity = parseBotId(entry.botId)
+            if (!identity) continue
+            const isAboveCutoff = rank < rankedActiveLimit
+            botStore.updateRankedStatus(identity.ownerUsername, identity.name, {
+              rankedStatus: isAboveCutoff ? 'active' : 'dropped',
+              rankedPoints: entry.points,
+              lastRankedRunId: run.runId,
+              ...(isAboveCutoff ? {} : { droppedAt: new Date().toISOString(), dropReason: 'below_daily_cut' }),
+            })
+          }
+
           return store.markComplete(run.runId, {
             matchIds,
-            summary: summarizeRun(matches),
+            summary,
           })
         } catch (error) {
           store.markFailed(run.runId, {

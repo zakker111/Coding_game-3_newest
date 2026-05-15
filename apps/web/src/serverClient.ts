@@ -300,3 +300,16 @@ export async function fetchServerDailyRunMatches(
     fetchImpl,
   )
 }
+
+export async function fetchServerMatchReplay(
+  baseUrl: string,
+  matchId: string,
+  fetchImpl?: FetchLike,
+): Promise<unknown> {
+  return requestJson(
+    baseUrl,
+    `/api/matches/${encodeURIComponent(matchId)}/replay`,
+    { method: 'GET' },
+    fetchImpl,
+  )
+}
