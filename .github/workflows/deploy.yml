@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,9 +37,11 @@ jobs:
           cp -r apps/web/dist/* docs/
 
       - name: Commit and push
-        if: github.event_name == 'push'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add docs/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Build: Update game files [skip ci]" && git push)
+          if [ -n "$(git status --porcelain)" ]; then
+            git commit -m "Build: Update game files [skip ci]"
+            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
+          fi
