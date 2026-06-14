@@ -8,6 +8,78 @@ This repo is **spec-first**, and includes a runnable prototype:
 - `apps/web`: Vite + React workshop that runs local matches in a Web Worker and renders the replay
 - `packages/replay`: legacy replay schema + sample generator (uses lightweight source heuristics like scanning for `SAW`/`SHIELD`; not authoritative engine behavior)
 
+---
+
+## 🎮 Quick Start: Run the Game Locally
+
+### Prerequisites
+You need to have **Node.js** and **pnpm** installed on your computer.
+
+- **Node.js**: Download from [nodejs.org](https://nodejs.org) (get the LTS version)
+- **pnpm**: Install it by running `npm install -g pnpm`
+
+### Step 1: Clone & Setup
+```bash
+git clone https://github.com/zakker111/Coding_game-3_newest.git
+cd Coding_game-3_newest
+pnpm install
+```
+
+### Step 2: Run the Game
+```bash
+pnpm dev
+```
+
+### Step 3: Open in Your Browser
+The terminal will print a URL (usually `http://localhost:5173`). Click it or paste it into your browser.
+
+### Game Pages Available:
+- **`/`** — Landing page
+- **`/workshop`** — Play the game! Create a bot script and watch it fight (play/pause/step through the battle)
+- **`/leaderboard`** — View daily rankings
+- **`/admin`** — Admin controls (for testing daily runs)
+
+---
+
+## 🚀 Deploy to GitHub Pages
+
+To make your game playable online with a shareable URL:
+
+### Step 1: Build the Game
+```bash
+pnpm build
+```
+This creates files in the `apps/web/dist/` folder.
+
+### Step 2: Copy to `docs/` Folder
+1. Create a folder called `docs` in your repo root
+2. Copy all files from `apps/web/dist/` into `docs/`
+3. Push to GitHub:
+   ```bash
+   git add .
+   git commit -m "Deploy game to GitHub Pages"
+   git push origin main
+   ```
+
+### Step 3: Enable GitHub Pages
+1. Go to your repo: https://github.com/zakker111/Coding_game-3_newest
+2. Click **Settings** → **Pages** (in left sidebar)
+3. Under "Build and deployment":
+   - **Source**: Select `Deploy from a branch`
+   - **Branch**: Select `main`
+   - **Folder**: Select `/docs`
+4. Click **Save**
+
+### Step 4: Get Your URL ✅
+GitHub will show your site URL in a few seconds:
+```
+https://zakker111.github.io/Coding_game-3_newest/
+```
+
+You can now share this link to let others test your game online!
+
+---
+
 ## Running the prototype
 
 Prereqs: Node.js + pnpm.
@@ -58,7 +130,7 @@ Current scope:
 - `POST /api/runs/daily` (admin-only)
 - `GET /api/runs`, `GET /api/runs/latest`, `GET /api/runs/:runId`, `GET /api/runs/:runId/matches`
 
-The server accepts inline participant snapshots for sandbox simulations. Daily runs use saved user/server bots, schedule every deterministic 4-bot combination for the run, store the resulting daily matches, and publish a placement-points leaderboard.
+The server accepts inline participant snapshots for sandbox simulations. Daily runs use saved user/server bots, schedule every deterministic 4-bot combination for the run, store the resulting daily[...]
 
 Default local admin:
 - username: `admin`
@@ -100,7 +172,7 @@ Legacy fast path (still useful for non-browser package checks):
 pnpm qa:phase1
 ```
 
-`pnpm qa:workshop` requires a Playwright-capable browser runtime. If Chromium cannot start because host libraries are missing, the script now fails with an actionable message instead of a raw launch stack.
+`pnpm qa:workshop` requires a Playwright-capable browser runtime. If Chromium cannot start because host libraries are missing, the script now fails with an actionable message instead of a raw lau[...]
 If the default local ports are already occupied, override them with `NOWT_QA_WORKSHOP_URL` and `NOWT_QA_WORKSHOP_APP_URL` when running `pnpm qa:release` / `pnpm gate:phase1`.
 
 Note: `site/` is a legacy prototype and is intentionally excluded from the pnpm workspace + CI.
@@ -150,13 +222,13 @@ Notes:
 
 - **4 bots per match** (`BOT1..BOT4`)
 - **Deterministic tick simulation**: `ticksPerSecond = 1` (so **1 tick = 1 simulated second**)
-  - Rendering/playback **must** be smooth while playing: interpolate bot/projectile positions within each tick (viewer-only; does not affect gameplay). When paused/scrubbing/stepping, render the exact tick snapshot (no intra-tick interpolation).
-- Each bot executes **exactly 1 instruction per tick** in a small DSL (with beginner-friendly aliases like `TARGET_CLOSEST`, `MOVE_TO_ZONE`, `IN_ZONE`, etc.; these are intended to normalize to a small canonical core at parse/compile time and do not affect determinism)
-- Arena is a **3×3 grid of sectors** (1–9). Each sector has **4 zones** (2×2). Bots have continuous world positions (`pos = {x,y}` in a 192×192 arena) and a **16×16 hitbox** (centered at `pos`); sector/zone are UI/rules regions derived from `pos`.
+  - Rendering/playback **must** be smooth while playing: interpolate bot/projectile positions within each tick (viewer-only; does not affect gameplay). When paused/scrubbing/stepping, render the [...]
+- Each bot executes **exactly 1 instruction per tick** in a small DSL (with beginner-friendly aliases like `TARGET_CLOSEST`, `MOVE_TO_ZONE`, `IN_ZONE`, etc.; these are intended to normalize to a [...]
+- Arena is a **3×3 grid of sectors** (1–9). Each sector has **4 zones** (2×2). Bots have continuous world positions (`pos = {x,y}` in a 192×192 arena) and a **16×16 hitbox** (centered at `p[...]
   - Bots do **not** move anchor-to-anchor or snap to sector/zone centers; only powerups use anchor locations for compact encoding.
-- Module/loadout note (rulesetVersion `0.2.0` in `packages/engine`): bots have an explicit 3-slot `loadout` in the match input (`[slot1, slot2, slot3]`). If omitted, it defaults to all-empty (`[null, null, null]`) and is deterministically normalized (see `Ruleset.md` §1.1.1).
+- Module/loadout note (rulesetVersion `0.2.0` in `packages/engine`): bots have an explicit 3-slot `loadout` in the match input (`[slot1, slot2, slot3]`). If omitted, it defaults to all-empty (`[n[...]
 - Current module catalog includes `BULLET`, `SAW`, `SHIELD`, `ARMOR`, `GRENADE`, `MINE`, `REPAIR_DRONE`, `SNIPER`, `ROCKET`, and `TELEPORT`.
-- Powerups (`HEALTH|AMMO|ENERGY`) spawn at deterministic anchors (seeded RNG) every **10–20 ticks** and are picked up when a bot’s AABB overlaps the anchor point.
+- Powerups (`HEALTH|AMMO|ENERGY`) spawn at deterministic anchors (seeded RNG) every **10–20 ticks** and are picked up when a bot's AABB overlaps the anchor point.
 - Matches end by rules: last bot alive, or `tickCap`, or `STALEMATE` (no bot-vs-bot damage for a configured window) — see `Ruleset.md`.
 - Matches are fully replayable from `(rulesetVersion, matchSeed, bot source snapshots, loadouts)`.
 
