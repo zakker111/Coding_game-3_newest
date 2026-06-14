@@ -13,6 +13,6 @@
     "@coding-game/engine": "workspace:*",
     "@coding-game/replay": "workspace:*",
     "@coding-game/ruleset": "workspace:*",
-    "fastify": "^5.8.4"
+    "fastify": "^5.8.5"
   }
 }
