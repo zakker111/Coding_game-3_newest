@@ -29,12 +29,15 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5000,
+    host: '0.0.0.0',
+    allowedHosts: true,
     fs: {
       allow: [repoRoot],
     },
   },
   preview: {
-    allowedHosts: ['4173-uknkc4ygdpnmvktw.cosine.computer'],
+    allowedHosts: true,
   },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
