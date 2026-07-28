@@ -1,79 +1,74 @@
-# Built-in bot: Armored Grenade Controller (GRENADE + ARMOR + REPAIR_DRONE)
+# bot5 — The Mine Trapper (MINE + REPAIR_DRONE)
 
 **Suggested loadout**
-- `SLOT1 = GRENADE`
-- `SLOT2 = ARMOR`
-- `SLOT3 = REPAIR_DRONE`
+- `SLOT1 = MINE`
+- `SLOT2 = REPAIR_DRONE`
+- `SLOT3 = (empty)`
 
 **Intended behavior**
-- Defaults to holding around the center (`SECTOR 5`).
-- Uses `ARMOR` for passive durability while holding center.
-- Demonstrates explicit target-state cleanup when switching plans:
-  - `CLEAR_TARGET`
-  - `CLEAR_TARGET_POWERUP`
-- Uses `SLOT3 = REPAIR_DRONE` through the generic slot interface for sustain while holding center.
-- When low on health/ammo/energy, targets that powerup type and **commits** for a few ticks using `MOVE_TO_TARGET`.
-- Otherwise returns to center control and lobs grenades at the closest target.
+Patrols the central sectors (5 → 2 → 4 → 6 → 8) dropping mines at each stop. Keeps a repair drone orbiting for passive healing. When enemies get close, it kites them back through the seeded mine field. Dismisses the drone and grabs energy powerups when reserves run low.
+
+Concepts demonstrated: `USE_SLOT1 NONE` (mine placement), `USE_SLOT2 SELF` (repair drone), `DRONE_COUNT()`, `STOP_SLOT2`, patrol routing with sector checks, kiting tactics.
 
 ## Script
 
 ```text
-;@slot1 GRENADE
-;@slot2 ARMOR
-;@slot3 REPAIR_DRONE
-; bot5 — Armored Grenade Controller
-; Loadout: SLOT1=GRENADE, SLOT2=ARMOR, SLOT3=REPAIR_DRONE
-; Summary: hold the center with ARMOR; clear/rebuild target state for HEALTH/AMMO/ENERGY runs; use SLOT3 REPAIR_DRONE for sustain; return to center for grenade pressure.
+;@slot1 MINE
+;@slot2 REPAIR_DRONE
+;@slot3 EMPTY
+; bot5 — The Mine Trapper
+; Loadout: SLOT1=MINE, SLOT2=REPAIR_DRONE
+; Strategy: patrol the central cross (sectors 5→2→4→6→8) dropping mines at each stop;
+;           keep a repair drone active for passive healing; kite enemies into the mine field.
 
-; Default posture: drift toward the center.
 SET_MOVE_TO_SECTOR 5
 
 LABEL LOOP
 
-; Keep one repair drone orbiting while we control the center.
-IF (SLOT_READY(SLOT3) && DRONE_COUNT() == 0) DO USE_SLOT3 SELF
+; Keep one repair drone orbiting when energy allows.
+IF (SLOT_READY(SLOT2) && DRONE_COUNT() == 0 && ENERGY > 55) DO USE_SLOT2 SELF
 
-; If energy gets low while a drone is active, dismiss it and refuel.
-IF (ENERGY < 35 && SLOT_ACTIVE(SLOT3)) DO STOP_SLOT3
+; Low energy: dismiss drone and grab a refuel.
+IF (ENERGY < 30 && SLOT_ACTIVE(SLOT2)) DO STOP_SLOT2
+IF (ENERGY < 30 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
 
-; If we're about to collide, step to a nearby zone briefly.
-IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
+; Health backup: drone doesn't always keep up.
+IF (HEALTH < 35 && POWERUP_EXISTS(HEALTH)) GOTO HEAL
 
-; --- Emergency powerup logic (commit for 3 ticks) ---
-; Low health → go to HEALTH.
-; (Thresholds are tuned so this behavior is visible in short Workshop runs.)
-IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO CLEAR_TARGET
-IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO TARGET_POWERUP HEALTH
-IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH) && TIMER_DONE(T1)) DO SET_TIMER T1 3
+; Kite approaching enemies — lead them back over the mines.
+IF (DIST_TO_CLOSEST_BOT() <= 52) GOTO KITE
 
-; Low energy (after drone upkeep) → go to ENERGY.
-IF (!TIMER_ACTIVE(T1) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T2)) DO CLEAR_TARGET
-IF (!TIMER_ACTIVE(T1) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T2)) DO TARGET_POWERUP ENERGY
-IF (!TIMER_ACTIVE(T1) && ENERGY < 60 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T2)) DO SET_TIMER T2 3
+; Drop a mine every 8 ticks to seed the patrol path.
+IF (SLOT_READY(SLOT1) && TIMER_DONE(T1)) DO USE_SLOT1 NONE
+IF (SLOT_READY(SLOT1) && TIMER_DONE(T1)) DO SET_TIMER T1 8
 
-; Low ammo (but not in the middle of a health run or energy run) → go to AMMO.
-IF (!TIMER_ACTIVE(T1) && ENERGY >= 60 && AMMO < 80 && POWERUP_EXISTS(AMMO) && TIMER_DONE(T2)) DO CLEAR_TARGET
-IF (!TIMER_ACTIVE(T1) && ENERGY >= 60 && AMMO < 80 && POWERUP_EXISTS(AMMO) && TIMER_DONE(T2)) DO TARGET_POWERUP AMMO
-IF (!TIMER_ACTIVE(T1) && ENERGY >= 60 && AMMO < 80 && POWERUP_EXISTS(AMMO) && TIMER_DONE(T2)) DO SET_TIMER T2 3
-IF (TIMER_ACTIVE(T1) || TIMER_ACTIVE(T2)) GOTO POWERUP_RUN
+; Patrol the central cross: 5 → 2 → 4 → 6 → 8 → 5.
+IF (SECTOR() == 5) DO SET_MOVE_TO_SECTOR 2
+IF (SECTOR() == 2) DO SET_MOVE_TO_SECTOR 4
+IF (SECTOR() == 4) DO SET_MOVE_TO_SECTOR 6
+IF (SECTOR() == 6) DO SET_MOVE_TO_SECTOR 8
+IF (SECTOR() == 8) DO SET_MOVE_TO_SECTOR 5
 
-; --- Combat logic ---
-CLEAR_TARGET_POWERUP
-TARGET_CLOSEST
+GOTO LOOP
+
+LABEL KITE
+; Move away from the threat and let the mines do the work.
+SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+WAIT 3
+GOTO LOOP
+
+LABEL REFUEL
+IF (SLOT_ACTIVE(SLOT2)) DO STOP_SLOT2
+TARGET_POWERUP ENERGY
 SET_MOVE_TO_TARGET
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
-
+WAIT 4
+CLEAR_MOVE
 GOTO LOOP
 
-LABEL POWERUP_RUN
-MOVE_TO_TARGET
-IF ((TIMER_DONE(T1) && TIMER_DONE(T2)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO) && !POWERUP_EXISTS(ENERGY))) DO CLEAR_TARGET_POWERUP
-IF ((TIMER_DONE(T1) && TIMER_DONE(T2)) || (!POWERUP_EXISTS(HEALTH) && !POWERUP_EXISTS(AMMO) && !POWERUP_EXISTS(ENERGY))) DO SET_MOVE_TO_SECTOR 5
-GOTO LOOP
-
-LABEL BACKOFF
-SET_MOVE_TO_SECTOR 5 ZONE 1
-WAIT 2
-SET_MOVE_TO_SECTOR 5
+LABEL HEAL
+TARGET_POWERUP HEALTH
+SET_MOVE_TO_TARGET
+WAIT 4
+CLEAR_MOVE
 GOTO LOOP
 ```

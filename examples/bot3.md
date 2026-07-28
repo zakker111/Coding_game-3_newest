@@ -1,61 +1,69 @@
-# Built-in bot: Immediate-Move Mine Bunker (MINE)
+# bot3 — The Rocket Soldier (ROCKET + SHIELD)
 
 **Suggested loadout**
-- `SLOT1 = MINE`
-- `SLOT2 = (empty)`
+- `SLOT1 = ROCKET`
+- `SLOT2 = SHIELD`
 - `SLOT3 = (empty)`
 
 **Intended behavior**
-- Defaults to a fixed “home” location.
-- Demonstrates **immediate movement** instructions instead of persistent move goals:
-  - `MOVE_TO_SECTOR`
-  - `MOVE_TO_POWERUP`
-- If bullets are nearby, briefly targets the closest bullet, moves away from it, and clears the bullet target.
-- If a bot is **very close** (or we just bumped), briefly steps deeper into its home sector.
-- Opportunistically drops mines while holding the bunker position, but waits a few ticks before trying to lay another one.
-- Resupplies ammo when needed.
+Fights at medium range (48–160 units) where rockets deal splash damage to clustered enemies. Raises the shield reactively when a bullet is closing in. Manages energy carefully since both the shield and rocket system need it. Repositions if enemies get too close for safe rocket fire.
+
+Concepts demonstrated: AoE weapon spacing, reactive `SHIELD ON/OFF` with timers, energy management, `SET_MOVE_AWAY_FROM_BOT` when overcrowded.
 
 ## Script
 
 ```text
-;@slot1 MINE
-;@slot2 EMPTY
+;@slot1 ROCKET
+;@slot2 SHIELD
 ;@slot3 EMPTY
-; bot3 — Immediate-Move Mine Bunker
-; Loadout: SLOT1=MINE
-; Summary: hold a home corner with immediate movement; drop mines in the bunker lane on a short timer; make one-tick HEALTH/AMMO detours; dodge bullets via the bullet target register.
+; bot3 — The Rocket Soldier
+; Loadout: SLOT1=ROCKET, SLOT2=SHIELD
+; Strategy: hold medium range for rocket splash; raise shield reactively vs bullets;
+;           manage energy carefully since both modules need it.
+
+SET_MOVE_TO_BOT CLOSEST_BOT
 
 LABEL LOOP
 
-; If enemy bullets are nearby, dodge for a tick.
-IF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS
-
-; If we're about to collide, take a short step inward.
-IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
-
-; Keep a mine in our lane, but wait a few ticks between placement attempts.
-IF (SLOT_READY(SLOT1) && TIMER_DONE(T1)) DO USE_SLOT1 NONE
-IF (SLOT_READY(SLOT1) && TIMER_DONE(T1)) DO SET_TIMER T1 6
-
-; Make one-tick detours to the nearest useful powerup.
-; (Thresholds are tuned so this behavior is visible in short Workshop runs.)
-IF (HEALTH < 70 && POWERUP_EXISTS(HEALTH)) DO MOVE_TO_POWERUP HEALTH
-IF (HEALTH >= 70 && AMMO < 80 && POWERUP_EXISTS(AMMO)) DO MOVE_TO_POWERUP AMMO
-
-; Otherwise, reassert the home corner immediately.
-IF (HEALTH >= 70 && (AMMO >= 80 || !POWERUP_EXISTS(AMMO))) DO MOVE_TO_SECTOR 1 ZONE 1
-
-GOTO LOOP
-
-LABEL BACKOFF
-; Step deeper into the home sector for a tick, then resume normal logic.
-MOVE_TO_SECTOR 1 ZONE 4
-GOTO LOOP
-
-LABEL DODGE_BULLETS
-; Quick evasive step: move away from the closest bullet, then clear the bullet target.
+; Raise shield when a bullet is incoming — keep it on for at least 4 ticks.
 TARGET_CLOSEST_BULLET
-IF (HAS_TARGET_BULLET()) DO MOVE_AWAY_FROM_TARGET
-IF (HAS_TARGET_BULLET()) DO CLEAR_TARGET_BULLET
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 72 && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 72) DO SET_TIMER T2 4
+IF (TIMER_DONE(T2) && SLOT_ACTIVE(SLOT2)) DO SHIELD OFF
+
+; Energy check — shield needs reserves.
+IF (ENERGY < 35 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
+
+; Health check.
+IF (HEALTH < 35 && POWERUP_EXISTS(HEALTH)) GOTO HEAL
+
+; Target the weakest enemy — rockets at low-HP targets can secure kills.
+TARGET_LOWEST_HEALTH
+SET_MOVE_TO_TARGET
+
+; Keep minimum distance — rockets deal splash; firing too close hurts us too.
+IF (DIST_TO_CLOSEST_BOT() < 48) DO SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+
+; Fire when in effective range.
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() >= 48 && DIST_TO_TARGET_BOT() <= 160) DO USE_SLOT1 TARGET
+
+GOTO LOOP
+
+LABEL REFUEL
+CLEAR_TARGET_BOT
+IF (SLOT_ACTIVE(SLOT2)) DO SHIELD OFF
+TARGET_POWERUP ENERGY
+SET_MOVE_TO_TARGET
+WAIT 4
+CLEAR_MOVE
+GOTO LOOP
+
+LABEL HEAL
+CLEAR_TARGET_BOT
+TARGET_POWERUP HEALTH
+SET_MOVE_TO_TARGET
+WAIT 4
+CLEAR_MOVE
+SET_MOVE_TO_BOT CLOSEST_BOT
 GOTO LOOP
 ```

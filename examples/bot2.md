@@ -1,70 +1,69 @@
-# Built-in bot: Target Cycler (BULLET)
+# bot2 — The Sniper (SNIPER + ARMOR)
 
 **Suggested loadout**
-- `SLOT1 = BULLET`
-- `SLOT2 = (empty)`
+- `SLOT1 = SNIPER`
+- `SLOT2 = ARMOR`
 - `SLOT3 = (empty)`
 
 **Intended behavior**
-- Demonstrates **explicit target cycling**:
-  - starts on `BOT1`
-  - rotates with `TARGET_NEXT`
-  - repairs the target when the current one dies via `TARGET_NEXT_IF_DEAD`
-- Uses **immediate movement** (`MOVE_TO_TARGET`) instead of a persistent chase goal.
-- If bullets are nearby, briefly dodges so it does not tunnel-vision forever.
-- If a bot is **very close** (or we just bumped), briefly backs off before re-engaging.
-- Shoots the selected target via `USE_SLOT1 TARGET`.
+Holds the middle distance (64–160 units). Fires high-damage sniper shots at the weakest enemy to secure kills. Uses `ARMOR` to absorb incidental hits while repositioning. Kites away when enemies close in and waits out the long sniper cooldown.
+
+Concepts demonstrated: `DIST_TO_CLOSEST_BOT()`, `DIST_TO_TARGET_BOT()`, kiting with `SET_MOVE_AWAY_FROM_BOT`, `SLOT_READY`, long-cooldown weapon management.
 
 ## Script
 
 ```text
-;@slot1 BULLET
-;@slot2 EMPTY
+;@slot1 SNIPER
+;@slot2 ARMOR
 ;@slot3 EMPTY
-; bot2 — Target Cycler
-; Loadout: SLOT1=BULLET
-; Summary: rotate targets with TARGET_NEXT / TARGET_NEXT_IF_DEAD; use immediate movement toward the current target; dodge bullets; shoot the selected target.
+; bot2 — The Sniper
+; Loadout: SLOT1=SNIPER, SLOT2=ARMOR (passive)
+; Strategy: hold sniping range (64–160 units); fire at lowest-health targets to secure kills;
+;           kite when enemies close in; armor absorbs hits during repositioning.
 
-SET_TARGET BOT1
-SET_TIMER T1 6
+SET_MOVE_TO_SECTOR 3
 
 LABEL LOOP
 
-; If we're about to collide, sidestep within our current sector.
-IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
+; Heal when low — armor doesn't make us invincible.
+IF (HEALTH < 40 && POWERUP_EXISTS(HEALTH)) GOTO HEAL
 
-; If enemy bullets are nearby, dodge for a tick.
-IF (BULLET_IN_SAME_SECTOR() || BULLET_IN_ADJ_SECTOR()) GOTO DODGE_BULLETS
+; Sniper ammo is expensive — resupply early.
+IF (AMMO < 45 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
-; Keep a valid target, and rotate periodically so the bot does not tunnel on one enemy forever.
-TARGET_NEXT_IF_DEAD
-IF (TIMER_DONE(T1)) DO TARGET_NEXT
-IF (TIMER_DONE(T1)) DO SET_TIMER T1 6
+; Kite: if enemies get too close, back off to restore firing distance.
+IF (DIST_TO_CLOSEST_BOT() < 64) GOTO KITE
 
-IF (HAS_TARGET_BOT()) DO MOVE_TO_TARGET
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1)) DO USE_SLOT1 TARGET
+; Close the gap if the fight is too far away.
+IF (DIST_TO_CLOSEST_BOT() > 180) DO SET_MOVE_TO_BOT CLOSEST_BOT
+
+; Target the weakest enemy for maximum kill probability per shot.
+TARGET_LOWEST_HEALTH
+
+; Fire when ready and the target is within effective range.
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() <= 180) DO USE_SLOT1 TARGET
 
 GOTO LOOP
 
-LABEL BACKOFF
-; Break pursuit and step to the opposite zone in our current sector.
+LABEL KITE
 CLEAR_MOVE
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1
-WAIT 2
+SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+WAIT 4
+GOTO LOOP
+
+LABEL HEAL
+CLEAR_TARGET_BOT
+TARGET_POWERUP HEALTH
+SET_MOVE_TO_TARGET
+WAIT 4
 CLEAR_MOVE
 GOTO LOOP
 
-LABEL DODGE_BULLETS
-; Quick evasive step: move to a different zone for 1 tick.
-CLEAR_MOVE
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 1
-WAIT 1
+LABEL RESUPPLY
+CLEAR_TARGET_BOT
+TARGET_POWERUP AMMO
+SET_MOVE_TO_TARGET
+WAIT 3
 CLEAR_MOVE
 GOTO LOOP
 ```

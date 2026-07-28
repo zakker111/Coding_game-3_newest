@@ -1,4 +1,4 @@
-# Built-in bot: Slot-Driven Saw Diver (SAW + SHIELD)
+# bot4 — The Saw Brawler (SAW + SHIELD)
 
 **Suggested loadout**
 - `SLOT1 = SAW`
@@ -6,16 +6,9 @@
 - `SLOT3 = (empty)`
 
 **Intended behavior**
-- Constantly chases the closest living enemy (persistent goal).
-- Demonstrates the **generic slot interface** instead of module-name sugar:
-  - `USE_SLOT1`
-  - `STOP_SLOT1`
-  - `USE_SLOT2`
-  - `STOP_SLOT2`
-- Bursts the saw when it bumps or reaches melee range.
-- Uses the shield reactively when bullets are nearby.
-- If energy gets low, turns its toggles off and rushes an `ENERGY` powerup before diving back in.
-- Sidesteps when very close to avoid repeated bump-lock.
+Dives into melee range and activates the saw for sustained close-range damage. Raises the shield reactively when bullets get close. Manages energy carefully since both modules drain it — breaks off to refuel rather than running dry mid-fight.
+
+Concepts demonstrated: `SAW ON/OFF`, `SHIELD ON/OFF`, bump detection, `DIST_TO_CLOSEST_BOT()`, energy management with toggle modules, `TIMER_DONE`/`SET_TIMER`.
 
 ## Script
 
@@ -23,41 +16,42 @@
 ;@slot1 SAW
 ;@slot2 SHIELD
 ;@slot3 EMPTY
-; bot4 — Slot-Driven Saw Diver
+; bot4 — The Saw Brawler
 ; Loadout: SLOT1=SAW, SLOT2=SHIELD
-; Summary: chase CLOSEST_BOT; drive SAW/SHIELD through USE_SLOTn / STOP_SLOTn; refuel from ENERGY when low; sidestep when too close.
+; Strategy: dive to melee range; burst saw on contact; shield incoming bullets;
+;           break off to refuel when energy is critically low.
 
 SET_MOVE_TO_BOT CLOSEST_BOT
 
 LABEL LOOP
 
-; Shield early when a bullet is closing in (keep it on for at least 3 ticks).
+; Energy crisis — both modules need energy. Refuel before we're helpless.
+IF (ENERGY < 28) GOTO REFUEL
+
+; Shield: raise when a bullet is closing in.
 TARGET_CLOSEST_BULLET
-IF (HAS_TARGET_BULLET() && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO USE_SLOT2 SELF
-IF (HAS_TARGET_BULLET() && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SET_TIMER T2 3
-IF (TIMER_DONE(T2) && SLOT_ACTIVE(SLOT2) && !HAS_TARGET_BULLET()) DO STOP_SLOT2
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 56 && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 56) DO SET_TIMER T2 3
+IF (TIMER_DONE(T2) && SLOT_ACTIVE(SLOT2)) DO SHIELD OFF
 
-; If energy gets low, break off and refuel before trying to burst again.
-IF (ENERGY < 45 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T3)) DO TARGET_POWERUP ENERGY
-IF (ENERGY < 45 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T3)) DO SET_TIMER T3 4
-IF (TIMER_ACTIVE(T3)) GOTO REFUEL
+; Health check.
+IF (HEALTH < 28 && POWERUP_EXISTS(HEALTH)) GOTO HEAL
 
-; SAW burst window after a bump.
-IF (BUMPED_BOT() && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO USE_SLOT1 SELF
-IF (BUMPED_BOT() && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO SET_TIMER T1 4
-IF (TIMER_DONE(T1) && SLOT_ACTIVE(SLOT1)) DO STOP_SLOT1
+; SAW: activate when in melee range or after a bump — run it for 6 ticks.
+IF ((DIST_TO_CLOSEST_BOT() <= 24 || BUMPED_BOT()) && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO SAW ON
+IF ((DIST_TO_CLOSEST_BOT() <= 24 || BUMPED_BOT())) DO SET_TIMER T1 6
+IF (TIMER_DONE(T1) && SLOT_ACTIVE(SLOT1)) DO SAW OFF
 
-; If we get right on top of someone, turn the saw on even without a bump.
-IF (DIST_TO_CLOSEST_BOT() <= 18 && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO USE_SLOT1 SELF
-IF (DIST_TO_CLOSEST_BOT() > 40 && SLOT_ACTIVE(SLOT1)) DO STOP_SLOT1
+; Turn saw off if the enemy escaped — conserve energy.
+IF (DIST_TO_CLOSEST_BOT() > 48 && SLOT_ACTIVE(SLOT1)) DO SAW OFF
 
-; If we're very close, briefly sidestep to avoid repeated bumps.
-IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
+; Sidestep when bump-locked and saw is off.
+IF (BUMPED_BOT() && !SLOT_ACTIVE(SLOT1)) GOTO BACKOFF
 
+SET_MOVE_TO_BOT CLOSEST_BOT
 GOTO LOOP
 
 LABEL BACKOFF
-; Step to the opposite zone in our current sector, then resume chase.
 IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4
 IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3
 IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2
@@ -67,10 +61,21 @@ SET_MOVE_TO_BOT CLOSEST_BOT
 GOTO LOOP
 
 LABEL REFUEL
-IF (SLOT_ACTIVE(SLOT1)) DO STOP_SLOT1
-IF (SLOT_ACTIVE(SLOT2)) DO STOP_SLOT2
-MOVE_TO_TARGET
-IF (ENERGY >= 75 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO CLEAR_TIMER T3
-IF (ENERGY >= 75 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO SET_MOVE_TO_BOT CLOSEST_BOT
+IF (SLOT_ACTIVE(SLOT1)) DO SAW OFF
+IF (SLOT_ACTIVE(SLOT2)) DO SHIELD OFF
+IF (POWERUP_EXISTS(ENERGY)) DO TARGET_POWERUP ENERGY
+IF (POWERUP_EXISTS(ENERGY)) DO SET_MOVE_TO_TARGET
+WAIT 4
+CLEAR_MOVE
+SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+
+LABEL HEAL
+IF (SLOT_ACTIVE(SLOT1)) DO SAW OFF
+TARGET_POWERUP HEALTH
+SET_MOVE_TO_TARGET
+WAIT 4
+CLEAR_MOVE
+SET_MOVE_TO_BOT CLOSEST_BOT
 GOTO LOOP
 ```

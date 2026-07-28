@@ -1,72 +1,74 @@
-# Built-in bot: Energy Saw Skirmisher (SAW + SHIELD)
+# bot6 — The Ghost (TELEPORT + SNIPER)
 
 **Suggested loadout**
-- `SLOT1 = SAW`
-- `SLOT2 = SHIELD`
+- `SLOT1 = TELEPORT`
+- `SLOT2 = SNIPER`
 - `SLOT3 = (empty)`
 
 **Intended behavior**
-- Aggressive chaser that uses **SAW bursts** after a bump or when very close.
-- Uses **bullet-target-aware SHIELD bursts** when enemy shots get close.
-- If energy gets low, targets an `ENERGY` powerup and **commits** to refueling for a few ticks.
-- Sidesteps when very close to avoid repeated bump-lock.
+Maintains sniper range and fires at the weakest enemy for maximum kill value. When enemies close in, it teleports to a corner sector to instantly reset positioning. Rotates through 4 corners using a register to stay unpredictable. Manages energy carefully since teleport has a cost.
+
+Concepts demonstrated: `USE_SLOT1 SECTOR <N>` (teleport), `SNIPER` long cooldown, register-based state (`R1`), distance-based positioning, `SLOT_READY` for cooldown checks.
 
 ## Script
 
 ```text
-;@slot1 SAW
-;@slot2 SHIELD
+;@slot1 TELEPORT
+;@slot2 SNIPER
 ;@slot3 EMPTY
-; bot6 — Energy Saw Skirmisher
-; Loadout: SLOT1=SAW, SLOT2=SHIELD
-; Summary: chase CLOSEST_BOT; bump/close→SAW burst; bullets→SHIELD burst; low ENERGY→TARGET_POWERUP ENERGY.
+; bot6 — The Ghost
+; Loadout: SLOT1=TELEPORT, SLOT2=SNIPER
+; Strategy: hold sniper range (80–200 units); teleport to a corner sector when cornered;
+;           rotate blink destinations via R1 to stay unpredictable.
 
-SET_MOVE_TO_BOT CLOSEST_BOT
+; R1 tracks which corner we blink to next (1=sector 1, 2=3, 3=7, 4=9).
+SET R1 1
+SET_MOVE_TO_SECTOR 3
 
 LABEL LOOP
 
-; --- Energy management (commit 4 ticks to refuel) ---
-IF (ENERGY < 45 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T3)) DO TARGET_POWERUP ENERGY
-IF (ENERGY < 45 && POWERUP_EXISTS(ENERGY) && TIMER_DONE(T3)) DO SET_TIMER T3 4
-IF (TIMER_ACTIVE(T3)) GOTO REFUEL
+; Health and ammo checks.
+IF (HEALTH < 38 && POWERUP_EXISTS(HEALTH)) GOTO HEAL
+IF (AMMO < 40 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
-; --- SAW burst (after bump / at very close range) ---
-IF ((BUMPED_BOT() || DIST_TO_CLOSEST_BOT() <= 18) && TIMER_DONE(T1) && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO SAW ON
-IF ((BUMPED_BOT() || DIST_TO_CLOSEST_BOT() <= 18) && TIMER_DONE(T1)) DO SET_TIMER T1 5
-IF (TIMER_DONE(T1) && SLOT_ACTIVE(SLOT1)) DO SAW OFF
+; Emergency blink: if enemies are dangerously close and teleport is charged.
+IF (DIST_TO_CLOSEST_BOT() <= 52 && SLOT_READY(SLOT1) && ENERGY >= 40) GOTO BLINK
 
-; Turn SAW off if we're no longer close.
-IF (DIST_TO_CLOSEST_BOT() > 40 && SLOT_ACTIVE(SLOT1)) DO SAW OFF
+; Target the weakest enemy — sniper shots should secure kills.
+TARGET_LOWEST_HEALTH
 
-; --- SHIELD burst (when the closest bullet gets dangerous) ---
-TARGET_CLOSEST_BULLET
-IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 48 && TIMER_DONE(T2) && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
-IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 48 && TIMER_DONE(T2)) DO SET_TIMER T2 3
-IF (TIMER_DONE(T2) && SLOT_ACTIVE(SLOT2) && (!HAS_TARGET_BULLET() || DIST_TO_TARGET_BULLET() > 64)) DO SHIELD OFF
+; Fire when the sniper is ready and in range.
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT2) && DIST_TO_TARGET_BOT() <= 200) DO USE_SLOT2 TARGET
 
-; If we're about to collide, sidestep briefly to avoid repeated bumps.
-IF (DIST_TO_CLOSEST_BOT() <= 32 || BUMPED_BOT()) GOTO BACKOFF
+; Maintain optimal sniping distance.
+IF (DIST_TO_CLOSEST_BOT() > 200) DO SET_MOVE_TO_BOT CLOSEST_BOT
+IF (DIST_TO_CLOSEST_BOT() < 80) DO SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
 
 GOTO LOOP
 
-LABEL BACKOFF
-; Step to the opposite zone in our current sector, then resume chase.
-IF (IN_ZONE(1)) DO SET_MOVE_TO_ZONE 4
-IF (IN_ZONE(2)) DO SET_MOVE_TO_ZONE 3
-IF (IN_ZONE(3)) DO SET_MOVE_TO_ZONE 2
-IF (IN_ZONE(4)) DO SET_MOVE_TO_ZONE 1
-WAIT 2
-SET_MOVE_TO_BOT CLOSEST_BOT
+LABEL BLINK
+; Rotate through the 4 corners for unpredictable repositioning.
+IF (R1 == 1) DO USE_SLOT1 SECTOR 1
+IF (R1 == 2) DO USE_SLOT1 SECTOR 3
+IF (R1 == 3) DO USE_SLOT1 SECTOR 7
+IF (R1 == 4) DO USE_SLOT1 SECTOR 9
+INC R1
+IF (R1 > 4) DO SET R1 1
 GOTO LOOP
 
-LABEL REFUEL
-; When refueling, conserve energy by turning toggles off, then walk the target.
-IF (SLOT_ACTIVE(SLOT1)) DO SAW OFF
-IF (SLOT_ACTIVE(SLOT2)) DO SHIELD OFF
-MOVE_TO_TARGET
+LABEL HEAL
+CLEAR_TARGET_BOT
+TARGET_POWERUP HEALTH
+SET_MOVE_TO_TARGET
+WAIT 3
+CLEAR_MOVE
+GOTO LOOP
 
-; If we refilled or the powerup disappeared, go back to chasing.
-IF (ENERGY >= 60 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO CLEAR_TIMER T3
-IF (ENERGY >= 60 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO SET_MOVE_TO_BOT CLOSEST_BOT
+LABEL RESUPPLY
+CLEAR_TARGET_BOT
+TARGET_POWERUP AMMO
+SET_MOVE_TO_TARGET
+WAIT 3
+CLEAR_MOVE
 GOTO LOOP
 ```
