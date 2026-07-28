@@ -264,6 +264,24 @@ export async function saveServerBot(
   )
 }
 
+export async function setServerBotRankedEnabled(
+  baseUrl: string,
+  owner: string,
+  name: string,
+  rankedEnabled: boolean,
+  fetchImpl?: FetchLike,
+): Promise<ServerBotSummary> {
+  return requestJson<ServerBotSummary>(
+    baseUrl,
+    `/api/bots/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/ranked`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ rankedEnabled }),
+    },
+    fetchImpl,
+  )
+}
+
 export async function listServerDailyRuns(baseUrl: string, fetchImpl?: FetchLike): Promise<ServerDailyRunListResponse> {
   return requestJson<ServerDailyRunListResponse>(baseUrl, '/api/runs', { method: 'GET' }, fetchImpl)
 }

@@ -27,6 +27,14 @@ export async function registerBotRoutes(app) {
     return reply.code(200).send(bot)
   })
 
+  app.patch('/api/bots/:owner/:name/ranked', async (request, reply) => {
+    const { owner, name } = request.params
+    const bot = app.botService.setRankedEnabled(owner, name, request.body?.rankedEnabled, {
+      currentUser: request.currentUser,
+    })
+    return reply.code(200).send(bot)
+  })
+
   app.get('/api/bots/:owner/:name/versions', async (request) => {
     const { owner, name } = request.params
     return app.botService.listVersions(owner, name, {

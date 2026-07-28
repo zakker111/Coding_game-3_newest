@@ -194,6 +194,34 @@ export function createBotService({ store, config }) {
       return versions
     },
 
+    setRankedEnabled(owner, name, rankedEnabled, { currentUser } = {}) {
+      const ownerUsername = validatePathPart(owner, 'owner')
+      const botName = validatePathPart(name, 'name')
+
+      if (ownerUsername === 'builtin') {
+        throw createHttpError(403, 'FORBIDDEN', 'builtin bots cannot be modified', { owner: ownerUsername })
+      }
+
+      requireAuthenticatedUser(currentUser, 'update bot ranked status')
+
+      if (currentUser.username !== ownerUsername) {
+        throw createHttpError(403, 'FORBIDDEN', 'you can only update bots for the authenticated user', {
+          owner: ownerUsername,
+          authenticatedUsername: currentUser.username,
+        })
+      }
+
+      if (typeof rankedEnabled !== 'boolean') {
+        throw createHttpError(400, 'INVALID_REQUEST', 'rankedEnabled must be a boolean', { field: 'rankedEnabled' })
+      }
+
+      const bot = store.updateRankedStatus(ownerUsername, botName, { rankedEnabled })
+      if (!bot) {
+        throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', { owner: ownerUsername, name: botName })
+      }
+      return bot
+    },
+
     getVersionSource(owner, name, sourceHash, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')

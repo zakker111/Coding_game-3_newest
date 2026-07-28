@@ -46,6 +46,7 @@ import {
   logoutServerUser,
   registerServerUser,
   saveServerBot,
+  setServerBotRankedEnabled,
   type ServerBotSummary,
   type ServerUser,
 } from '../serverClient'
@@ -510,6 +511,7 @@ export function WorkshopPage() {
   const [selectedServerBotSourceText, setSelectedServerBotSourceText] = React.useState<string | null>(null)
   const [serverSaveBusy, setServerSaveBusy] = React.useState(false)
   const [serverSaveNotice, setServerSaveNotice] = React.useState<{ tone: 'good' | 'bad'; text: string } | null>(null)
+  const [serverRankedToggleBusy, setServerRankedToggleBusy] = React.useState(false)
 
   const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
@@ -1652,6 +1654,30 @@ export function WorkshopPage() {
     }
   }
 
+  async function handleToggleRankedEnabled() {
+    if (!serverUser || !selectedServerBot) return
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerRankedToggleBusy(true)
+    try {
+      const updated = await setServerBotRankedEnabled(
+        baseUrl,
+        serverUser.username,
+        selectedServerBot.name,
+        !selectedServerBot.rankedEnabled,
+      )
+      setServerBots((prev) => prev.map((b) => (b.botId === updated.botId ? updated : b)))
+      pushServerActivity(
+        'good',
+        `${updated.botId} is now ${updated.rankedEnabled ? 'entered in' : 'excluded from'} daily runs.`,
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      pushServerActivity('bad', `Ranked toggle failed: ${message}`)
+    } finally {
+      setServerRankedToggleBusy(false)
+    }
+  }
+
   async function handleSaveToServer() {
     if (!serverUser || !selectedServerBotLoaded) return
 
@@ -2437,6 +2463,47 @@ export function WorkshopPage() {
                     'Choose one of your three server bots to edit source and loadout.'
                   )}
                 </div>
+
+                {selectedServerBot ? (
+                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span className="muted" style={{ fontSize: '0.8em' }}>
+                      Daily runs:{' '}
+                      <strong
+                        style={{
+                          color:
+                            selectedServerBot.rankedStatus === 'active'
+                              ? 'rgba(134, 239, 172, 0.95)'
+                              : selectedServerBot.rankedStatus === 'dropped'
+                                ? '#fecaca'
+                                : 'var(--text)',
+                        }}
+                      >
+                        {selectedServerBot.rankedEnabled
+                          ? selectedServerBot.rankedStatus
+                          : 'disabled'}
+                      </strong>
+                      {selectedServerBot.rankedEnabled && selectedServerBot.rankedPoints > 0
+                        ? ` · ${selectedServerBot.rankedPoints} pts`
+                        : ''}
+                    </span>
+                    <button
+                      className="mini-button"
+                      onClick={() => void handleToggleRankedEnabled()}
+                      disabled={serverRankedToggleBusy}
+                      title={
+                        selectedServerBot.rankedEnabled
+                          ? 'Exclude this bot from daily runs'
+                          : 'Enter this bot into daily runs'
+                      }
+                    >
+                      {serverRankedToggleBusy
+                        ? '…'
+                        : selectedServerBot.rankedEnabled
+                          ? 'Disable'
+                          : 'Enable'}
+                    </button>
+                  </div>
+                ) : null}
 
                 {serverSaveNotice ? (
                   <div
