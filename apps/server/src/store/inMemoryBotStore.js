@@ -13,6 +13,7 @@ function rankedFields(bot) {
   const source = bot && typeof bot === 'object' ? bot : {}
   return {
     rankedEnabled: source.rankedEnabled !== false,
+    anticipate: source.anticipate === true,
     rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
     rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
     lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,

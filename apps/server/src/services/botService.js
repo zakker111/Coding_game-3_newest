@@ -194,6 +194,34 @@ export function createBotService({ store, config }) {
       return versions
     },
 
+    setAnticipate(owner, name, anticipate, { currentUser } = {}) {
+      const ownerUsername = validatePathPart(owner, 'owner')
+      const botName = validatePathPart(name, 'name')
+
+      if (ownerUsername === 'builtin') {
+        throw createHttpError(403, 'FORBIDDEN', 'builtin bots cannot be modified', { owner: ownerUsername })
+      }
+
+      requireAuthenticatedUser(currentUser, 'update bot anticipate setting')
+
+      if (currentUser.username !== ownerUsername) {
+        throw createHttpError(403, 'FORBIDDEN', 'you can only update bots for the authenticated user', {
+          owner: ownerUsername,
+          authenticatedUsername: currentUser.username,
+        })
+      }
+
+      if (typeof anticipate !== 'boolean') {
+        throw createHttpError(400, 'INVALID_REQUEST', 'anticipate must be a boolean', { field: 'anticipate' })
+      }
+
+      const bot = store.updateRankedStatus(ownerUsername, botName, { anticipate })
+      if (!bot) {
+        throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found', { owner: ownerUsername, name: botName })
+      }
+      return bot
+    },
+
     setRankedEnabled(owner, name, rankedEnabled, { currentUser } = {}) {
       const ownerUsername = validatePathPart(owner, 'owner')
       const botName = validatePathPart(name, 'name')

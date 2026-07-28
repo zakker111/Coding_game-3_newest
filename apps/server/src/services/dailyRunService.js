@@ -208,7 +208,9 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
       }
       const maxRounds = validatePositiveInt(input.maxRounds, DEFAULT_MAX_ROUNDS, 'maxRounds')
       const eligibleBots = deterministicShuffle(
-        botStore.listBots().filter((bot) => bot.ownerUsername !== 'builtin' && bot.rankedEnabled !== false),
+        botStore.listBots().filter(
+          (bot) => bot.ownerUsername !== 'builtin' && bot.rankedEnabled !== false && bot.rankedStatus !== 'dropped'
+        ),
         runSeed
       )
 
@@ -257,10 +259,35 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
             }
           }
 
-          return store.markComplete(run.runId, {
-            matchIds,
-            summary: summarizeRun(matches),
-          })
+          const summary = summarizeRun(matches)
+          const completedRun = store.markComplete(run.runId, { matchIds, summary })
+
+          // Update rankedPoints and auto-drop bots that scored below threshold
+          const DROP_THRESHOLD = 1
+          const timestamp = new Date().toISOString()
+          for (const entry of summary.leaderboard) {
+            const slashIndex = entry.botId.indexOf('/')
+            if (slashIndex === -1) continue
+            const ownerUsername = entry.botId.slice(0, slashIndex)
+            const name = entry.botId.slice(slashIndex + 1)
+            const existing = botStore.getBot(ownerUsername, name)
+            if (!existing) continue
+            const newPoints = (existing.rankedPoints ?? 0) + entry.points
+            const shouldDrop = entry.points < DROP_THRESHOLD && !existing.anticipate
+            botStore.updateRankedStatus(ownerUsername, name, {
+              rankedPoints: newPoints,
+              lastRankedRunId: run.runId,
+              ...(shouldDrop
+                ? {
+                    rankedStatus: 'dropped',
+                    droppedAt: timestamp,
+                    dropReason: `Scored ${entry.points} pts in run (threshold: ${DROP_THRESHOLD})`,
+                  }
+                : {}),
+            })
+          }
+
+          return completedRun
         } catch (error) {
           store.markFailed(run.runId, {
             code: error?.code ?? 'DAILY_RUN_FAILED',

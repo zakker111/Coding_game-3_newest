@@ -46,6 +46,7 @@ import {
   logoutServerUser,
   registerServerUser,
   saveServerBot,
+  setServerBotAnticipate,
   setServerBotRankedEnabled,
   type ServerBotSummary,
   type ServerUser,
@@ -512,6 +513,7 @@ export function WorkshopPage() {
   const [serverSaveBusy, setServerSaveBusy] = React.useState(false)
   const [serverSaveNotice, setServerSaveNotice] = React.useState<{ tone: 'good' | 'bad'; text: string } | null>(null)
   const [serverRankedToggleBusy, setServerRankedToggleBusy] = React.useState(false)
+  const [serverAnticipateToggleBusy, setServerAnticipateToggleBusy] = React.useState(false)
 
   const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
@@ -1654,6 +1656,32 @@ export function WorkshopPage() {
     }
   }
 
+  async function handleToggleAnticipate() {
+    if (!serverUser || !selectedServerBot) return
+    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    setServerAnticipateToggleBusy(true)
+    try {
+      const updated = await setServerBotAnticipate(
+        baseUrl,
+        serverUser.username,
+        selectedServerBot.name,
+        !selectedServerBot.anticipate,
+      )
+      setServerBots((prev) => prev.map((b) => (b.botId === updated.botId ? updated : b)))
+      pushServerActivity(
+        'good',
+        updated.anticipate
+          ? `${updated.botId} will stay in daily runs even with low scores.`
+          : `${updated.botId} will be dropped automatically on low scores.`,
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      pushServerActivity('bad', `Anticipate toggle failed: ${message}`)
+    } finally {
+      setServerAnticipateToggleBusy(false)
+    }
+  }
+
   async function handleToggleRankedEnabled() {
     if (!serverUser || !selectedServerBot) return
     const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
@@ -2501,6 +2529,27 @@ export function WorkshopPage() {
                         : selectedServerBot.rankedEnabled
                           ? 'Disable'
                           : 'Enable'}
+                    </button>
+                    <button
+                      className="mini-button"
+                      onClick={() => void handleToggleAnticipate()}
+                      disabled={serverAnticipateToggleBusy}
+                      title={
+                        selectedServerBot.anticipate
+                          ? 'Turn off anticipate — bot will be auto-dropped on low scores'
+                          : 'Turn on anticipate — bot stays in daily runs even with low scores'
+                      }
+                      style={
+                        selectedServerBot.anticipate
+                          ? { color: '#fde68a', borderColor: '#fde68a' }
+                          : {}
+                      }
+                    >
+                      {serverAnticipateToggleBusy
+                        ? '…'
+                        : selectedServerBot.anticipate
+                          ? '⚡ Anticipate'
+                          : 'Anticipate'}
                     </button>
                   </div>
                 ) : null}

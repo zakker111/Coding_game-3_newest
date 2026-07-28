@@ -33,6 +33,7 @@ export type ServerBotSummary = {
   sourceHash: string | null
   loadout: Loadout
   rankedEnabled: boolean
+  anticipate: boolean
   rankedStatus: 'active' | 'pending' | 'dropped'
   rankedPoints: number
   lastRankedRunId: string | null
@@ -259,6 +260,24 @@ export async function saveServerBot(
     {
       method: 'PUT',
       body: JSON.stringify(body),
+    },
+    fetchImpl,
+  )
+}
+
+export async function setServerBotAnticipate(
+  baseUrl: string,
+  owner: string,
+  name: string,
+  anticipate: boolean,
+  fetchImpl?: FetchLike,
+): Promise<ServerBotSummary> {
+  return requestJson<ServerBotSummary>(
+    baseUrl,
+    `/api/bots/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/anticipate`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ anticipate }),
     },
     fetchImpl,
   )
