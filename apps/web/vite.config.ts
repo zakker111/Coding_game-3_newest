@@ -18,6 +18,9 @@ const normalizedBasePath = basePath.endsWith('/') ? basePath : `${basePath}/`
 export default defineConfig({
   base: normalizedBasePath,
   plugins: [react()],
+  optimizeDeps: {
+    exclude: ['@coding-game/engine', '@coding-game/replay', '@coding-game/ruleset'],
+  },
   build: {
     rollupOptions: {
       input: {
@@ -32,6 +35,13 @@ export default defineConfig({
     port: 5000,
     host: '0.0.0.0',
     allowedHosts: true,
+    hmr: process.env.REPLIT_DEV_DOMAIN
+      ? {
+          host: process.env.REPLIT_DEV_DOMAIN,
+          protocol: 'wss',
+          clientPort: 443,
+        }
+      : true,
     fs: {
       allow: [repoRoot],
     },
