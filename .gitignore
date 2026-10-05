@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output (CI regenerates; deploy/ is synced via pnpm sync:deploy)
+dist/
+apps/web/dist/
+docs/
+
+# Local data / caches
+*.db
+*.sqlite
+.data/
+.cache/
+.eslintcache
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
