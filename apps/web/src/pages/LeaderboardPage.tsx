@@ -2,11 +2,20 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { getDefaultServerBaseUrl } from '../config'
-import { fetchLatestServerDailyRun, fetchServerMe, type ServerDailyRun, type ServerUser } from '../serverClient'
+import {
+  describeRankedStatus,
+  fetchLatestServerDailyRun,
+  fetchServerMe,
+  listServerBots,
+  type ServerBotSummary,
+  type ServerDailyRun,
+  type ServerUser,
+} from '../serverClient'
 
 export function LeaderboardPage() {
   const [run, setRun] = React.useState<ServerDailyRun | null>(null)
   const [user, setUser] = React.useState<ServerUser | null>(null)
+  const [myBots, setMyBots] = React.useState<ServerBotSummary[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -19,6 +28,16 @@ export function LeaderboardPage() {
       const [me, latestRun] = await Promise.all([fetchServerMe(baseUrl), fetchLatestServerDailyRun(baseUrl)])
       setUser(me.user)
       setRun(latestRun)
+      if (me.user) {
+        try {
+          const listed = await listServerBots(baseUrl, { owner: me.user.username })
+          setMyBots(listed.bots.filter((bot) => bot.ownerUsername === me.user!.username))
+        } catch {
+          setMyBots([])
+        }
+      } else {
+        setMyBots([])
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
       setRun(null)
@@ -32,6 +51,7 @@ export function LeaderboardPage() {
   }, [])
 
   const leaderboard = run?.summary?.leaderboard ?? []
+  const leaderboardByBotId = new Map(leaderboard.map((entry) => [entry.botId, entry]))
 
   return (
     <div className="leaderboard-page">
@@ -47,6 +67,38 @@ export function LeaderboardPage() {
             {loading ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
+
+        {user && myBots.length ? (
+          <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+            <span className="muted">Your ranked status:</span>
+            {myBots.map((bot) => {
+              const badge = describeRankedStatus(bot)
+              const standing = leaderboardByBotId.get(bot.botId)
+              const rank = standing ? leaderboard.indexOf(standing) + 1 : null
+              const detail =
+                badge.tone === 'good' && rank
+                  ? `${badge.detail} Current rank #${rank}, ${standing?.points ?? bot.rankedPoints} pts.`
+                  : badge.detail
+              return (
+                <span
+                  key={bot.botId}
+                  title={detail}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: 999,
+                    fontSize: 12,
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color:
+                      badge.tone === 'bad' ? '#fca5a5' : badge.tone === 'warn' ? '#fcd34d' : 'rgba(134, 239, 172, 0.95)',
+                  }}
+                >
+                  {bot.name}: {badge.label}
+                  {rank ? ` · #${rank}` : bot.rankedPoints ? ` · ${bot.rankedPoints} pts` : ''}
+                </span>
+              )
+            })}
+          </div>
+        ) : null}
 
         {run ? (
           <div className="muted" style={{ marginTop: 12 }}>

@@ -1,5 +1,6 @@
 import { attachArenaRenderer } from './arena.js'
 import { DEFAULT_OPPONENT_EXAMPLE_IDS, EXAMPLE_BOTS, OPPONENT_EXAMPLE_POOL_IDS } from './exampleBots.js'
+import { isKnownModuleId } from '../ruleset/index.js'
 
 let engineWorker = null
 let engineWorkerFailure = null
@@ -169,8 +170,8 @@ function parseLoadoutFromSource(sourceText) {
       if (slot < 1 || slot > 3) continue
 
       if (raw === 'EMPTY' || raw === 'NONE') loadout[slot - 1] = null
-      else if (raw === 'BULLET' || raw === 'SAW' || raw === 'SHIELD' || raw === 'ARMOR' || raw === 'GRENADE' || raw === 'MINE' || raw === 'REPAIR_DRONE') loadout[slot - 1] = raw
-      else loadout[slot - 1] = null
+      else if (isKnownModuleId(raw)) loadout[slot - 1] = raw
+      else loadout[slot - 1] = raw // Unknown module: pass through so the engine emits UNKNOWN_MODULE warnings.
     }
 
     // Workshop contract: only the first 3 non-blank comment lines are considered.

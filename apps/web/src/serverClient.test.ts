@@ -1,4 +1,5 @@
 import {
+  describeRankedStatus,
   fetchServerBotSource,
   fetchServerMe,
   listServerBots,
@@ -7,6 +8,27 @@ import {
   registerServerUser,
   saveServerBot,
 } from './serverClient'
+
+describe('describeRankedStatus', () => {
+  it('maps each ranked status to a user-facing badge', () => {
+    expect(describeRankedStatus({ rankedStatus: 'active', dropReason: null })).toMatchObject({
+      label: 'Active',
+      tone: 'good',
+    })
+    expect(describeRankedStatus({ rankedStatus: 'pending', dropReason: null })).toMatchObject({
+      label: 'Pending',
+      tone: 'warn',
+    })
+    const dropped = describeRankedStatus({ rankedStatus: 'dropped', dropReason: 'below_daily_cut' })
+    expect(dropped).toMatchObject({ label: 'Dropped', tone: 'bad' })
+    expect(dropped.detail).toContain('daily cutoff')
+  })
+
+  it('falls back to the raw drop reason when unknown', () => {
+    const dropped = describeRankedStatus({ rankedStatus: 'dropped', dropReason: 'manual_admin_drop' })
+    expect(dropped.detail).toContain('manual_admin_drop')
+  })
+})
 
 describe('serverClient helpers', () => {
   it('fetches the current authenticated user with credentials', async () => {

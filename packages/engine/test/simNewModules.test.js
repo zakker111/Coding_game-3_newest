@@ -24,14 +24,15 @@ test('runMatchToReplay: SNIPER hits instantly through USE_SLOT', () => {
 })
 
 test('runMatchToReplay: ROCKET uses explosive projectile path', () => {
+  // tickCap must exceed the ROCKET fuse (24 ticks) so the projectile can travel and explode.
   const replay = runMatchToReplay({
     seed: 123,
-    tickCap: 12,
+    tickCap: 30,
     bots: [
       { slotId: 'BOT1', sourceText: 'LABEL LOOP\nUSE_SLOT1 BOT2\nGOTO LOOP\n', loadout: ['ROCKET', null, null] },
-      { slotId: 'BOT2', sourceText: 'WAIT 12\n', loadout: [null, null, null] },
-      { slotId: 'BOT3', sourceText: 'WAIT 12\n', inactive: true },
-      { slotId: 'BOT4', sourceText: 'WAIT 12\n', inactive: true },
+      { slotId: 'BOT2', sourceText: 'WAIT 30\n', loadout: [null, null, null] },
+      { slotId: 'BOT3', sourceText: 'WAIT 30\n', inactive: true },
+      { slotId: 'BOT4', sourceText: 'WAIT 30\n', inactive: true },
     ],
   })
 

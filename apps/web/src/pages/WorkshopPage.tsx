@@ -39,6 +39,7 @@ import {
   type ServerRulesetResponse,
 } from '../serverSimulation'
 import {
+  describeRankedStatus,
   fetchServerBotSource,
   fetchServerMe,
   listServerBots,
@@ -509,7 +510,7 @@ export function WorkshopPage() {
   const [selectedServerBotName, setSelectedServerBotName] = React.useState('bot1')
   const [selectedServerBotSourceText, setSelectedServerBotSourceText] = React.useState<string | null>(null)
   const [serverSaveBusy, setServerSaveBusy] = React.useState(false)
-  const [serverSaveNotice, setServerSaveNotice] = React.useState<{ tone: 'good' | 'bad'; text: string } | null>(null)
+  const [serverSaveNotice, setServerSaveNotice] = React.useState<{ tone: 'good' | 'warn' | 'bad'; text: string } | null>(null)
 
   const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
@@ -1683,11 +1684,13 @@ export function WorkshopPage() {
             : bot,
         ),
       }))
+      const statusBadge = describeRankedStatus(saved)
+      const pointsSuffix = Number.isFinite(saved.rankedPoints) && saved.rankedPoints > 0 ? ` · ${saved.rankedPoints} pts` : ''
       setServerSaveNotice({
-        tone: 'good',
-        text: `Saved ${selectedMyBot.name} to ${saved.botId}.`,
+        tone: saved.rankedStatus === 'dropped' ? 'bad' : saved.rankedStatus === 'pending' ? 'warn' : 'good',
+        text: `Saved ${selectedMyBot.name} to ${saved.botId}. Ranked: ${statusBadge.label}${pointsSuffix} — ${statusBadge.detail}`,
       })
-      pushServerActivity('good', `Saved ${selectedMyBot.name} to ${saved.botId}.`)
+      pushServerActivity('good', `Saved ${selectedMyBot.name} to ${saved.botId} (ranked ${statusBadge.label}).`)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       setServerSaveNotice({
@@ -2438,12 +2441,47 @@ export function WorkshopPage() {
                   )}
                 </div>
 
+                {ownServerBots.length ? (
+                  <div className="muted" style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                    <span>Ranked status:</span>
+                    {ownServerBots.map((bot) => {
+                      const badge = describeRankedStatus(bot)
+                      return (
+                        <span
+                          key={bot.botId}
+                          title={`${badge.detail}${bot.rankedPoints ? ` (${bot.rankedPoints} pts)` : ''}`}
+                          style={{
+                            padding: '2px 8px',
+                            borderRadius: 999,
+                            fontSize: 12,
+                            border: '1px solid rgba(255,255,255,0.15)',
+                            color:
+                              badge.tone === 'bad'
+                                ? '#fca5a5'
+                                : badge.tone === 'warn'
+                                  ? '#fcd34d'
+                                  : 'rgba(134, 239, 172, 0.95)',
+                          }}
+                        >
+                          {bot.name}: {badge.label}
+                          {bot.rankedPoints ? ` ${bot.rankedPoints}` : ''}
+                        </span>
+                      )
+                    })}
+                  </div>
+                ) : null}
+
                 {serverSaveNotice ? (
                   <div
                     className="muted"
                     style={{
                       marginTop: 8,
-                      color: serverSaveNotice.tone === 'bad' ? '#fecaca' : 'rgba(134, 239, 172, 0.95)',
+                      color:
+                        serverSaveNotice.tone === 'bad'
+                          ? '#fecaca'
+                          : serverSaveNotice.tone === 'warn'
+                            ? '#fcd34d'
+                            : 'rgba(134, 239, 172, 0.95)',
                     }}
                   >
                     {serverSaveNotice.text}
