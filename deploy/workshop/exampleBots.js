@@ -430,7 +430,139 @@ IF (ENERGY >= 60 || !POWERUP_EXISTS(ENERGY) || TIMER_DONE(T3)) DO SET_MOVE_TO_BO
 GOTO LOOP
 `,
   },
+
+  bot7: {
+    id: 'bot7',
+    displayName: 'Long-Range Sniper',
+    sourceText: `;@slot1 SNIPER
+;@slot2 SHIELD
+;@slot3 EMPTY
+; bot7 — Long-Range Sniper
+; Loadout: SLOT1=SNIPER, SLOT2=SHIELD
+; Summary: keep distance; SNIPER the LOWEST_HEALTH_BOT (else CLOSEST_BOT); SHIELD against incoming bullets; run for AMMO when the reserve is low.
+
+LABEL LOOP
+
+; --- Ammo discipline: SNIPER costs ammo per shot, keep a reserve ---
+IF (AMMO < 40 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
+
+; --- Pick a victim: wounded first (TARGET_LOWEST_HEALTH also drives movement) ---
+TARGET_LOWEST_HEALTH
+
+; --- Defensive SHIELD burst when a bullet gets dangerous ---
+TARGET_CLOSEST_BULLET
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 40 && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
+IF (!HAS_TARGET_BULLET() || DIST_TO_TARGET_BULLET() > 60) DO SHIELD OFF
+
+; --- Fire the sniper (hitscan, 10-tick cooldown, gated on ammo) ---
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && AMMO >= 50) DO USE_SLOT1 TARGET
+
+; --- Maintain range: back off if enemies crowd in ---
+IF (DIST_TO_CLOSEST_BOT() <= 48) GOTO BACKOFF
+
+WAIT 1
+GOTO LOOP
+
+LABEL BACKOFF
+SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+WAIT 3
+SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+
+LABEL RESUPPLY
+SHIELD OFF
+TARGET_POWERUP AMMO
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(AMMO) || AMMO >= 60) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(AMMO) || AMMO >= 60) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
+
+  bot8: {
+    id: 'bot8',
+    displayName: 'Rocket Barrager',
+    sourceText: `;@slot1 ROCKET
+;@slot2 ARMOR
+;@slot3 EMPTY
+; bot8 — Rocket Barrager
+; Loadout: SLOT1=ROCKET, SLOT2=ARMOR
+; Summary: hunt CLOSEST_BOT under ARMOR; fire ROCKET volleys at mid range (24..90 units) gated by SLOT_READY and an ammo reserve; resupply AMMO when low.
+
+; ARMOR is passive once slotted — no ON/OFF needed, but we keep it explicit for teaching value.
+LABEL LOOP
+
+; --- Choose the hunt target ---
+TARGET_CLOSEST
+
+; --- Resupply check: rockets cost a lot of ammo per shot ---
+IF (AMMO < 30 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
+
+; --- Volley logic: fire only in the sweet spot, respecting the 12-tick cooldown ---
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() >= 24 && DIST_TO_TARGET_BOT() <= 90 && AMMO >= 40) DO USE_SLOT1 TARGET
+
+; --- Close-in bail: don't trade bumps while reloading ---
+IF (DIST_TO_CLOSEST_BOT() <= 20) GOTO BACKOFF
+
+WAIT 1
+GOTO LOOP
+
+LABEL BACKOFF
+SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+WAIT 2
+SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+
+LABEL RESUPPLY
+TARGET_POWERUP AMMO
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(AMMO) || AMMO >= 60) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(AMMO) || AMMO >= 60) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
+
+  bot9: {
+    id: 'bot9',
+    displayName: 'Blink Teleporter',
+    sourceText: `;@slot1 TELEPORT
+;@slot2 SHIELD
+;@slot3 EMPTY
+; bot9 — Blink Teleporter
+; Loadout: SLOT1=TELEPORT, SLOT2=SHIELD
+; Summary: chase CLOSEST_BOT on foot; when ENERGY >= 50 and the target is far, USE_SLOT1 SECTOR_5 to blink to center control; SHIELD on approach; farm ENERGY powerups to refill the jump fuel.
+
+LABEL LOOP
+
+; --- Fuel check first: TELEPORT costs 30 energy per jump ---
+IF (ENERGY < 50 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
+
+; --- Defensive shield while closing distance ---
+TARGET_CLOSEST_BULLET
+IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 40 && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
+IF (!HAS_TARGET_BULLET() || DIST_TO_TARGET_BULLET() > 60) DO SHIELD OFF
+
+; --- Blink: long cooldown (14 ticks), so only jump when it wins a race ---
+IF (DIST_TO_CLOSEST_BOT() >= 80 && ENERGY >= 50 && SLOT_READY(SLOT1)) DO USE_SLOT1 SECTOR_5
+
+; --- Normal pursuit between jumps ---
+SET_MOVE_TO_BOT CLOSEST_BOT
+
+; --- Finish the fight up close with bumps once we've arrived ---
+IF (DIST_TO_CLOSEST_BOT() <= 24) DO SHIELD OFF
+
+WAIT 1
+GOTO LOOP
+
+LABEL REFUEL
+TARGET_POWERUP ENERGY
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 70) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 70) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
 }
 
-export const OPPONENT_EXAMPLE_POOL_IDS = ['bot1', 'bot2', 'bot3', 'bot4', 'bot5', 'bot6']
+export const OPPONENT_EXAMPLE_POOL_IDS = ['bot1', 'bot2', 'bot3', 'bot4', 'bot5', 'bot6', 'bot7', 'bot8', 'bot9']
 export const DEFAULT_OPPONENT_EXAMPLE_IDS = ['bot2', 'bot3', 'bot4']

@@ -89,4 +89,33 @@ describe('built-in example bots', () => {
     expect(src).toContain('TARGET_CLOSEST_BULLET')
     expect(src).toContain('DIST_TO_TARGET_BULLET')
   })
+
+  it('bot7 teaches SNIPER hitscan combat with ammo discipline and shielding', () => {
+    const src = EXAMPLE_BOTS.bot7.sourceText
+    expect(src).toMatch(/;@slot1 SNIPER/)
+    expect(src).toContain('USE_SLOT1 TARGET')
+    expect(src).toContain('TARGET_LOWEST_HEALTH')
+    expect(src).toContain('TARGET_POWERUP AMMO')
+    expect(src).toContain('SHIELD ON')
+    expect(src).toContain('SLOT_READY(SLOT1)')
+  })
+
+  it('bot8 teaches ROCKET volleys gated by range, cooldown, and ammo reserve', () => {
+    const src = EXAMPLE_BOTS.bot8.sourceText
+    expect(src).toMatch(/;@slot1 ROCKET/)
+    expect(src).toMatch(/;@slot2 ARMOR/)
+    expect(src).toContain('USE_SLOT1 TARGET')
+    expect(src).toContain('DIST_TO_TARGET_BOT()')
+    expect(src).toContain('SLOT_READY(SLOT1)')
+    expect(src).toContain('TARGET_POWERUP AMMO')
+  })
+
+  it('bot9 teaches TELEPORT blinks fueled by ENERGY powerups with shield timing', () => {
+    const src = EXAMPLE_BOTS.bot9.sourceText
+    expect(src).toMatch(/;@slot1 TELEPORT/)
+    expect(src).toContain('USE_SLOT1 SECTOR_5')
+    expect(src).toContain('TARGET_POWERUP ENERGY')
+    expect(src).toContain('ENERGY')
+    expect(src).toContain('SHIELD ON')
+  })
 })

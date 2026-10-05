@@ -37,7 +37,7 @@ export function selectDistinctFromPool<T extends string>(seed: number, pool: rea
 }
 
 /**
- * Deterministically selects `count` distinct opponent ids from the example pool (bot1..bot6).
+ * Deterministically selects `count` distinct opponent ids from the example pool (bot1..bot9).
  */
 export function selectOpponents(seed: number, count = 3): ExampleOpponentId[] {
   return selectDistinctFromPool(seed, EXAMPLE_OPPONENT_IDS, count)

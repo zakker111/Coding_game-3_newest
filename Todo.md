@@ -25,19 +25,22 @@ Recently completed (this merge set)
 - Replay contract and deploy Workshop static-contract tests now lock the current 0.2.0 schema/QA surface more explicitly.
 - Workshop match setup now allows `BOT2..BOT4` to be set to `None (inactive)` for client-side local inspection runs while keeping randomize opponent-only.
 
-Next slice
-- Add ranked lifecycle controls so daily runs stay small:
-  - ranked bot status (`active` / `pending` / `dropped`)
-  - active daily cutoff (`rankedActiveLimit`, recommended default: `20`)
-  - dropped bots excluded from future ranked runs
-  - saving a dropped bot marks it `pending` for the next daily run
-  - after daily scoring, top `rankedActiveLimit` bots become/remain `active`; lower-ranked eligible bots become `dropped`
-  - keep this admin-controlled first, then add user-facing resubmit details later
-- Add polished example bots for `SNIPER`, `ROCKET`, and `TELEPORT`.
-- Add a repeatable admin/dev seed flow for demo users and bot concepts.
-- Balance the new module numbers after running daily leagues.
+Recently completed (cont.)
+- Ranked lifecycle controls shipped in `dailyRunService.js`: `rankedStatus` (`active`/`pending`/`dropped`),
+  `rankedActiveLimit` cutoff (default `20`), dropped bots excluded from ranked runs, saving a dropped bot
+  marks it `pending`, and post-scoring promote/drop of the top `rankedActiveLimit` eligible bots.
+- Polished example bots for `SNIPER`, `ROCKET`, and `TELEPORT` shipped as `examples/bot7..bot9.md`,
+  wired into web `exampleBots.ts`, opponents, deploy workshop, and engine compile tests.
+- Repeatable admin/dev seed flow added: `scripts/seed-demo.mjs` creates demo users and clones builtin
+  example bots into each account against a running server.
 
-### Ranked lifecycle plan (next backend/admin slice)
+Next slice
+- User-facing resubmit/ranked-status details in the Workshop UI (currently admin/API-controlled only).
+- Balance the new module numbers after running daily leagues (use `scripts/seed-demo.mjs` to populate).
+- Pre-production security hardening before real hosting: password hashing, session store,
+  remove default admin, durable storage, rate limiting.
+
+### Ranked lifecycle plan (shipped backend/admin slice — kept for reference)
 
 Goal: keep daily ranked runs bounded while still letting users improve and re-upload bots.
 
@@ -147,7 +150,8 @@ Next up
 - [x] Bullet-targeting follow-up: examples and remaining deploy parity UX.
 - [x] Deploy/workshop parity: legacy deploy Workshop mirrors the React replay loadout warnings.
 - [x] Phase 8A: sandbox server runner (inline submissions + deterministic runs + replay retrieval).
-- [ ] Phase 8B: server-backed Workshop simulations.
+- [x] Phase 8B: server-backed Workshop simulations (Workshop server mode + local-mirror parity).
+- [x] Phase 8C: ranked lifecycle (active/pending/dropped, rankedActiveLimit, promote/drop), example bots bot7..bot9 (SNIPER/ROCKET/TELEPORT), and `scripts/seed-demo.mjs` admin/dev seed flow.
 
 ---
 

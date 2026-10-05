@@ -84,14 +84,23 @@ Verification:
 
 ---
 
-## 4) Next slice: Phase 8B server-backed Workshop simulations
+## 4) Recently completed: Phase 8B/8C — server-backed Workshop sims + ranked lifecycle
 
 Why this is next:
 - The client can already run local deterministic matches.
 - The server can already run deterministic sandbox matches and return replay JSON.
 - The next product milestone is proving that the Workshop can use the server runner without replacing the local workflow.
 
-Scope:
+Shipped (8B): Workshop server mode runs the same 4-bot setup through `POST /api/simulations`,
+renders the returned replay in the existing viewer, and surfaces server validation errors;
+the local-mirror mode keeps parity without a live server.
+
+Shipped (8C): Ranked lifecycle in `dailyRunService.js` (`rankedStatus` active/pending/dropped,
+`rankedActiveLimit` cutoff default 20, dropped bots excluded, save-marks-pending, post-scoring
+promote/drop), example bots `examples/bot7..bot9.md` (SNIPER/ROCKET/TELEPORT) wired into web
+examples/opponents/deploy workshop + engine compile tests, and `scripts/seed-demo.mjs` admin/dev seed flow.
+
+Original scope (kept for reference):
 - Add a Workshop control/path for server-backed simulations while keeping the current local run path.
 - Send the current bot source snapshots and explicit loadouts to `POST /api/simulations`.
 - Fetch the returned replay from `GET /api/matches/:matchId/replay`.
@@ -131,9 +140,11 @@ Manual checks:
 
 ---
 
-## 6) After Phase 8B lands
+## 6) Next slice (after Phase 8B/8C landed)
 
-- Harden persistent submissions/versioning beyond the current server baseline.
-- Replace the in-memory match store with durable storage.
-- Add rate limiting and production-grade auth/session hardening.
-- Add daily scheduling after the sandbox path is stable.
+1. Balance pass for SNIPER/ROCKET/TELEPORT module costs/damage/cooldowns — seed demo users with
+   `node scripts/seed-demo.mjs`, trigger daily runs, and tune numbers from league outcomes.
+2. User-facing ranked-status/resubmit details in the Workshop UI (lifecycle is currently admin/API-only).
+3. Pre-production security hardening: password hashing, real session store, remove default admin
+   credentials, durable replay/match storage, rate limiting.
+4. Daily-run scheduling automation (runs remain admin-triggered today).
