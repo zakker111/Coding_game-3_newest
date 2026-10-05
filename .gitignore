@@ -3,3 +3,4 @@ dist/
 .nowt/
 *.log
 .DS_Store
+*.tsbuildinfo
