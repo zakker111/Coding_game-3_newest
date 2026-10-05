@@ -4,44 +4,50 @@ on:
   push:
     branches: [main]
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+# Serialize with the CI workflow and prevent concurrent Pages publishes
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+          node-version: '20'
+          cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build the game
         run: pnpm build
 
-      - name: Copy build to docs folder
-        run: |
-          rm -rf docs
-          mkdir -p docs
-          cp -r apps/web/dist/* docs/
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
 
-      - name: Commit and push
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add docs/
-          if [ -n "$(git status --porcelain)" ]; then
-            git commit -m "Build: Update game files [skip ci]"
-            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
-          fi
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

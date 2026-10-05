@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Golden fixtures (strict)
+        run: pnpm golden:check:ci
+
+      - name: Run tests (web + server + packages)
+        run: pnpm test:all
+
+      - name: Build all packages
+        run: pnpm build:all
+
+      - name: Verify deploy folder is in sync
+        run: pnpm check:deploy
