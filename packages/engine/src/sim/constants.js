@@ -51,6 +51,11 @@ export const SNIPER_AMMO_COST = 4
 export const SNIPER_COOLDOWN_TICKS = 10
 export const ROCKET_AMMO_COST = 8
 export const ROCKET_COOLDOWN_TICKS = 12
+export const ROCKET_SPEED_UNITS_PER_TICK = 3
+export const ROCKET_FUSE_TICKS = 24
+export const ROCKET_TTL_TICKS = 60
+export const ROCKET_DAMAGE_CENTER = 35
+export const ROCKET_DAMAGE_ADJACENT = 15
 export const TELEPORT_ENERGY_COST = 30
 export const TELEPORT_COOLDOWN_TICKS = 14
 

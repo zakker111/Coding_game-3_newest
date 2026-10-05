@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nowt</title>
+
+    <!--
+      SPA deep-link support for static hosting.
+
+      This file is intended to be served by the host when a path doesn't map to a real file
+      (e.g. /workshop). We then redirect back to / with the original path encoded in query params.
+
+      On /, index.html will restore the intended path via history.replaceState.
+    -->
+    <script>
+      ;(() => {
+        const path = window.location.pathname
+        const search = window.location.search
+        const hash = window.location.hash
+
+        // Strip leading slash from the query string.
+        const q = search.startsWith('?') ? search.slice(1) : search
+        const segments = path.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean)
+        const prefix = '../'.repeat(Math.max(1, segments.length - 1))
+
+        const target = `${prefix}?p=${encodeURIComponent(path)}&q=${encodeURIComponent(q)}${hash}`
+        window.location.replace(target)
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>
