@@ -1,10 +1,1 @@
-# Dependencies
-node_modules/
-
-# Build artifacts
-dist/
 *.tsbuildinfo
-
-# Logs and temp files
-*.log
-*_tmp_*
