@@ -120,11 +120,16 @@ Shipped:
 - Bot helper instructions/expressions for powerups, low resources, movement, and targeting.
 - `SNIPER`, `ROCKET`, and `TELEPORT` modules.
 
+Shipped:
+- Ranked lifecycle in `dailyRunService.js`: `rankedStatus` (active/pending/dropped), `rankedActiveLimit` cutoff (default 20), dropped bots excluded from ranked runs, saving a dropped bot marks it pending, post-scoring promote/drop.
+- Polished built-in example bots using the new modules: `examples/bot7.md` (SNIPER), `bot8.md` (ROCKET), `bot9.md` (TELEPORT), wired into web examples, opponents, deploy workshop, and engine compile tests.
+- Repeatable admin/dev seed flow: `scripts/seed-demo.mjs`.
+
 Next:
-- Balance pass for new module costs/damage/cooldowns.
-- Add polished built-in example bots using the new modules.
+- Balance pass for new module costs/damage/cooldowns (run daily leagues via the seed flow first).
+- User-facing ranked-status/resubmit details in the Workshop UI.
 
 Still deferred inside Phase 8:
 - Production-grade auth/session hardening + rate limiting.
 - Durable replay/match storage.
-- Daily run scheduling and standings.
+- Daily run scheduling automation (runs remain admin-triggered; standings/lifecycle shipped).

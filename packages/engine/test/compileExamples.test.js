@@ -201,6 +201,25 @@ test('compileBotSource compiles example bots (bot0..bot6)', () => {
   }
 })
 
+test('compileBotSource compiles the new-module example bots (bot7 SNIPER, bot8 ROCKET, bot9 TELEPORT)', () => {
+  for (const name of ['bot7', 'bot8', 'bot9']) {
+    const filename = path.join(repoRoot, 'examples', `${name}.md`)
+    const md = readFileSync(filename, 'utf8')
+    const sourceText = extractTextFence(md)
+
+    const { executable } = compileAndAssertOk(name, sourceText)
+
+    // USE_SLOT instructions can sit inside IF_DO actions, so walk both shapes.
+    const usesSlot1 = executable.some((instr) => {
+      const candidates = [instr, instr?.instruction]
+      return candidates.some(
+        (c) => c && typeof c === 'object' && (c.kind === 'USE_SLOT' || c.op === 'USE_SLOT1') && (c.slot === 1 || c.target !== undefined)
+      )
+    })
+    assert.ok(usesSlot1, `expected ${name} to exercise its module slot via USE_SLOT1`)
+  }
+})
+
 test('compileBotSource still normalizes legacy aliases for compatibility', () => {
   const { executable } = compileAndAssertOk('alias normalization', 'FIRE_SLOT1 NEAREST_BOT\n')
 

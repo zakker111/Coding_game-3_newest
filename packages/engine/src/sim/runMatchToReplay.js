@@ -16,6 +16,9 @@ import {
   SNIPER_COOLDOWN_TICKS,
   ROCKET_AMMO_COST,
   ROCKET_COOLDOWN_TICKS,
+  ROCKET_SPEED_UNITS_PER_TICK,
+  ROCKET_FUSE_TICKS,
+  ROCKET_TTL_TICKS,
   TELEPORT_ENERGY_COST,
   TELEPORT_COOLDOWN_TICKS,
   GRENADE_AMMO_COST,
@@ -402,6 +405,9 @@ export function runMatchToReplay(params) {
               ammoCost: ROCKET_AMMO_COST,
               cause: 'FIRE_ROCKET',
               eventType: 'ROCKET_SPAWN',
+              speed: ROCKET_SPEED_UNITS_PER_TICK,
+              fuse: ROCKET_FUSE_TICKS,
+              ttl: ROCKET_TTL_TICKS,
             })
 
             if (!r.ok) {
@@ -1739,7 +1745,12 @@ function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGren
   const targetBot = resolveBotTargetToken(bot, targetToken, bots)
   if (!targetBot || !targetBot.alive) return { ok: false, reason: 'INVALID_TARGET' }
 
-  const grenade = createGrenade(bot, targetBot)
+  const grenade = createGrenade(bot, targetBot, {
+    moduleId,
+    ...(options.speed != null ? { speed: options.speed } : {}),
+    ...(options.fuse != null ? { fuse: options.fuse } : {}),
+    ...(options.ttl != null ? { ttl: options.ttl } : {}),
+  })
   const grenadeId = `G${nextGrenadeId}`
   grenade.grenadeId = grenadeId
 

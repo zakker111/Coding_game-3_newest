@@ -2,6 +2,8 @@ import { RULESET_VERSION } from '@coding-game/ruleset'
 
 const DEFAULT_TICK_CAP = 600
 const DEFAULT_MAX_ROUNDS = 1
+const DEFAULT_RANKED_ACTIVE_LIMIT = 20
+const MAX_RANKED_ACTIVE_LIMIT = 100
 const SLOT_IDS = ['BOT1', 'BOT2', 'BOT3', 'BOT4']
 
 function createHttpError(statusCode, code, message, details) {
@@ -40,6 +42,45 @@ function validatePositiveInt(value, fallback, field) {
     })
   }
   return value
+}
+
+function validateRankedActiveLimit(value) {
+  const limit = validatePositiveInt(value, DEFAULT_RANKED_ACTIVE_LIMIT, 'rankedActiveLimit')
+  if (limit > MAX_RANKED_ACTIVE_LIMIT) {
+    throw createHttpError(400, 'INVALID_REQUEST', `rankedActiveLimit must be <= ${MAX_RANKED_ACTIVE_LIMIT}`, {
+      field: 'rankedActiveLimit',
+      rankedActiveLimitMax: MAX_RANKED_ACTIVE_LIMIT,
+      actual: limit,
+    })
+  }
+  return limit
+}
+
+function rankedFields(bot) {
+  const source = bot && typeof bot === 'object' ? bot : {}
+  return {
+    rankedEnabled: source.rankedEnabled !== false,
+    rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
+    rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
+    lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,
+    lastSubmittedAt: typeof source.lastSubmittedAt === 'string' ? source.lastSubmittedAt : null,
+    droppedAt: typeof source.droppedAt === 'string' ? source.droppedAt : null,
+    dropReason: typeof source.dropReason === 'string' ? source.dropReason : null,
+  }
+}
+
+// Deterministic eligibility selection per Todo.md "Daily run size control":
+// pending bots first, then active bots by previous rankedPoints descending,
+// then botId ascending; take the first rankedActiveLimit.
+function selectRankedParticipants(eligibleBots, rankedActiveLimit) {
+  const selected = [...eligibleBots].sort((a, b) => {
+    const aPending = a.rankedStatus === 'pending' ? 0 : 1
+    const bPending = b.rankedStatus === 'pending' ? 0 : 1
+    if (aPending !== bPending) return aPending - bPending
+    if (b.rankedPoints !== a.rankedPoints) return b.rankedPoints - a.rankedPoints
+    return a.botId.localeCompare(b.botId)
+  })
+  return selected.slice(0, rankedActiveLimit)
 }
 
 function hashString(value) {
@@ -207,9 +248,14 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         })
       }
       const maxRounds = validatePositiveInt(input.maxRounds, DEFAULT_MAX_ROUNDS, 'maxRounds')
-      const eligibleBots = deterministicShuffle(
-        botStore.listBots().filter((bot) => bot.ownerUsername !== 'builtin'),
-        runSeed
+      const rankedActiveLimit = validateRankedActiveLimit(input.rankedActiveLimit)
+      const eligibleBots = selectRankedParticipants(
+        botStore
+          .listBots()
+          .filter((bot) => bot.ownerUsername !== 'builtin')
+          .map((bot) => ({ ...bot, ...rankedFields(bot) }))
+          .filter((bot) => bot.rankedEnabled && (bot.rankedStatus === 'active' || bot.rankedStatus === 'pending')),
+        rankedActiveLimit
       )
 
       if (eligibleBots.length < SLOT_IDS.length) {
@@ -226,6 +272,7 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
           rulesetVersion: RULESET_VERSION,
           maxRounds,
           tickCap,
+          rankedActiveLimit,
         })
 
         store.markRunning(run.runId)
@@ -270,7 +317,47 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         }
       }
 
-      return typeof store.transact === 'function' ? store.transact(runDaily) : runDaily()
+      const applyRankedLifecycle = (completedRun) => {
+        if (typeof botStore.updateRankedStatus !== 'function') return completedRun
+
+        const droppedAt = new Date().toISOString()
+        const leaderboardByBotId = new Map(
+          (completedRun.summary?.leaderboard ?? []).map((entry) => [entry.botId, entry])
+        )
+
+        eligibleBots.forEach((bot, index) => {
+          const identity = parseBotId(bot.botId)
+          if (!identity) return
+          const entry = leaderboardByBotId.get(bot.botId)
+          const rankedPoints = entry?.points ?? 0
+
+          if (index < rankedActiveLimit) {
+            botStore.updateRankedStatus(identity.ownerUsername, identity.name, {
+              rankedEnabled: true,
+              rankedStatus: 'active',
+              rankedPoints,
+              lastRankedRunId: completedRun.runId,
+              ...(bot.rankedStatus === 'dropped'
+                ? { droppedAt: null, dropReason: null }
+                : {}),
+            })
+            return
+          }
+
+          botStore.updateRankedStatus(identity.ownerUsername, identity.name, {
+            rankedEnabled: true,
+            rankedStatus: 'dropped',
+            rankedPoints,
+            lastRankedRunId: completedRun.runId,
+            droppedAt,
+            dropReason: 'below_daily_cut',
+          })
+        })
+
+        return completedRun
+      }
+
+      return typeof store.transact === 'function' ? store.transact(() => applyRankedLifecycle(runDaily())) : applyRankedLifecycle(runDaily())
     },
   }
 }

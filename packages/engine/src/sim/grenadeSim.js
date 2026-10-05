@@ -7,15 +7,26 @@ import {
   GRENADE_FUSE_TICKS,
   GRENADE_SPEED_UNITS_PER_TICK,
   GRENADE_TTL_TICKS,
+  ROCKET_DAMAGE_ADJACENT,
+  ROCKET_DAMAGE_CENTER,
+  ROCKET_FUSE_TICKS,
+  ROCKET_SPEED_UNITS_PER_TICK,
+  ROCKET_TTL_TICKS,
   SLOT_IDS,
 } from './constants.js'
 import { clonePos, normalizeToLen, normalizeToMaxAxis, sectorFromPos } from './arenaMath.js'
 
-export function createGrenade(shooter, target) {
+export function createGrenade(shooter, target, options = {}) {
+  const moduleId = options.moduleId ?? 'GRENADE'
+  const isRocket = moduleId === 'ROCKET'
+  const speed = options.speed ?? (isRocket ? ROCKET_SPEED_UNITS_PER_TICK : GRENADE_SPEED_UNITS_PER_TICK)
+  const fuse = options.fuse ?? (isRocket ? ROCKET_FUSE_TICKS : GRENADE_FUSE_TICKS)
+  const ttl = options.ttl ?? (isRocket ? ROCKET_TTL_TICKS : GRENADE_TTL_TICKS)
+
   const dx = target.pos.x - shooter.pos.x
   const dy = target.pos.y - shooter.pos.y
 
-  const vel = normalizeToLen(dx, dy, GRENADE_SPEED_UNITS_PER_TICK)
+  const vel = normalizeToLen(dx, dy, speed)
   const muzzleOffset = normalizeToMaxAxis(dx, dy, BOT_HALF_SIZE + 2)
 
   const spawn = {
@@ -25,14 +36,15 @@ export function createGrenade(shooter, target) {
 
   return {
     grenadeId: '',
+    moduleId,
     ownerBotId: shooter.botId,
     pos: {
       x: Math.max(ARENA_MIN, Math.min(ARENA_MAX, spawn.x)),
       y: Math.max(ARENA_MIN, Math.min(ARENA_MAX, spawn.y)),
     },
     vel,
-    fuse: GRENADE_FUSE_TICKS,
-    ttl: GRENADE_TTL_TICKS,
+    fuse,
+    ttl,
   }
 }
 
@@ -89,6 +101,9 @@ export function stepGrenades(grenades, bots, tickEvents) {
 }
 
 function explodeGrenade(grenade, bots, tickEvents) {
+  const isRocket = grenade.moduleId === 'ROCKET'
+  const damageCenter = isRocket ? ROCKET_DAMAGE_CENTER : GRENADE_DAMAGE_CENTER
+  const damageAdjacent = isRocket ? ROCKET_DAMAGE_ADJACENT : GRENADE_DAMAGE_ADJACENT
   const centerSector = sectorFromPos(grenade.pos)
 
   tickEvents.push({
@@ -97,6 +112,7 @@ function explodeGrenade(grenade, bots, tickEvents) {
     ownerBotId: grenade.ownerBotId,
     pos: clonePos(grenade.pos),
     sector: centerSector,
+    ...(isRocket ? { moduleId: 'ROCKET' } : {}),
   })
 
   for (const botId of SLOT_IDS) {
@@ -106,8 +122,8 @@ function explodeGrenade(grenade, bots, tickEvents) {
 
     const victimSector = sectorFromPos(bot.pos)
     let damage = 0
-    if (victimSector === centerSector) damage = GRENADE_DAMAGE_CENTER
-    else if (isAdjSector(centerSector, victimSector)) damage = GRENADE_DAMAGE_ADJACENT
+    if (victimSector === centerSector) damage = damageCenter
+    else if (isAdjSector(centerSector, victimSector)) damage = damageAdjacent
     if (damage <= 0) continue
 
     if (bot.armorEquipped) damage = damage - Math.floor(damage / 3)
@@ -119,10 +135,10 @@ function explodeGrenade(grenade, bots, tickEvents) {
       type: 'DAMAGE',
       victimBotId: bot.botId,
       amount: damage,
-      source: 'GRENADE',
+      source: isRocket ? 'ROCKET' : 'GRENADE',
       sourceBotId: grenade.ownerBotId,
       kind: 'EXPLOSION',
-      sourceRef: { type: 'GRENADE', id: grenade.grenadeId },
+      sourceRef: { type: isRocket ? 'ROCKET' : 'GRENADE', id: grenade.grenadeId },
     })
 
     if (bot.hp <= 0 && bot.alive) {
