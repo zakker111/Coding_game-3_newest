@@ -207,10 +207,16 @@ async function waitForQaReplay(page, timeout = 30_000) {
 }
 
 async function runWorkshopParityQa({ deployBaseUrl, appBaseUrl, headless }) {
-  const browser = await launchBrowser(headless)
-  const context = await browser.newContext()
-  const deployPage = await context.newPage()
-  const appPage = await context.newPage()
+  // Use two isolated browser contexts so neither surface can inherit
+  // localStorage state (e.g. opponent nonce/assignments written by prior QA
+  // steps such as "Randomize opponents") from the other or from earlier runs.
+  // This keeps the baseline replay comparison hermetic and deterministic.
+  const deployBrowser = await launchBrowser(headless)
+  const appBrowser = await launchBrowser(headless)
+  const deployContext = await deployBrowser.newContext()
+  const appContext = await appBrowser.newContext()
+  const deployPage = await deployContext.newPage()
+  const appPage = await appContext.newPage()
 
   const failures = []
   const assert = (cond, msg) => {
@@ -228,7 +234,11 @@ async function runWorkshopParityQa({ deployBaseUrl, appBaseUrl, headless }) {
   }, null, { timeout: 30_000 })
   const deployReplay = await waitForQaReplay(deployPage)
 
+  // Fresh context guarantees empty localStorage; clear defensively in case a
+  // future change ever shares storage, then load the factory-default baseline.
   await appPage.goto(`${appBaseUrl}/workshop/`, { waitUntil: 'domcontentloaded' })
+  await appPage.evaluate(() => window.localStorage.clear())
+  await appPage.reload({ waitUntil: 'domcontentloaded' })
   await appPage.getByRole('button', { name: 'Run / Preview' }).click()
   await appPage.getByRole('button', { name: 'Run / Preview' }).waitFor({ state: 'visible', timeout: 30_000 })
   const appReplay = await waitForQaReplay(appPage)
@@ -243,7 +253,8 @@ async function runWorkshopParityQa({ deployBaseUrl, appBaseUrl, headless }) {
     `Expected deploy/app baseline replay parity. deploy=${deployHash} app=${appHash}`,
   )
 
-  await browser.close()
+  await deployBrowser.close()
+  await appBrowser.close()
 
   return {
     failures,
@@ -449,18 +460,40 @@ async function runWorkshopQa({ baseUrl, headless }) {
 
   // (4) Tick events filter + raw output (basic smoke)
   await page.waitForSelector('#tickEventsFilterInput')
-  await page.waitForSelector('#tickEventsFilterStatus')
+  // NOTE: #tickEventsFilterStatus is hidden until a non-empty filter query is
+  // applied (see deploy/workshop/workshop.js), so never wait for visibility
+  // before typing the query. Wait for it only after the filter is set.
+  await page.waitForSelector('#tickEventsList', { state: 'attached' })
+
+  // The tick-events list renders replay.events[currentTick], and tick 0 has no
+  // events in a fresh replay. Seek to a tick that actually contains BOT_EXEC
+  // events (via the scrub input, which dispatches updateInspector), then show
+  // all events so we reliably have BOT_EXEC entries for other bots.
+  await page.evaluate(() => {
+    const replay = globalThis.__NOWT_WORKSHOP_QA__?.getReplay?.()
+    if (!replay) return
+    const idx = (replay.events || []).findIndex((evs) => (evs || []).some((e) => e?.type === 'BOT_EXEC'))
+    if (idx >= 0) {
+      const scrub = document.getElementById('scrub')
+      if (scrub) {
+        scrub.value = String(idx)
+        scrub.dispatchEvent(new Event('input', { bubbles: true }))
+        scrub.dispatchEvent(new Event('change', { bubbles: true }))
+      }
+    }
+  })
 
   // Show all events so we reliably have BOT_EXEC entries for other bots.
   await page.click('#tickEventsAllBtn')
   await page.waitForFunction(() => {
     const t = document.getElementById('tickEventsList')?.textContent || ''
-    return t.length > 0
-  })
+    return t.length > 0 && !t.includes('(no events)')
+  }, null, { timeout: 30_000 })
 
   const filterInput = page.locator('#tickEventsFilterInput')
 
   await filterInput.fill('BOT_EXEC')
+  await page.waitForSelector('#tickEventsFilterStatus', { state: 'visible' })
   await page.waitForFunction(() => {
     const t = document.getElementById('tickEventsList')?.textContent || ''
     return t.includes('BOT_EXEC')

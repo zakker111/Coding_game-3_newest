@@ -45,6 +45,44 @@ export type ServerBotListResponse = {
   bots: ServerBotSummary[]
 }
 
+export type RankedStatusBadge = {
+  label: string
+  tone: 'good' | 'warn' | 'bad'
+  detail: string
+}
+
+const DROP_REASON_LABELS: Record<string, string> = {
+  below_daily_cut: 'below the daily cutoff',
+}
+
+export function describeRankedStatus(bot: Pick<ServerBotSummary, 'rankedStatus' | 'dropReason'>): RankedStatusBadge {
+  if (bot.rankedStatus === 'pending') {
+    return {
+      label: 'Pending',
+      tone: 'warn',
+      detail: 'Resubmitted — joins the next daily ranked run.',
+    }
+  }
+  if (bot.rankedStatus === 'dropped') {
+    // Drop reasons arrive in snake_case; keep the raw token visible so users can
+    // match UI text against API responses, while capitalizing the human label.
+    const raw = bot.dropReason ?? ''
+    const known = DROP_REASON_LABELS[raw]
+    // Known reasons read best with a lowercase lead-in ("Dropped below the daily cutoff").
+    const sentence = known
+      ? `Dropped ${known}`
+      : raw
+        ? `Dropped — ${raw.replace(/_/g, ' ')} (${raw})`
+        : 'Dropped from the ranked ladder'
+    return {
+      label: 'Dropped',
+      tone: 'bad',
+      detail: `${sentence} — save an update to requeue as pending.`,
+    }
+  }
+  return { label: 'Active', tone: 'good', detail: 'Playing in daily ranked runs.' }
+}
+
 export type ServerBotSourceResponse = {
   botId: string
   sourceText: string

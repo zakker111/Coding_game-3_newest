@@ -42,6 +42,25 @@ describe('runMatchLocal (smoke)', () => {
     expect(anyBulletSpawn).toBe(false)
   })
 
+  it('uses the RAW seed so replays are reproducible and match the deploy engine (parity)', () => {
+    const bots = [
+      { slotId: 'BOT1' as const, sourceText: EXAMPLE_BOTS.bot0.sourceText, loadout: deriveLoadoutForSlot('BOT1', EXAMPLE_BOTS.bot0.sourceText) },
+      { slotId: 'BOT2' as const, sourceText: EXAMPLE_BOTS.bot2.sourceText, loadout: deriveLoadoutForSlot('BOT2', EXAMPLE_BOTS.bot2.sourceText) },
+      { slotId: 'BOT3' as const, sourceText: EXAMPLE_BOTS.bot3.sourceText, loadout: deriveLoadoutForSlot('BOT3', EXAMPLE_BOTS.bot3.sourceText) },
+      { slotId: 'BOT4' as const, sourceText: EXAMPLE_BOTS.bot4.sourceText, loadout: deriveLoadoutForSlot('BOT4', EXAMPLE_BOTS.bot4.sourceText) },
+    ]
+
+    const replay = runMatchLocal(12345, 50, bots)
+
+    // Regression guard: previously mixSeed() hashed bot sources into the seed, so
+    // replay.matchSeed !== user seed and client vs deploy replays diverged.
+    expect(replay.matchSeed).toBe(12345)
+
+    // Deterministic: same inputs -> byte-identical replays.
+    const again = runMatchLocal(12345, 50, bots)
+    expect(JSON.stringify(again)).toBe(JSON.stringify(replay))
+  })
+
   it('starts inactive slots dead for Workshop-only none opponents', () => {
     const emptyLoadout: [null, null, null] = [null, null, null]
 
