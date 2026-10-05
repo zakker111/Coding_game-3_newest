@@ -66,21 +66,32 @@ async function main() {
     const username = `demo${i}`
     const cookie = await registerLogin(username, DEMO_PASSWORD)
 
-    let saved = 0
+    // Users are capped at the starter-bot slots (bot1..bot3); overwrite those
+    // with distinct builtin concepts so seeded accounts differ across leagues.
+    const userSlots = ['bot1', 'bot2', 'bot3']
+    const sourceByName = new Map()
     for (const name of builtinNames) {
       const { json: source } = await request(`/api/bots/builtin/${encodeURIComponent(name)}/source`, { cookie })
-      await request(`/api/bots/${username}/${encodeURIComponent(name)}`, {
+      sourceByName.set(name, source)
+    }
+
+    let saved = 0
+    for (let i2 = 0; i2 < userSlots.length; i2++) {
+      const slot = userSlots[i2]
+      const name = builtinNames[(i2 * 3 + (i - 1)) % builtinNames.length]
+      const source = sourceByName.get(name)
+      await request(`/api/bots/${username}/${slot}`, {
         method: 'PUT',
         cookie,
         body: {
           sourceText: source.sourceText,
           loadout: source.loadout,
-          saveMessage: 'seeded from builtin',
+          saveMessage: `seeded from builtin ${name}`,
         },
       })
       saved += 1
     }
-    console.log(`Seeded @${username} with ${saved} bots (password: ${DEMO_PASSWORD})`)
+    console.log(`Seeded @${username} with ${saved} bots from builtin concepts (password: ${DEMO_PASSWORD})`)
   }
 
   console.log('Done.')

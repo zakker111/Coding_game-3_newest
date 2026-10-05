@@ -1,24 +1,5 @@
-# Dependencies
 node_modules/
-
-# Build output (CI regenerates)
 dist/
-apps/web/dist/
-docs/
-
-# Local data / caches
-*.db
-*.sqlite
-.data/
-.cache/
-.eslintcache
-
-# Environment & secrets
-.env
-.env.*
-!.env.example
-
-# OS / editor
-.DS_Store
-Thumbs.db
+.nowt/
 *.log
+.DS_Store
