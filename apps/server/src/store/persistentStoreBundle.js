@@ -161,12 +161,13 @@ export function createPersistentStoreBundle({ filePath }) {
       return cloneRecord(state.users.find((user) => user.id === userId) ?? null)
     },
 
-    createSession({ userId }) {
+    createSession({ userId, expiresAt }) {
       const session = {
         sessionId: randomBytes(24).toString('hex'),
         userId,
         createdAt: new Date().toISOString(),
       }
+      if (typeof expiresAt === 'string') session.expiresAt = expiresAt
       state.sessions.push(session)
       persist()
       return cloneRecord(session)
@@ -348,7 +349,9 @@ export function createPersistentStoreBundle({ filePath }) {
       }
       match.status = 'complete'
       match.result = payload.result
-      match.replay = payload.replay
+      if (typeof payload.replay !== 'undefined') {
+        match.replay = payload.replay
+      }
       match.updatedAt = new Date().toISOString()
       persist()
       return cloneRecord(match)
@@ -372,7 +375,8 @@ export function createPersistentStoreBundle({ filePath }) {
 
     getReplay(matchId) {
       const match = state.matches.find((entry) => entry.matchId === matchId)
-      return cloneRecord(match?.replay ?? null)
+      if (!match || match.replay == null) return null
+      return cloneRecord(match.replay)
     },
 
     listMatches({ dailyRunId, kind } = {}) {

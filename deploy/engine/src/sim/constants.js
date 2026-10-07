@@ -47,8 +47,12 @@ export const GRENADE_DAMAGE_ADJACENT = 10
 export const GRENADE_AMMO_COST = 6
 export const GRENADE_COOLDOWN_TICKS = 8
 export const SNIPER_DAMAGE = 25
-export const SNIPER_AMMO_COST = 4
-export const SNIPER_COOLDOWN_TICKS = 10
+// Raised from cost 4 / cooldown 10: at the old values a maxed AMMO bot could
+// snipe every 6 ticks (~208 dmg/240-tick match), out-sustaining BULLET and
+// ROCKET. Cost 6 + cooldown 12 caps a full-ammo burst at ~16 shots and makes
+// ammo pickups matter for the sniper build.
+export const SNIPER_AMMO_COST = 6
+export const SNIPER_COOLDOWN_TICKS = 12
 export const ROCKET_AMMO_COST = 8
 export const ROCKET_COOLDOWN_TICKS = 12
 export const ROCKET_SPEED_UNITS_PER_TICK = 3

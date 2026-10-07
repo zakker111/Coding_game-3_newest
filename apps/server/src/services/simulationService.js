@@ -229,9 +229,25 @@ export function createSimulationService({
 
         const result = summarizeResult(replay)
 
+        // Daily matches keep a trimmed replay record (no per-tick state/events)
+        // so summaries and leaderboard data survive rebuilds without storing
+        // full frame-by-frame replays for every daily match.
+        const storedReplay =
+          meta.persistReplay === false
+            ? {
+                schemaVersion: replay.schemaVersion,
+                seed: replay.seed,
+                tickCap: replay.tickCap,
+                mapSeed: replay.mapSeed,
+                bots: replay.bots,
+                events: [],
+                state: [replay.state[replay.state.length - 1]],
+              }
+            : replay
+
         return store.markComplete(match.matchId, {
           result,
-          replay: meta.persistReplay === false ? null : replay,
+          replay: storedReplay,
         })
       } catch (error) {
         store.markFailed(match.matchId, {

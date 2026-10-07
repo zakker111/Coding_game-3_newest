@@ -83,14 +83,35 @@ function toSessionUser(user) {
   }
 }
 
-export function createAuthService({ store } = {}) {
+export function createAuthService({ store, config = {} } = {}) {
   if (!store) {
     throw new Error('createAuthService requires a store')
   }
 
+  const sessionTtlMs = Number.isFinite(config.sessionTtlMs) ? config.sessionTtlMs : null
+  const requireStrongAdminPassword = config.requireStrongAdminPassword === true
+  const secureCookie = config.secureCookies === true || process.env.NODE_ENV === 'production'
+  const cookieFlags = `Path=/; HttpOnly; SameSite=Lax${secureCookie ? '; Secure' : ''}`
+
   return {
     ensureDefaultAdmin() {
-      if (store.getUserByUsername(DEFAULT_ADMIN_USERNAME)) return null
+      const existing = store.getUserByUsername(DEFAULT_ADMIN_USERNAME)
+      if (existing) {
+        if (requireStrongAdminPassword && verifyPassword(DEFAULT_ADMIN_PASSWORD, existing.passwordHash)) {
+          throw new Error(
+            'Refusing to start in production with the default admin/admin credentials. ' +
+              'Rotate the admin password or set NOWT_ALLOW_DEFAULT_ADMIN=1 for preview deployments.'
+          )
+        }
+        return null
+      }
+
+      if (requireStrongAdminPassword) {
+        throw new Error(
+          'Refusing to auto-create the default admin account in production. ' +
+            'Create an admin out-of-band or set NOWT_ALLOW_DEFAULT_ADMIN=1 for preview deployments.'
+        )
+      }
 
       return toSessionUser(
         store.createUser({
@@ -107,6 +128,11 @@ export function createAuthService({ store } = {}) {
 
       const session = store.getSession(sessionId)
       if (!session) return null
+
+      if (typeof session.expiresAt === 'string' && Date.parse(session.expiresAt) <= Date.now()) {
+        store.deleteSession(sessionId)
+        return null
+      }
 
       const user = store.getUserById(session.userId)
       return user ? toSessionUser(user) : null
@@ -127,6 +153,7 @@ export function createAuthService({ store } = {}) {
       })
       const session = store.createSession({
         userId: user.id,
+        expiresAt: sessionTtlMs ? new Date(Date.now() + sessionTtlMs).toISOString() : undefined,
       })
 
       return {
@@ -145,6 +172,7 @@ export function createAuthService({ store } = {}) {
 
       const session = store.createSession({
         userId: user.id,
+        expiresAt: sessionTtlMs ? new Date(Date.now() + sessionTtlMs).toISOString() : undefined,
       })
 
       return {
@@ -162,17 +190,11 @@ export function createAuthService({ store } = {}) {
     },
 
     setSessionCookie(reply, sessionId) {
-      reply.header(
-        'set-cookie',
-        `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; HttpOnly; SameSite=Lax`
-      )
+      reply.header('set-cookie', `${SESSION_COOKIE_NAME}=${sessionId}; ${cookieFlags}`)
     },
 
     clearSessionCookie(reply) {
-      reply.header(
-        'set-cookie',
-        `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`
-      )
+      reply.header('set-cookie', `${SESSION_COOKIE_NAME}=; ${cookieFlags}; Max-Age=0`)
     },
   }
 }
