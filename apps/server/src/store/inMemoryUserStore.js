@@ -33,12 +33,13 @@ export function createInMemoryUserStore() {
       return cloneRecord(usersById.get(userId) ?? null)
     },
 
-    createSession({ userId }) {
+    createSession({ userId, expiresAt }) {
       const session = {
         sessionId: randomBytes(24).toString('hex'),
         userId,
         createdAt: new Date().toISOString(),
       }
+      if (typeof expiresAt === 'string') session.expiresAt = expiresAt
       sessions.set(session.sessionId, session)
       return cloneRecord(session)
     },

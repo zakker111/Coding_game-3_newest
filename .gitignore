@@ -1,1 +1,12 @@
+# Dependencies
+node_modules/
+
+# Build artifacts and outputs
+dist/
 *.tsbuildinfo
+
+# Logs
+*.log
+
+# Runtime state (server data)
+.nowt/

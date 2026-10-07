@@ -3,6 +3,7 @@ const DEFAULT_MAX_SOURCE_CHARS = 12000
 const DEFAULT_MAX_SOURCE_LINES = 400
 const DEFAULT_BODY_LIMIT = 262144
 const DEFAULT_DATA_FILE = '.nowt/server-state.json'
+const DEFAULT_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 
 function parseIntEnv(value, fallback, name) {
   if (value == null || value === '') return fallback
@@ -30,6 +31,8 @@ export function getServerConfig(env = process.env) {
     ),
     bodyLimit: parseIntEnv(env.NOWT_SERVER_BODY_LIMIT, DEFAULT_BODY_LIMIT, 'NOWT_SERVER_BODY_LIMIT'),
     dataFilePath: env.NOWT_SERVER_DATA_FILE || DEFAULT_DATA_FILE,
+    sessionTtlMs: parseIntEnv(env.NOWT_SESSION_TTL_MS, DEFAULT_SESSION_TTL_MS, 'NOWT_SESSION_TTL_MS'),
+    requireStrongAdminPassword: env.NODE_ENV === 'production' && env.NOWT_ALLOW_DEFAULT_ADMIN !== '1',
   }
 
   return Object.freeze(config)

@@ -109,7 +109,7 @@ Important:
 - The engine does **not** read `;@slot*` header directives; those are UI/serialization metadata only.
 
 Recognized module ids:
-- `BULLET | SAW | SHIELD | ARMOR | GRENADE | MINE | REPAIR_DRONE`
+- `BULLET | SAW | SHIELD | ARMOR | GRENADE | MINE | REPAIR_DRONE | SNIPER | ROCKET | TELEPORT`
 
 Implementation note:
 - the authoritative runtime catalog and normalization helper live in `@coding-game/ruleset`
@@ -125,6 +125,11 @@ Module semantics:
 - `ARMOR` (passive):
   - mitigation applies to all damage sources (see §2.3)
   - speed penalty applies if equipped in any slot (see §1.2)
+- `SNIPER`: ammo weapon; fires a high-damage long bullet (`damage = 25`, `ammoCost = 6`, `cooldownTicks = 12`) at a bot target
+- `ROCKET`: ammo weapon; launches a slow projectile that explodes after a fuse or on impact (`center = 35`, `adjacent = 15`, `ammoCost = 8`, `cooldownTicks = 12`, `speed = 3/tick`, `fuse = 24`, `ttl = 60`)
+- `TELEPORT`: utility module; instant relocation to a location target (`energyCost = 30`, `cooldownTicks = 14`)
+
+(Balance numbers above are implemented constants in `packages/engine/src/sim/constants.js`; tune only via the Phase 9 balance pass.)
 
 Invalid loadouts do not abort the match; they are **deterministically normalized** and issues are recorded in `loadoutIssues` (intended to be surfaced as a visible, non-blocking warning/error in UIs/replay viewers).
 
