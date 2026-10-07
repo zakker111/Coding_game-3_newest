@@ -2,13 +2,17 @@ import React from 'react'
 
 import {
   createServerDailyRun,
+  describeRankedStatus,
   fetchServerDailyRunMatches,
   fetchServerMe,
+  fetchServerRankedState,
   listServerDailyRuns,
   loginServerUser,
   logoutServerUser,
+  setServerBotRankedStatus,
   type ServerDailyRun,
   type ServerDailyRunMatch,
+  type ServerRankedState,
   type ServerUser,
 } from '../serverClient'
 import { getDefaultServerBaseUrl } from '../config'
@@ -34,11 +38,22 @@ export function AdminServerPage() {
   const [notice, setNotice] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [busy, setBusy] = React.useState(false)
+  const [rankedState, setRankedState] = React.useState<ServerRankedState | null>(null)
+
+  async function refreshRanked() {
+    try {
+      setRankedState(await fetchServerRankedState(baseUrl))
+    } catch (err) {
+      // Ranked panel is best-effort; surface but don't block the rest of refresh.
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }
 
   async function refresh(nextRunId = selectedRunId) {
     const [me, runList] = await Promise.all([fetchServerMe(baseUrl), listServerDailyRuns(baseUrl)])
     setUser(me.user)
     setRuns(runList.runs)
+    if (me.user?.username === 'admin') void refreshRanked()
 
     const runId = nextRunId ?? runList.runs[0]?.runId ?? null
     setSelectedRunId(runId)
@@ -112,6 +127,21 @@ export function AdminServerPage() {
     }
   }
 
+  async function handleSetRanked(bot: ServerRankedState['bots'][number], rankedStatus: 'active' | 'pending' | 'dropped') {
+    setBusy(true)
+    setError(null)
+    setNotice(null)
+    try {
+      await setServerBotRankedStatus(baseUrl, bot.ownerUsername, bot.name, rankedStatus)
+      setNotice(`${bot.ownerUsername}/${bot.name} → ${rankedStatus}`)
+      await refreshRanked()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const selectedRun = runs.find((run) => run.runId === selectedRunId) ?? null
   const isAdmin = user?.username === 'admin'
 
@@ -169,6 +199,60 @@ export function AdminServerPage() {
           </p>
         )}
       </div>
+
+      {isAdmin && rankedState ? (
+        <div className="panel" style={{ marginTop: 16 }}>
+          <div className="workshop-setup-header">
+            <div>
+              <div className="panel-title">Ranked ladder controls</div>
+              <div className="muted" style={{ marginTop: 6 }}>
+                Active limit: {rankedState.rankedActiveLimit} · Latest run: {rankedState.latestRunId ?? 'none'}
+                {rankedState.latestRunDate ? ` (${rankedState.latestRunDate})` : ''}
+              </div>
+            </div>
+            <button className="ui-button ui-button-secondary" disabled={busy} onClick={() => refreshRanked()}>
+              Refresh ranked
+            </button>
+          </div>
+
+          <div className="admin-table" style={{ marginTop: 10 }}>
+            {rankedState.bots.map((bot) => {
+              const badge = describeRankedStatus(bot)
+              return (
+                <div className="admin-table-row" key={`${bot.ownerUsername}/${bot.name}`}>
+                  <span>{bot.ownerUsername}/{bot.name}</span>
+                  <span>{badge.label}</span>
+                  <span>{bot.rankedPoints} pts</span>
+                  <span className="actions">
+                    <button
+                      className="ui-button ui-button-secondary"
+                      disabled={busy || bot.rankedStatus === 'active'}
+                      onClick={() => handleSetRanked(bot, 'active')}
+                    >
+                      Activate
+                    </button>
+                    <button
+                      className="ui-button ui-button-secondary"
+                      disabled={busy || bot.rankedStatus === 'pending'}
+                      onClick={() => handleSetRanked(bot, 'pending')}
+                    >
+                      Pending
+                    </button>
+                    <button
+                      className="ui-button ui-button-secondary"
+                      disabled={busy || bot.rankedStatus === 'dropped'}
+                      onClick={() => handleSetRanked(bot, 'dropped')}
+                    >
+                      Drop
+                    </button>
+                  </span>
+                </div>
+              )
+            })}
+            {rankedState.bots.length === 0 ? <div className="muted">No submitted bots yet.</div> : null}
+          </div>
+        </div>
+      ) : null}
 
       {selectedRun ? (
         <div className="panel" style={{ marginTop: 16 }}>

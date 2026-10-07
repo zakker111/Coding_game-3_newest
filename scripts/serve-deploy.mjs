@@ -1,4 +1,5 @@
 import http from 'node:http'
+import https from 'node:https'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -77,14 +78,43 @@ function respond(res, statusCode, body, headers = {}) {
 const { host, port, root } = parseArgs(process.argv.slice(2))
 const staticRoot = path.resolve(repoRoot, root)
 
+// Optional API reverse proxy so previews can reach the backend on the same origin.
+const apiProxyTarget = process.env.API_PROXY_TARGET || 'http://127.0.0.1:3000'
+
+function proxyApi(req, res) {
+  const target = new URL(apiProxyTarget)
+  const transport = target.protocol === 'https:' ? https : http
+  const upstream = transport.request(
+    target,
+    // Preserve the incoming path: `http.request(url)` only uses url.origin and drops req.url.
+    { method: req.method, path: req.url, headers: { ...req.headers, host: target.host } },
+    (upRes) => {
+      res.statusCode = upRes.statusCode || 502
+      for (const [k, v] of Object.entries(upRes.headers)) {
+        if (v != null) res.setHeader(k, v)
+      }
+      res.setHeader('access-control-allow-origin', req.headers.origin || '*')
+      res.setHeader('vary', 'origin')
+      upRes.pipe(res)
+    },
+  )
+  upstream.on('error', () => {
+    respond(res, 502, 'Bad Gateway', { 'Content-Type': 'text/plain' })
+  })
+  req.pipe(upstream)
+}
+
 const server = http.createServer(async (req, res) => {
   if (!req.url || !req.method) return respond(res, 400, 'Bad Request')
+
+  const url = new URL(req.url, `http://${req.headers.host || host}`)
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
+    return proxyApi(req, res)
+  }
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     return respond(res, 405, 'Method Not Allowed', { Allow: 'GET, HEAD' })
   }
-
-  const url = new URL(req.url, `http://${req.headers.host || host}`)
 
   // URL pathname is always posix-style.
   const pathname = decodeURIComponent(url.pathname)

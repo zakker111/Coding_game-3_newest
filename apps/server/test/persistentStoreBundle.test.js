@@ -62,6 +62,17 @@ function createDailyBotStore() {
         sourceText,
       }
     },
+
+    updateRankedStatus(ownerUsername, name, rankedPatch) {
+      return {
+        botId: `${ownerUsername}/${name}`,
+        ownerUsername,
+        name,
+        updatedAt: null,
+        sourceHash: null,
+        ...rankedPatch,
+      }
+    },
   }
 }
 

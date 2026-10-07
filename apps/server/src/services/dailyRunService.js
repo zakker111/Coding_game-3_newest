@@ -202,6 +202,52 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
       }
     },
 
+    getRankedState() {
+      const latestRun = store.listRuns()[0] ?? null
+      const rankedActiveLimit = Number.isFinite(latestRun?.rankedActiveLimit)
+        ? latestRun.rankedActiveLimit
+        : DEFAULT_RANKED_ACTIVE_LIMIT
+      const bots = botStore
+        .listBots()
+        .filter((bot) => bot.ownerUsername !== 'builtin')
+        .map((bot) => ({ ...bot, ...rankedFields(bot) }))
+        .sort((a, b) => {
+          if (b.rankedPoints !== a.rankedPoints) return b.rankedPoints - a.rankedPoints
+          return a.botId.localeCompare(b.botId)
+        })
+      return {
+        rankedActiveLimit,
+        latestRunId: latestRun?.runId ?? null,
+        latestRunDate: latestRun?.runDate ?? null,
+        bots,
+      }
+    },
+
+    setRankedStatus({ ownerUsername, name, rankedStatus } = {}) {
+      const allowed = new Set(['active', 'pending', 'dropped'])
+      if (typeof ownerUsername !== 'string' || ownerUsername === '' || typeof name !== 'string' || name === '') {
+        throw createHttpError(400, 'INVALID_REQUEST', 'ownerUsername and name are required')
+      }
+      if (!allowed.has(rankedStatus)) {
+        throw createHttpError(400, 'INVALID_REQUEST', `rankedStatus must be one of: ${[...allowed].join(', ')}`)
+      }
+      if (typeof botStore.updateRankedStatus !== 'function') {
+        throw createHttpError(500, 'UNSUPPORTED_OPERATION', 'bot store does not support ranked status updates')
+      }
+      const now = new Date().toISOString()
+      const patch =
+        rankedStatus === 'dropped'
+          ? { rankedEnabled: true, rankedStatus, droppedAt: now, dropReason: 'admin_manual' }
+          : rankedStatus === 'active'
+            ? { rankedEnabled: true, rankedStatus, droppedAt: null, dropReason: null }
+            : { rankedEnabled: true, rankedStatus, droppedAt: null, dropReason: null }
+      const updated = botStore.updateRankedStatus(ownerUsername, name, patch)
+      if (!updated) {
+        throw createHttpError(404, 'BOT_NOT_FOUND', 'Bot not found')
+      }
+      return updated
+    },
+
     getRun(runId) {
       const run = store.getRun(runId)
       if (!run) {
@@ -224,11 +270,7 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         runId,
         matches: run.matchIds
           .map((matchId) => matchStore.getMatch(matchId))
-          .filter(Boolean)
-          .map((match) => ({
-            ...match,
-            ...(match.persistReplay === false ? { replayStored: false } : {}),
-          })),
+          .filter(Boolean),
       }
     },
 
@@ -296,10 +338,14 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
                 {
                   kind: 'daily',
                   dailyRunId: run.runId,
+                  persistReplay: false,
                 }
               )
 
-              matches.push(match)
+              matches.push({
+                ...match,
+                replay: null,
+              })
               matchIds.push(match.matchId)
             }
           }

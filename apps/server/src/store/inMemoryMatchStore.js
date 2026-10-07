@@ -47,7 +47,9 @@ export function createInMemoryMatchStore() {
       const match = requireMatch(matchId)
       match.status = 'complete'
       match.result = payload.result
-      match.replay = payload.replay
+      if (typeof payload.replay !== 'undefined') {
+        match.replay = payload.replay
+      }
       match.updatedAt = new Date().toISOString()
       return cloneRecord(match)
     },
@@ -66,7 +68,8 @@ export function createInMemoryMatchStore() {
 
     getReplay(matchId) {
       const match = matches.get(matchId)
-      return cloneRecord(match?.replay ?? null)
+      if (!match || match.replay == null) return null
+      return cloneRecord(match.replay)
     },
 
     listMatches({ dailyRunId, kind } = {}) {

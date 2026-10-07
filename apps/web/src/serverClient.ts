@@ -326,6 +326,38 @@ export async function createServerDailyRun(
   )
 }
 
+export type ServerRankedState = {
+  rankedActiveLimit: number
+  latestRunId: string | null
+  latestRunDate: string | null
+  bots: Array<ServerBotSummary & Partial<Pick<ServerBotSummary, 'rankedStatus'>>>
+}
+
+export async function fetchServerRankedState(
+  baseUrl: string,
+  fetchImpl?: FetchLike,
+): Promise<ServerRankedState> {
+  return requestJson<ServerRankedState>(baseUrl, '/api/admin/ranked', { method: 'GET' }, fetchImpl)
+}
+
+export async function setServerBotRankedStatus(
+  baseUrl: string,
+  ownerUsername: string,
+  name: string,
+  rankedStatus: 'active' | 'pending' | 'dropped',
+  fetchImpl?: FetchLike,
+): Promise<ServerBotSummary> {
+  return requestJson<ServerBotSummary>(
+    baseUrl,
+    `/api/admin/ranked/${encodeURIComponent(ownerUsername)}/${encodeURIComponent(name)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ rankedStatus }),
+    },
+    fetchImpl,
+  )
+}
+
 export async function fetchServerDailyRunMatches(
   baseUrl: string,
   runId: string,

@@ -50,6 +50,7 @@ export async function buildApp({
 
   const authService = createAuthService({
     store: userStore,
+    config,
   })
   const botService = createBotService({
     store: botStore,
@@ -79,7 +80,34 @@ export async function buildApp({
   )
   app.decorateRequest('currentUser', null)
 
-  app.addHook('onRequest', async (request) => {
+  // Simple in-memory fixed-window rate limiter for auth endpoints (per IP).
+  const RATE_LIMIT_WINDOW_MS = 60_000
+  const RATE_LIMIT_MAX_AUTH = Number.isFinite(config.rateLimitMaxAuth) ? config.rateLimitMaxAuth : 20
+  const authRateBuckets = new Map()
+  setInterval(() => {
+    const cutoff = Date.now() - 5 * RATE_LIMIT_WINDOW_MS
+    for (const [key, bucket] of authRateBuckets) {
+      if (bucket.resetAt <= cutoff) authRateBuckets.delete(key)
+    }
+  }, RATE_LIMIT_WINDOW_MS).unref?.()
+
+  app.addHook('onRequest', async (request, reply) => {
+    if (/^\/api\/auth\/(login|register)$/.test(request.url.split('?')[0])) {
+      const ip = request.ip || 'unknown'
+      const now = Date.now()
+      let bucket = authRateBuckets.get(ip)
+      if (!bucket || bucket.resetAt <= now) {
+        bucket = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
+        authRateBuckets.set(ip, bucket)
+      }
+      bucket.count += 1
+      if (bucket.count > RATE_LIMIT_MAX_AUTH) {
+        reply.header('retry-after', Math.ceil((bucket.resetAt - now) / 1000))
+        return reply.code(429).send({
+          error: { code: 'RATE_LIMITED', message: 'Too many auth attempts, slow down.' },
+        })
+      }
+    }
     request.currentUser = app.authService.getCurrentUser(request.headers.cookie)
   })
 

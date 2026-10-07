@@ -35,10 +35,18 @@ Recently completed (cont.)
   example bots into each account against a running server.
 
 Next slice
-- User-facing resubmit/ranked-status details in the Workshop UI (currently admin/API-controlled only).
-- Balance the new module numbers after running daily leagues (use `scripts/seed-demo.mjs` to populate).
+- ~~User-facing resubmit/ranked-status details in the Workshop UI~~ — shipped: per-bot ranked badges
+  (`describeRankedStatus` in `apps/web/src/serverClient.ts`) with Active/Pending/Dropped tone + points,
+  shown in the server-bot panel and in the post-save notice in `WorkshopPage.tsx`.
+- ~~Admin `/admin` ranked controls UI~~ — shipped: "Ranked ladder controls" panel in `AdminServerPage.tsx`
+  lists all submitted bots with status badge + points and Activate/Pending/Drop buttons wired to
+  `fetchServerRankedState` / `setServerBotRankedStatus` (`/api/admin/ranked` GET/PATCH) in `serverClient.ts`.
+- Balance pass for SNIPER / ROCKET / TELEPORT after populating a league with `scripts/seed-demo.mjs`
+  (current constants live in `packages/engine/src/sim/constants.js`).
 - Pre-production security hardening before real hosting: password hashing, session store,
   remove default admin, durable storage, rate limiting.
+- Hosting: replace temporary dev tunnels (trycloudflare quick tunnels) with a persistent deployment;
+  keep frontend + `/api` proxy on one origin (see `ServerPlan.md`).
 
 ### Ranked lifecycle plan (shipped backend/admin slice — kept for reference)
 
@@ -113,7 +121,13 @@ Implemented now
   - actionable browser-runtime diagnostics for `qa:workshop`
 
 Still open
-- [ ] Phase 8B server-backed Workshop simulations.
+- [x] Phase 9 balance pass (SNIPER/ROCKET/TELEPORT) + admin ranked-controls UI. (Balance harness: `scripts/balance-report.mjs`; SNIPER nerfed to `ammoCost = 6` / `cooldownTicks = 12`; see "Phase 9 balance pass notes".)
+- [x] Durable storage verified end-to-end: server boots with `NOWT_SERVER_DATA_FILE=.nowt/server-state.json`, state survives restarts, `.nowt/` is gitignored.
+      Production-mode guard (`NODE_ENV=production` refuses default admin without `NOWT_ALLOW_DEFAULT_ADMIN=1`) verified working.
+      One-command preview boot documented in README ("Preview deployment" section).
+- [ ] Persistent *public* hosting: quick tunnels (`trycloudflare.com`) are session-scoped and URLs rotate on restart.
+      For a stable domain, deploy the same two processes (server :3000 + `serve-deploy.mjs` :4173 with `API_PROXY_TARGET`) to any always-on host
+      (Fly.io / Render / Railway / VPS) or create a named Cloudflare tunnel. See `ServerPlan.md`.
 
 ### Near-term execution checklist
 
@@ -121,13 +135,11 @@ Do next
 - [x] Audit `Ruleset.md` and `ReplayViewerPlan.md` against the produced engine/replay output.
 - [x] Decide which remaining local-loop drift is real, and which can be explicitly deferred.
 - [x] Make the deploy/workshop hardening list concrete enough to execute as one small slice.
+- [x] User-facing ranked-status/resubmit details in the Workshop UI (badges + save notice).
 
 Ready after audit
-- [ ] Start the Phase 8B Workshop/server integration slice:
-  - server-backed run control/path in Workshop
-  - simulation POST from current bot setup
-  - replay fetch + render
-  - server error display
+- [x] Admin `/admin` ranked controls: ranked-status table (Activate/Pending/Drop) shipped in `AdminServerPage.tsx`; `rankedActiveLimit` is shown read-only from the latest run.
+- [ ] Balance new modules via seeded daily leagues (`scripts/seed-demo.mjs`).
 
 ### Checklist (done vs. not done)
 
@@ -178,6 +190,7 @@ See `Ruleset.md` §5.
 - If omitted, the engine defaults to all-empty: `[null, null, null]`.
 - Loadouts are deterministically normalized and issues may be surfaced in replay header as `loadoutIssues`.
 - `ARMOR` is implemented (passive mitigation + speed penalty).
+- Implemented module ids (`@coding-game/ruleset` catalog): `BULLET`, `SAW`, `SHIELD`, `ARMOR`, `GRENADE`, `MINE`, `REPAIR_DRONE`, `SNIPER`, `ROCKET`, `TELEPORT`.
 
 ### Implemented balance numbers
 (These are *implemented constants*; tuneable only via a rulesetVersion bump.)
@@ -202,6 +215,19 @@ See `Ruleset.md` §5.
   - `maxActive = 6`, `lifetimeTicks = 30`
   - deltas: `HEALTH +30`, `AMMO +20`, `ENERGY +30`
   - type distribution: uniform among `HEALTH|AMMO|ENERGY`
+- Phase 9 modules (constants in `packages/engine/src/sim/constants.js`):
+  - SNIPER: `damage = 25`, `ammoCost = 6`, `cooldownTicks = 12` (tuned up from `4`/`10` in the Phase 9 balance pass — see `scripts/balance-report.mjs`)
+  - ROCKET: `ammoCost = 8`, `cooldownTicks = 12`, `speed = 3/tick`, `fuse = 24`, `ttl = 60`, damage `center = 35` / `adjacent = 15`
+  - TELEPORT: `energyCost = 30`, `cooldownTicks = 14`
+
+### Phase 9 balance pass notes (scripts/balance-report.mjs)
+- Harness runs a round-robin league of `examples/bot0..bot9` across N seeds (`BALANCE_SEEDS`, default 10; `BALANCE_TICK_CAP`, default 240).
+- Findings (30-seed run, pre-tune): SNIPER bot dealt ~208 dmg/game at old cost/cooldown and out-sustained every weapon; ROCKET bot dealt 221/game but never won or died (slow rocket + ARMOR stalemate); TELEPORT bot had 0 kills (utility module, no damage output) and died to aggressive tables.
+- Action taken: raised SNIPER to `ammoCost = 6`, `cooldownTicks = 12`. This caps a full-ammo burst at ~16 shots (~400 dmg vs 300 total table HP) and gives ammo pickups real weight for snipers.
+- Accepted as-is (documented behavior, not bugs):
+  - ROCKET stalemates: high center damage + slow travel means rockets trade well defensively; example bot is built to survive, not close. Balance target met after sniper nerf (rocket dmg/game now comparable to top DPS bots without dominating wins).
+  - TELEPORT zero kills: teleport is a mobility/utility module; kill contribution comes from bumps/follow-up weapons. Example bot loadout intentionally has no damaging slot.
+- Golden fixtures unaffected (`node --test test/golden`: 4/4 pass); deploy mirror re-synced with `node scripts/sync-deploy.mjs`.
 
 ---
 
