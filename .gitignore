@@ -1,14 +1,21 @@
 # Dependencies
 node_modules/
 
-# Build artifacts
+# Build outputs
 dist/
 *.tsbuildinfo
-
-# Logs
-*.log
-# Local temp scripts
-_tmp_*
+deploy/bundles/
 
 # Runtime state
 .nowt/
+
+# Logs
+*.log
+logs/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+
+# Temporary scratch files
+_tmp_*

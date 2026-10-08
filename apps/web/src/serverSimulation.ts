@@ -109,9 +109,10 @@ export function normalizeServerBaseUrl(baseUrl: string): string {
   return trimmed || DEFAULT_SERVER_BASE_URL
 }
 
-// Same-origin variant used on static hosts (e.g. GitHub Pages) where no backend
-// exists: '' means "fetch /api/... relative to the page" instead of falling back
-// to the local dev default URL.
+// Same-origin marker used on static hosts (e.g. GitHub Pages) where no backend
+// exists: '' means "fetch /api/... relative to the page". Callers must check
+// for '' BEFORE normalizing, since an empty input intentionally stays empty
+// rather than falling back to the local dev default URL.
 export function apiBaseUrlForStaticHost(): string {
   return ''
 }

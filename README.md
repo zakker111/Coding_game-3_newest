@@ -175,7 +175,7 @@ pnpm qa:phase1
 `pnpm qa:workshop` requires a Playwright-capable browser runtime. If Chromium cannot start because host libraries are missing, the script now fails with an actionable message instead of a raw lau[...]
 If the default local ports are already occupied, override them with `NOWT_QA_WORKSHOP_URL` and `NOWT_QA_WORKSHOP_APP_URL` when running `pnpm qa:release` / `pnpm gate:phase1`.
 
-Note: `site/` is a legacy prototype and is intentionally excluded from the pnpm workspace + CI.
+Note: the legacy `site/` prototype has been removed from the repository (cleanup pass, Oct 2026). All active code lives in `apps/` and `packages/`.
 
 ## Deploying (static)
 

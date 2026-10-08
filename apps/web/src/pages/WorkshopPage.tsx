@@ -552,7 +552,8 @@ export function WorkshopPage() {
     if (!loaded) return
 
     try {
-      localStorage.setItem(SERVER_BASE_URL_KEY, normalizeServerBaseUrl(serverBaseUrl))
+      // Preserve the '' same-origin marker; only normalize real URLs.
+      localStorage.setItem(SERVER_BASE_URL_KEY, serverBaseUrl === '' ? '' : normalizeServerBaseUrl(serverBaseUrl))
     } catch {
       // ignore quota/unavailable
     }
@@ -748,7 +749,7 @@ export function WorkshopPage() {
   }
 
   React.useEffect(() => {
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     refreshRemoteServerState(baseUrl).catch(() => {
       setServerUser(null)
       setServerBots([])
@@ -765,7 +766,7 @@ export function WorkshopPage() {
     }
 
     let cancelled = false
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     setServerBotsLoading(true)
     setServerAuthError(null)
 
@@ -1427,7 +1428,7 @@ export function WorkshopPage() {
   }
 
   async function importServerBotAsBot1(bot: ServerBotSummary) {
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     setServerBotsLoading(true)
     setServerSaveNotice(null)
 
@@ -1564,7 +1565,7 @@ export function WorkshopPage() {
       return
     }
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     setServerConnectionState({ kind: 'checking', message: 'Checking server…' })
     setServerRunError(null)
     setServerAuthError(null)
@@ -1593,7 +1594,7 @@ export function WorkshopPage() {
   async function handleServerAuth(mode: 'register' | 'login') {
     if (serverSandboxMode !== 'remote-http') return
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     setServerAuthBusy(true)
     setServerAuthError(null)
     setServerSaveNotice(null)
@@ -1629,7 +1630,7 @@ export function WorkshopPage() {
   async function handleServerLogout() {
     if (serverSandboxMode !== 'remote-http') return
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     setServerAuthBusy(true)
     setServerAuthError(null)
     setServerSaveNotice(null)
@@ -1660,7 +1661,7 @@ export function WorkshopPage() {
   async function handleSaveToServer() {
     if (!serverUser || !selectedServerBotLoaded) return
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
     setServerSaveBusy(true)
     setServerAuthError(null)
     setServerSaveNotice(null)
@@ -1781,7 +1782,7 @@ export function WorkshopPage() {
       'muted',
       serverSandboxMode === 'local-mirror'
         ? 'Running local server-mirror sandbox.'
-        : `Submitting server sandbox run to ${normalizeServerBaseUrl(serverBaseUrl)}.`,
+        : `Submitting server sandbox run to ${serverBaseUrl === "" ? "same origin" : normalizeServerBaseUrl(serverBaseUrl)}.`,
     )
 
     try {
@@ -1798,7 +1799,7 @@ export function WorkshopPage() {
         replay = mirrored.replay
         pushServerActivity('muted', `Mirror created match ${mirrored.created.matchId} (${mirrored.created.status}).`)
       } else {
-        const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+        const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
         const created = await createServerSimulation(baseUrl, {
           seed,
           tickCap,
