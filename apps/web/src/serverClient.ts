@@ -164,7 +164,10 @@ export type ServerCreateDailyRunRequest = {
 }
 
 function buildApiUrl(baseUrl: string, path: string) {
-  return `${normalizeServerBaseUrl(baseUrl)}${path}`
+  // '' is an explicit "same origin" marker (static hosts like GitHub Pages);
+  // only null/undefined falls back to the local dev default.
+  const normalized = baseUrl === '' ? '' : normalizeServerBaseUrl(baseUrl)
+  return `${normalized}${path}`
 }
 
 function withQuery(path: string, query?: Record<string, string | undefined>) {

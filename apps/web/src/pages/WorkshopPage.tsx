@@ -199,7 +199,11 @@ function normalizeOpponentAssignments(prev: OpponentAssignments, poolIds: string
 function readServerBaseUrl(): string {
   try {
     const raw = localStorage.getItem(SERVER_BASE_URL_KEY)
-    return normalizeServerBaseUrl(raw ?? getDefaultServerBaseUrl())
+    // Preserve the explicit '' same-origin marker for static hosts.
+    if (raw === '') return ''
+    const fallback = getDefaultServerBaseUrl()
+    if (fallback === '') return ''
+    return normalizeServerBaseUrl(raw ?? fallback)
   } catch {
     return getDefaultServerBaseUrl()
   }

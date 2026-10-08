@@ -1,8 +1,16 @@
-import { DEFAULT_SERVER_BASE_URL } from './serverSimulation'
+import { apiBaseUrlForStaticHost, DEFAULT_SERVER_BASE_URL } from './serverSimulation'
+
+// GitHub Pages (and any static host without an /api proxy): the game runs fully
+// client-side; remote server features are unavailable on these hosts. Same-origin
+// relative URLs keep API calls failing gracefully instead of blanking the app.
+export function isStaticNoApiHost(hostname: string) {
+  return /\.github\.io$/.test(hostname) || hostname.endsWith('.githubusercontent.com')
+}
 
 export function getDefaultServerBaseUrl() {
   if (typeof window === 'undefined') return DEFAULT_SERVER_BASE_URL
   const { protocol, hostname } = window.location
+  if (isStaticNoApiHost(hostname)) return apiBaseUrlForStaticHost()
   const cosineMatch = /^(\d+)-(.+\.cosine\.computer)$/.exec(hostname)
   if (cosineMatch) {
     return `${protocol}//3000-${cosineMatch[2]}`
@@ -28,6 +36,8 @@ export async function resolveDefaultServerBaseUrl(): Promise<string> {
   const sync = getDefaultServerBaseUrl()
   if (typeof window === 'undefined') return sync
   const { protocol, hostname } = window.location
+  // GitHub Pages has no /api proxy; never probe or fall back to a local server URL.
+  if (isStaticNoApiHost(hostname)) return ''
   if (hostname === 'localhost' || hostname.startsWith('127.')) return sync
   if (sync !== DEFAULT_SERVER_BASE_URL) return sync
   try {

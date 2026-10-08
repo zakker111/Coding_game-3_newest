@@ -109,6 +109,13 @@ export function normalizeServerBaseUrl(baseUrl: string): string {
   return trimmed || DEFAULT_SERVER_BASE_URL
 }
 
+// Same-origin variant used on static hosts (e.g. GitHub Pages) where no backend
+// exists: '' means "fetch /api/... relative to the page" instead of falling back
+// to the local dev default URL.
+export function apiBaseUrlForStaticHost(): string {
+  return ''
+}
+
 function countLines(text: string) {
   return text === '' ? 0 : text.split('\n').length
 }
@@ -351,7 +358,9 @@ export async function runLocalMirroredServerSimulation(
 }
 
 function buildApiUrl(baseUrl: string, path: string) {
-  return `${normalizeServerBaseUrl(baseUrl)}${path}`
+  // '' is an explicit "same origin" marker (static hosts like GitHub Pages).
+  const normalized = baseUrl === '' ? '' : normalizeServerBaseUrl(baseUrl)
+  return `${normalized}${path}`
 }
 
 async function requestJson<T>(baseUrl: string, path: string, init?: RequestInit, fetchImpl: FetchLike = fetch): Promise<T> {
