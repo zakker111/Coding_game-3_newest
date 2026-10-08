@@ -34,6 +34,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the game
+        # GitHub Pages serves project sites under /<repo>/, so assets must be built
+        # with a matching base path. Set PUBLIC_BASE_PATH to '/' if you ever use a
+        # custom domain.
+        env:
+          PUBLIC_BASE_PATH: /Coding_game-3_newest/
         run: pnpm build
 
       - name: Upload Pages artifact
