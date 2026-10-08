@@ -1,13 +1,9 @@
 # Dependencies
 node_modules/
 
-# Build output
-apps/web/dist/
+# Build artifacts
+dist/
 *.tsbuildinfo
 
-# Runtime state & logs
-.nowt/
+# Logs
 *.log
-
-# Archives
-*.bundle

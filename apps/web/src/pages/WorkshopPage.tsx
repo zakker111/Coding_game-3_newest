@@ -199,10 +199,18 @@ function normalizeOpponentAssignments(prev: OpponentAssignments, poolIds: string
 function readServerBaseUrl(): string {
   try {
     const raw = localStorage.getItem(SERVER_BASE_URL_KEY)
-    return normalizeServerBaseUrl(raw ?? getDefaultServerBaseUrl())
+    // Empty string is a valid "same origin" choice (e.g. GitHub Pages); only
+    // null/undefined falls back to the default resolver.
+    if (raw !== null) return String(raw).trim().replace(/\/+$/g, '')
+    return getDefaultServerBaseUrl()
   } catch {
     return getDefaultServerBaseUrl()
   }
+}
+
+function normalizeServerBaseUrlLoose(baseUrl: string): string {
+  // Like normalizeServerBaseUrl but preserves the empty-string "same origin" choice.
+  return String(baseUrl ?? '').trim().replace(/\/+$/g, '')
 }
 
 function readServerSandboxMode(): ServerSandboxMode {
@@ -548,7 +556,7 @@ export function WorkshopPage() {
     if (!loaded) return
 
     try {
-      localStorage.setItem(SERVER_BASE_URL_KEY, normalizeServerBaseUrl(serverBaseUrl))
+      localStorage.setItem(SERVER_BASE_URL_KEY, normalizeServerBaseUrlLoose(serverBaseUrl))
     } catch {
       // ignore quota/unavailable
     }
@@ -744,7 +752,7 @@ export function WorkshopPage() {
   }
 
   React.useEffect(() => {
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     refreshRemoteServerState(baseUrl).catch(() => {
       setServerUser(null)
       setServerBots([])
@@ -761,7 +769,7 @@ export function WorkshopPage() {
     }
 
     let cancelled = false
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     setServerBotsLoading(true)
     setServerAuthError(null)
 
@@ -1423,7 +1431,7 @@ export function WorkshopPage() {
   }
 
   async function importServerBotAsBot1(bot: ServerBotSummary) {
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     setServerBotsLoading(true)
     setServerSaveNotice(null)
 
@@ -1560,7 +1568,7 @@ export function WorkshopPage() {
       return
     }
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     setServerConnectionState({ kind: 'checking', message: 'Checking server…' })
     setServerRunError(null)
     setServerAuthError(null)
@@ -1589,7 +1597,7 @@ export function WorkshopPage() {
   async function handleServerAuth(mode: 'register' | 'login') {
     if (serverSandboxMode !== 'remote-http') return
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     setServerAuthBusy(true)
     setServerAuthError(null)
     setServerSaveNotice(null)
@@ -1625,7 +1633,7 @@ export function WorkshopPage() {
   async function handleServerLogout() {
     if (serverSandboxMode !== 'remote-http') return
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     setServerAuthBusy(true)
     setServerAuthError(null)
     setServerSaveNotice(null)
@@ -1656,7 +1664,7 @@ export function WorkshopPage() {
   async function handleSaveToServer() {
     if (!serverUser || !selectedServerBotLoaded) return
 
-    const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+    const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
     setServerSaveBusy(true)
     setServerAuthError(null)
     setServerSaveNotice(null)
@@ -1777,7 +1785,7 @@ export function WorkshopPage() {
       'muted',
       serverSandboxMode === 'local-mirror'
         ? 'Running local server-mirror sandbox.'
-        : `Submitting server sandbox run to ${normalizeServerBaseUrl(serverBaseUrl)}.`,
+        : `Submitting server sandbox run to ${normalizeServerBaseUrlLoose(serverBaseUrl)}.`,
     )
 
     try {
@@ -1794,7 +1802,7 @@ export function WorkshopPage() {
         replay = mirrored.replay
         pushServerActivity('muted', `Mirror created match ${mirrored.created.matchId} (${mirrored.created.status}).`)
       } else {
-        const baseUrl = normalizeServerBaseUrl(serverBaseUrl)
+        const baseUrl = normalizeServerBaseUrlLoose(serverBaseUrl)
         const created = await createServerSimulation(baseUrl, {
           seed,
           tickCap,
