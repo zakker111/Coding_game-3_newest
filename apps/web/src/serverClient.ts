@@ -1,5 +1,4 @@
-// NOTE: normalizeServerBaseUrl is intentionally NOT used here; an empty baseUrl
-// means "same origin" (GitHub Pages / proxied previews) and must be preserved.
+import { normalizeServerBaseUrl } from './serverSimulation'
 import type { Loadout } from '@coding-game/ruleset'
 
 type FetchLike = typeof fetch
@@ -165,10 +164,7 @@ export type ServerCreateDailyRunRequest = {
 }
 
 function buildApiUrl(baseUrl: string, path: string) {
-  // An empty baseUrl means "same origin" (e.g. GitHub Pages static hosting or a
-  // host serving the API through an /api proxy on the same origin).
-  const trimmed = String(baseUrl ?? '').trim().replace(/\/+$/g, '')
-  return `${trimmed}${path}`
+  return `${normalizeServerBaseUrl(baseUrl)}${path}`
 }
 
 function withQuery(path: string, query?: Record<string, string | undefined>) {

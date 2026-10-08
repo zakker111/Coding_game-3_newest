@@ -3,9 +3,6 @@ import { DEFAULT_SERVER_BASE_URL } from './serverSimulation'
 export function getDefaultServerBaseUrl() {
   if (typeof window === 'undefined') return DEFAULT_SERVER_BASE_URL
   const { protocol, hostname } = window.location
-  // GitHub Pages (and any static host without an /api proxy): the game runs fully
-  // client-side; remote server features are unavailable on these hosts.
-  if (/\.github\.io$/.test(hostname)) return ''
   const cosineMatch = /^(\d+)-(.+\.cosine\.computer)$/.exec(hostname)
   if (cosineMatch) {
     return `${protocol}//3000-${cosineMatch[2]}`
@@ -31,8 +28,6 @@ export async function resolveDefaultServerBaseUrl(): Promise<string> {
   const sync = getDefaultServerBaseUrl()
   if (typeof window === 'undefined') return sync
   const { protocol, hostname } = window.location
-  // GitHub Pages has no /api proxy; never probe or fall back to a local server URL.
-  if (/\.github\.io$/.test(hostname)) return ''
   if (hostname === 'localhost' || hostname.startsWith('127.')) return sync
   if (sync !== DEFAULT_SERVER_BASE_URL) return sync
   try {
