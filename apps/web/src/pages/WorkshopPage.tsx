@@ -24,6 +24,7 @@ import { initialPlaybackState, playbackReducer } from '../replay/playbackReducer
 import { getAppearanceColorMap, getBotsForPlayback, SLOT_IDS } from '../replay/interpolate'
 import { formatReplayLoadoutIssue, getReplayHeaderBotsBySlot, getReplayLoadoutIssuesBySlot } from '../replay/loadoutWarnings'
 import { ArenaCanvas, type ArenaRenderState } from '../ui/arena'
+import { ARENA_SIZE_WORLD } from '../ui/arena/arenaMath'
 import { getDefaultServerBaseUrl } from '../config'
 import {
   createServerSimulation,
@@ -235,6 +236,16 @@ function isRelevantEvent(e: ReplayEvent, botId: SlotId): boolean {
       return e.victimBotId === botId || e.sourceBotId === botId
     case 'BOT_DIED':
       return e.victimBotId === botId || e.creditedBotId === botId
+    case 'SNIPER_HIT':
+      return e.ownerBotId === botId || e.targetBotId === botId
+    case 'BOT_TELEPORT':
+    case 'RAILGUN_SHOT':
+    case 'PULSE_BLAST':
+    case 'FLAMER_BURN':
+    case 'BOT_CLOAK_START':
+    case 'BOT_CLOAK_END':
+    case 'BOT_STUNNED':
+      return e.botId === botId
     case 'POWERUP_PICKUP':
       return e.botId === botId
     case 'POWERUP_SPAWN':
@@ -347,6 +358,62 @@ function formatTickEventLine(e: KnownReplayEvent): TickEventLine {
         key: `BOT_DIED:${e.victimBotId}:${e.creditedBotId ?? ''}`,
         label: `death`,
         detail: `${e.victimBotId} died${e.creditedBotId ? ` (credited ${e.creditedBotId})` : ''}`,
+        tone: 'bad',
+      }
+    case 'SNIPER_HIT':
+      return {
+        key: `SNIPER_HIT:${e.ownerBotId}:${e.targetBotId}:${e.damage}`,
+        label: `sniper hit`,
+        detail: `${e.ownerBotId} sniped ${e.targetBotId} (-${e.damage})`,
+        tone: 'bad',
+      }
+    case 'RAILGUN_SHOT':
+      return {
+        key: `RAILGUN_SHOT:${e.botId}:${e.fromPos.x},${e.fromPos.y}`,
+        label: `railgun shot`,
+        detail: `${e.botId} fired railgun${e.hitBotIds.length ? ` → hit ${e.hitBotIds.join(', ')}` : ' (no hits)'}`,
+        tone: e.hitBotIds.length ? 'bad' : 'muted',
+      }
+    case 'PULSE_BLAST':
+      return {
+        key: `PULSE_BLAST:${e.botId}:${e.radius}`,
+        label: `pulse blast`,
+        detail: `${e.botId} pulsed r=${e.radius}${e.affectedBotIds.length ? ` → ${e.affectedBotIds.join(', ')}` : ''}`,
+        tone: e.affectedBotIds.length ? 'bad' : 'muted',
+      }
+    case 'FLAMER_BURN':
+      return {
+        key: `FLAMER_BURN:${e.botId}:${e.victimBotIds.join(',')}`,
+        label: `flamer burn`,
+        detail: `${e.botId} burned ${e.victimBotIds.join(', ')}`,
+        tone: 'bad',
+      }
+    case 'BOT_TELEPORT':
+      return {
+        key: `BOT_TELEPORT:${e.botId}:${e.fromPos.x},${e.fromPos.y}->${e.toPos.x},${e.toPos.y}`,
+        label: `teleport`,
+        detail: `${e.botId} blinked ${e.fromPos.x},${e.fromPos.y} → ${e.toPos.x},${e.toPos.y}`,
+        tone: 'good',
+      }
+    case 'BOT_CLOAK_START':
+      return {
+        key: `BOT_CLOAK_START:${e.botId}:${e.ticks}`,
+        label: `cloak on`,
+        detail: `${e.botId} cloaked (${e.ticks} ticks)`,
+        tone: 'good',
+      }
+    case 'BOT_CLOAK_END':
+      return {
+        key: `BOT_CLOAK_END:${e.botId}:${e.reason}`,
+        label: `cloak off`,
+        detail: `${e.botId} decloaked (${e.reason})`,
+        tone: 'muted',
+      }
+    case 'BOT_STUNNED':
+      return {
+        key: `BOT_STUNNED:${e.botId}:${e.ticksRemaining}`,
+        label: `stunned`,
+        detail: `${e.botId} stunned (${e.ticksRemaining} ticks)`,
         tone: 'bad',
       }
     case 'BULLET_SPAWN':
@@ -1060,16 +1127,43 @@ export function WorkshopPage() {
     if (!replay) return []
 
     const t = clamp(playback.tick, 0, replay.tickCap)
-    const grenadeExplodeEvents = (replay.events[t] ?? []).filter(
+    const tickEvents = replay.events[t] ?? []
+    const grenadeExplodeEvents = tickEvents.filter(
       (e): e is Extract<KnownReplayEvent, { type: 'GRENADE_EXPLODE' }> => isKnownReplayEventType(e, 'GRENADE_EXPLODE'),
     )
-    const mineDetonateEvents = (replay.events[t] ?? []).filter(
+    const mineDetonateEvents = tickEvents.filter(
       (e): e is Extract<KnownReplayEvent, { type: 'MINE_DETONATE' }> => isKnownReplayEventType(e, 'MINE_DETONATE'),
     )
+    const sniperHitEvents = tickEvents.filter(
+      (e): e is Extract<KnownReplayEvent, { type: 'SNIPER_HIT' }> => isKnownReplayEventType(e, 'SNIPER_HIT'),
+    )
+    const railgunShotEvents = tickEvents.filter(
+      (e): e is Extract<KnownReplayEvent, { type: 'RAILGUN_SHOT' }> => isKnownReplayEventType(e, 'RAILGUN_SHOT'),
+    )
+    const pulseBlastEvents = tickEvents.filter(
+      (e): e is Extract<KnownReplayEvent, { type: 'PULSE_BLAST' }> => isKnownReplayEventType(e, 'PULSE_BLAST'),
+    )
+    const flamerBurnEvents = tickEvents.filter(
+      (e): e is Extract<KnownReplayEvent, { type: 'FLAMER_BURN' }> => isKnownReplayEventType(e, 'FLAMER_BURN'),
+    )
 
-    if (!grenadeExplodeEvents.length && !mineDetonateEvents.length) return []
+    if (
+      !grenadeExplodeEvents.length &&
+      !mineDetonateEvents.length &&
+      !sniperHitEvents.length &&
+      !railgunShotEvents.length &&
+      !pulseBlastEvents.length &&
+      !flamerBurnEvents.length
+    ) {
+      return []
+    }
 
     const pulse = playback.playing ? alpha : 0.35
+    const snap = replay.state[t]
+    const botPosById = new Map<string, { x: number; y: number }>()
+    if (snap) {
+      for (const b of snap.bots) botPosById.set(b.botId, b.pos)
+    }
 
     return [
       ...grenadeExplodeEvents.map((e) => ({
@@ -1090,7 +1184,102 @@ export function WorkshopPage() {
         outerRadius: 64 + pulse * 6,
         alpha: playback.playing ? 1 - pulse * 0.5 : 0.92,
       })),
+      // Sniper tracer: instant beam from shooter to target.
+      ...sniperHitEvents.map((e) => ({
+        explosionId: `sniper:${e.ownerBotId}:${e.targetBotId}:${t}`,
+        kind: 'sniper' as const,
+        ownerBotId: e.ownerBotId,
+        pos: e.targetPos,
+        fromPos: e.fromPos,
+        innerRadius: 6,
+        outerRadius: 10,
+        alpha: playback.playing ? 1 - pulse * 0.5 : 0.9,
+      })),
+      // Railgun beam: extends along facing dir until arena edge or first hit.
+      ...railgunShotEvents.flatMap((e) => {
+        const dx = e.dir?.dx ?? 1
+        const dy = e.dir?.dy ?? 0
+        const firstHitPos = e.hitBotIds.length ? botPosById.get(e.hitBotIds[0]) : undefined
+        const reach = firstHitPos
+          ? Math.max(
+              10,
+              Math.hypot(firstHitPos.x - e.fromPos.x, firstHitPos.y - e.fromPos.y),
+            )
+          : ARENA_SIZE_WORLD
+        const endX = Math.min(
+          ARENA_SIZE_WORLD,
+          Math.max(0, e.fromPos.x + dx * reach),
+        )
+        const endY = Math.min(
+          ARENA_SIZE_WORLD,
+          Math.max(0, e.fromPos.y + dy * reach),
+        )
+        return [
+          {
+            explosionId: `railgun:${e.botId}:${t}`,
+            kind: 'railgun' as const,
+            ownerBotId: e.botId,
+            pos: { x: endX, y: endY },
+            fromPos: e.fromPos,
+            innerRadius: 8,
+            outerRadius: 12,
+            alpha: playback.playing ? 1 - pulse * 0.45 : 0.92,
+          },
+        ]
+      }),
+      // Pulse blast: expanding cyan ring at the caster.
+      ...pulseBlastEvents.map((e) => ({
+        explosionId: `pulse:${e.botId}:${t}`,
+        kind: 'pulse' as const,
+        ownerBotId: e.botId,
+        pos: botPosById.get(e.botId) ?? { x: ARENA_SIZE_WORLD / 2, y: ARENA_SIZE_WORLD / 2 },
+        innerRadius: 12 + pulse * 10,
+        outerRadius: (e.radius ?? 40) + pulse * 8,
+        alpha: playback.playing ? 1 - pulse * 0.5 : 0.9,
+      })),
+      // Flamer burn: cone FX from caster toward each victim.
+      ...flamerBurnEvents.flatMap((e) => {
+        const src = botPosById.get(e.botId)
+        if (!src) return []
+        return e.victimBotIds
+          .map((vid) => botPosById.get(vid))
+          .filter((v): v is { x: number; y: number } => Boolean(v))
+          .map((victimPos) => {
+            const vx = victimPos.x - src.x
+            const vy = victimPos.y - src.y
+            const len = Math.hypot(vx, vy) || 1
+            return {
+              explosionId: `flamer:${e.botId}:${t}:${victimPos.x},${victimPos.y}`,
+              kind: 'flamer' as const,
+              ownerBotId: e.botId,
+              pos: victimPos,
+              fromPos: src,
+              dir: { dx: vx / len, dy: vy / len },
+              innerRadius: 8,
+              outerRadius: 26,
+              alpha: playback.playing ? 1 - pulse * 0.35 : 0.85,
+            }
+          })
+      }),
     ]
+  }, [alpha, playback.playing, playback.tick, replay])
+
+  const teleportsForRender = React.useMemo(() => {
+    if (!replay) return []
+    const t = clamp(playback.tick, 0, replay.tickCap)
+    const teleportEvents = (replay.events[t] ?? []).filter(
+      (e): e is Extract<KnownReplayEvent, { type: 'BOT_TELEPORT' }> => isKnownReplayEventType(e, 'BOT_TELEPORT'),
+    )
+    if (!teleportEvents.length) return []
+    const pulse = playback.playing ? alpha : 0.35
+
+    return teleportEvents.map((e) => ({
+      teleportId: `tp:${e.botId}:${t}`,
+      botId: e.botId,
+      fromPos: e.fromPos,
+      toPos: e.toPos,
+      alpha: playback.playing ? 1 - pulse * 0.5 : 0.9,
+    }))
   }, [alpha, playback.playing, playback.tick, replay])
 
   const powerupsForRender = React.useMemo(() => {
@@ -1234,6 +1423,11 @@ export function WorkshopPage() {
         alive: b.alive,
         appearanceColor: appearanceMap[b.botId],
         displayName: displayNameBySlot[b.botId],
+        shieldActive: b.shieldActive,
+        flamerActive: b.flamerActive,
+        stunned: b.stunned,
+        cloaked: b.cloaked,
+        facing: b.facing ?? null,
       })),
       bullets: bulletsForRender,
       grenades: grenadesForRender,
@@ -1241,8 +1435,9 @@ export function WorkshopPage() {
       mines: minesForRender,
       drones: dronesForRender,
       powerups: powerupsForRender,
+      teleports: teleportsForRender,
     }
-  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, dronesForRender, explosionsForRender, grenadesForRender, minesForRender, powerupsForRender, visibleReplaySlots])
+  }, [appearanceMap, botsForRender, bulletsForRender, displayNameBySlot, dronesForRender, explosionsForRender, grenadesForRender, minesForRender, powerupsForRender, teleportsForRender, visibleReplaySlots])
 
   const selectedBotState = React.useMemo(() => {
     if (!replay) return null

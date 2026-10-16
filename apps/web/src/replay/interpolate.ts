@@ -7,6 +7,11 @@ export type BotRenderSnapshot = {
   ammo: number
   energy: number
   alive: boolean
+  shieldActive?: boolean
+  flamerActive?: boolean
+  stunned?: boolean
+  cloaked?: boolean
+  facing?: { dx: number; dy: number } | null
 }
 
 export const SLOT_IDS: readonly SlotId[] = ['BOT1', 'BOT2', 'BOT3', 'BOT4']
@@ -60,6 +65,11 @@ export function interpolateBots(
       ammo: statSrc.ammo,
       energy: statSrc.energy,
       alive: statSrc.alive,
+      shieldActive: statSrc.shieldActive,
+      flamerActive: statSrc.flamerActive,
+      stunned: statSrc.stunned,
+      cloaked: statSrc.cloaked,
+      facing: statSrc.facing ?? null,
     }
   })
 }

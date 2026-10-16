@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Phase 9 balance harness: round-robin league of the example bots (bot0..bot9)
+// Phase 9 balance harness: round-robin league of the example bots (bot0..bot13)
 // across many seeds, reporting per-bot survival / wins / damage dealt.
 // Used to sanity-check SNIPER / ROCKET / TELEPORT against legacy modules.
 //
@@ -24,7 +24,7 @@ const { runMatchToReplay } = await import(
 
 const SEED_COUNT = Number.parseInt(process.env.BALANCE_SEEDS || '10', 10)
 const TICK_CAP = Number.parseInt(process.env.BALANCE_TICK_CAP || '240', 10)
-const BOT_COUNT = Number.parseInt(process.env.BALANCE_BOTS || '10', 10)
+const BOT_COUNT = Number.parseInt(process.env.BALANCE_BOTS || '14', 10)
 
 function extractTextFence(md) {
   const m = md.match(/```[a-zA-Z]*\r?\n([\s\S]*?)```/)

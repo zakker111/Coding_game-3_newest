@@ -46,6 +46,12 @@ export type ReplayBotState = {
   pc: number
   targetBulletId?: string | null
   targetMineId?: string | null
+  // Status flags for viewer FX (ruleset 0.3.x). Optional so older replays stay valid.
+  shieldActive?: boolean
+  flamerActive?: boolean
+  stunned?: boolean
+  cloaked?: boolean
+  facing?: { dx: number; dy: number } | null
 }
 
 export type ReplayBulletState = {
@@ -117,6 +123,13 @@ export type ResourceDeltaCause =
   | 'DRONE_HEAL'
   | 'SAW_DRAIN'
   | 'SHIELD_DRAIN'
+  | 'FLAMER_DRAIN'
+  | 'FIRE_SNIPER'
+  | 'FIRE_ROCKET'
+  | 'FIRE_RAILGUN'
+  | 'TELEPORT'
+  | 'FIRE_PULSE'
+  | 'ACTIVATE_CLOAK'
   | 'PICKUP_HEALTH'
   | 'PICKUP_AMMO'
   | 'PICKUP_ENERGY'
@@ -336,6 +349,65 @@ export type BotDiedEvent = {
   creditedBotId?: SlotId
 }
 
+// --- Ruleset 0.3.x module events (viewer FX) ---
+
+export type SniperHitEvent = {
+  type: 'SNIPER_HIT'
+  ownerBotId: SlotId
+  targetBotId: SlotId
+  fromPos: Pos
+  targetPos: Pos
+  damage: number
+}
+
+export type BotTeleportEvent = {
+  type: 'BOT_TELEPORT'
+  botId: SlotId
+  fromPos: Pos
+  toPos: Pos
+}
+
+export type RailgunShotEvent = {
+  type: 'RAILGUN_SHOT'
+  botId: SlotId
+  fromPos: Pos
+  dir: { dx: number; dy: number }
+  hitBotIds: SlotId[]
+}
+
+export type PulseBlastEvent = {
+  type: 'PULSE_BLAST'
+  botId: SlotId
+  radius: number
+  affectedBotIds: SlotId[]
+}
+
+export type CloakStartEvent = {
+  type: 'BOT_CLOAK_START'
+  botId: SlotId
+  ticks: number
+}
+
+export type CloakEndReason = 'EXPIRED' | 'ATTACK'
+
+export type CloakEndEvent = {
+  type: 'BOT_CLOAK_END'
+  botId: SlotId
+  reason: CloakEndReason
+}
+
+export type StunnedEvent = {
+  type: 'BOT_STUNNED'
+  botId: SlotId
+  ticksRemaining: number
+}
+
+export type FlamerBurnEvent = {
+  type: 'FLAMER_BURN'
+  botId: SlotId
+  victimBotIds: SlotId[]
+}
+
 export type MatchEndReason = 'LAST_BOT_ALIVE' | 'ALL_DEAD' | 'STALEMATE' | 'TICK_CAP'
 
 export type MatchEndEvent = {
@@ -371,6 +443,14 @@ export type KnownReplayEvent =
   | DroneDespawnEvent
   | DamageEvent
   | BotDiedEvent
+  | SniperHitEvent
+  | BotTeleportEvent
+  | RailgunShotEvent
+  | PulseBlastEvent
+  | CloakStartEvent
+  | CloakEndEvent
+  | StunnedEvent
+  | FlamerBurnEvent
   | MatchEndEvent
 
 export type UnknownReplayEvent = {

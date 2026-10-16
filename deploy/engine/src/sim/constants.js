@@ -60,33 +60,51 @@ export const ROCKET_FUSE_TICKS = 24
 export const ROCKET_TTL_TICKS = 60
 export const ROCKET_DAMAGE_CENTER = 35
 export const ROCKET_DAMAGE_ADJACENT = 15
-export const TELEPORT_ENERGY_COST = 30
-export const TELEPORT_COOLDOWN_TICKS = 14
+export const TELEPORT_ENERGY_COST = 25
+export const TELEPORT_COOLDOWN_TICKS = 10
+// Blink-adjacent damage: teleporting next to an enemy is a commit, not a free
+// reposition. The blinker takes BLINK_CONTACT_DAMAGE on arrival (armor/shield
+// mitigated) so pure blink-rush builds pay for the jump.
+export const TELEPORT_BLINK_CONTACT_DAMAGE = 8
+// Contact window: bots collide within BOT_HALF_SIZE*2; a few units of pad so
+// blinking "next to" someone (not just on top of them) still costs HP.
+export const TELEPORT_BLINK_CONTACT_RANGE_PAD = 6
 
 // FLAMER (ruleset 0.3.0): close-range cone weapon, energy-per-tick while active.
+// Balance pass: with damage 4/tick a 240-tick match allowed ~90 burn damage per
+// flame window — far above every other module's output. Damage 2 + drain 3 caps
+// a full-energy burst at ~66 dmg and makes the energy fund the real limiter.
 export const FLAMER_RANGE = 26
 export const FLAMER_CONE_COS = 0 // dot >= 0 => 180-degree facing cone (integer-friendly)
-export const FLAMER_DAMAGE = 4
-export const FLAMER_ENERGY_DRAIN_PER_TICK = 2
+export const FLAMER_DAMAGE = 2
+export const FLAMER_ENERGY_DRAIN_PER_TICK = 3
 
 // RAILGUN (ruleset 0.3.0): piercing Bresenham beam along the shot direction.
-export const RAILGUN_AMMO_COST = 10
-export const RAILGUN_COOLDOWN_TICKS = 18
+// Balance pass: cost 12 + cooldown 22 keeps a maxed-ammo railgun at ~8 shots
+// (~160 dmg) per match instead of the previous unlimited-feel 10/18 rhythm.
+export const RAILGUN_AMMO_COST = 12
+export const RAILGUN_COOLDOWN_TICKS = 22
 export const RAILGUN_DAMAGE_FIRST = 20
 export const RAILGUN_DAMAGE_SUBSEQUENT = 12
 export const RAILGUN_MAX_HITS = 3
 
-// PULSE (ruleset 0.3.0): radial knockback + brief stun burst.
+// PULSE (ruleset 0.3.0): radial blast — damage + knockback + brief stun.
+// Balance pass: previously pure utility (stun/knockback, zero damage), which
+// made pulse bots deal no damage at all in the league. Added direct blast
+// damage so it reads as an AoE finisher; the stun is what enables the follow-up.
 export const PULSE_ENERGY_COST = 35
 export const PULSE_COOLDOWN_TICKS = 25
 export const PULSE_RADIUS = 40
 export const PULSE_KNOCKBACK_UNITS = 12
 export const PULSE_STUN_TICKS = 3
+export const PULSE_DAMAGE = 10
 
 // CLOAK (ruleset 0.3.0): self-invisibility to enemy targeting; attacking breaks it.
+// Balance pass: 10 ticks was too short to reposition AND land a sniper shot
+// before the enemy retargeted; 14 makes one cloak = one clean ambush.
 export const CLOAK_ENERGY_COST = 30
 export const CLOAK_COOLDOWN_TICKS = 24
-export const CLOAK_DURATION_TICKS = 10
+export const CLOAK_DURATION_TICKS = 14
 
 export const MINE_ARM_TICKS = 2
 export const MINE_FUSE_TICKS = 18

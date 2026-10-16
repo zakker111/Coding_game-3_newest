@@ -15,7 +15,22 @@ test('runMatchToReplay: wall-bump death is credited to last damaging bot', () =>
       loadout: [null, null, null],
       sourceText: ['WAIT 5', 'LABEL LOOP', 'MOVE RIGHT', 'GOTO LOOP', ''].join('\n'),
     },
-    { slotId: 'BOT3', loadout: [null, null, null], sourceText: 'LABEL LOOP\nWAIT 10\nGOTO LOOP\n' },
+    // BOT3 chases and finishes off whichever rival is weakest; it must NOT
+    // shoot BOT2, so BOT1 stays the last bot to damage BOT2 before the
+    // wall-grind death (kill credit = last damaging bot).
+    {
+      slotId: 'BOT3',
+      loadout: ['BULLET', null, null],
+      sourceText: [
+        'LABEL LOOP',
+        'IF (HAS_LOWEST_HEALTH_BOT()) DO TARGET_LOWEST_HEALTH',
+        'IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 60) DO USE_SLOT1 TARGET',
+        'SET_MOVE_TO_TARGET CLOSEST_BOT',
+        'WAIT 1',
+        'GOTO LOOP',
+        '',
+      ].join('\n'),
+    },
     { slotId: 'BOT4', loadout: [null, null, null], sourceText: 'LABEL LOOP\nWAIT 10\nGOTO LOOP\n' },
   ]
 

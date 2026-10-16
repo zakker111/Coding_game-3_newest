@@ -20,6 +20,11 @@ export type ArenaRenderBot = {
   alive: boolean
   appearanceColor?: string
   displayName?: string
+  shieldActive?: boolean
+  flamerActive?: boolean
+  stunned?: boolean
+  cloaked?: boolean
+  facing?: { dx: number; dy: number } | null
 }
 
 export type ArenaRenderBullet = {
@@ -41,11 +46,23 @@ export type ArenaRenderGrenade = {
 
 export type ArenaRenderExplosion = {
   explosionId: string
-  kind?: 'grenade' | 'mine'
+  kind?: 'grenade' | 'mine' | 'pulse' | 'teleport' | 'railgun' | 'sniper' | 'flamer'
   ownerBotId?: SlotId
   pos: { x: number; y: number }
   innerRadius?: number
   outerRadius?: number
+  alpha?: number
+  /** For beam-style FX (railgun/snipetracer): beam origin. */
+  fromPos?: { x: number; y: number }
+  /** For directional FX (flamer cone): unit-ish direction vector. */
+  dir?: { dx: number; dy: number }
+}
+
+export type ArenaRenderTeleport = {
+  teleportId: string
+  botId: SlotId
+  fromPos: { x: number; y: number }
+  toPos: { x: number; y: number }
   alpha?: number
 }
 
@@ -79,6 +96,7 @@ export type ArenaRenderState = {
   mines?: ArenaRenderMine[]
   drones?: ArenaRenderDrone[]
   powerups?: ArenaRenderPowerup[]
+  teleports?: ArenaRenderTeleport[]
 }
 
 export type ArenaCanvasProps = {
@@ -410,8 +428,93 @@ export function ArenaCanvas({
         const alpha = typeof fx.alpha === 'number' ? clamp(fx.alpha, 0, 1) : 0.85
         const outerRadiusPx = Math.max(8, Math.floor((fx.outerRadius ?? SECTOR_SIZE_WORLD) * s))
         const innerRadiusPx = Math.max(4, Math.floor((fx.innerRadius ?? SECTOR_SIZE_WORLD / 2) * s))
-        const outerFill = fx.kind === 'mine' ? '#fca5a5' : '#fb923c'
-        const innerFill = fx.kind === 'mine' ? '#fee2e2' : '#fde68a'
+
+        // --- Beam-style FX (sniper tracer / railgun beam) ---
+        if ((fx.kind === 'sniper' || fx.kind === 'railgun') && fx.fromPos) {
+          const isRail = fx.kind === 'railgun'
+          const bx = worldToSnappedCssPx(fx.fromPos.x, s, dpr)
+          const by = worldToSnappedCssPx(fx.fromPos.y, s, dpr)
+          const coreColor = isRail ? '#a5b4fc' : '#fef08a'
+          const glowColor = isRail ? 'rgba(129, 140, 248, 0.5)' : 'rgba(250, 204, 21, 0.45)'
+
+          ctx.save()
+          ctx.globalAlpha = alpha
+          ctx.lineCap = 'round'
+
+          ctx.beginPath()
+          ctx.moveTo(bx, by)
+          ctx.lineTo(x, y)
+          ctx.strokeStyle = glowColor
+          ctx.lineWidth = Math.max(3, Math.floor((isRail ? 3.5 : 2.5) * s))
+          ctx.stroke()
+
+          ctx.beginPath()
+          ctx.moveTo(bx, by)
+          ctx.lineTo(x, y)
+          ctx.strokeStyle = coreColor
+          ctx.lineWidth = Math.max(1, Math.floor((isRail ? 1.4 : 1) * s))
+          ctx.stroke()
+
+          // muzzle flash
+          ctx.beginPath()
+          ctx.arc(bx, by, Math.max(2, Math.floor(1.6 * s)), 0, Math.PI * 2)
+          ctx.fillStyle = coreColor
+          ctx.globalAlpha = alpha * 0.9
+          ctx.fill()
+
+          // impact spark at target
+          ctx.globalAlpha = alpha
+          ctx.beginPath()
+          ctx.arc(x, y, innerRadiusPx * 0.5, 0, Math.PI * 2)
+          ctx.fillStyle = ownerColor
+          ctx.fill()
+          ctx.restore()
+          continue
+        }
+
+        // --- Directional cone FX (flamer) ---
+        if (fx.kind === 'flamer' && fx.dir && fx.fromPos) {
+          const bx = worldToSnappedCssPx(fx.fromPos.x, s, dpr)
+          const by = worldToSnappedCssPx(fx.fromPos.y, s, dpr)
+          const ang = Math.atan2(fx.dir.dy, fx.dir.dx)
+          const spread = Math.PI / 5
+          const lenPx = Math.max(10, Math.floor((fx.outerRadius ?? 26) * s))
+
+          ctx.save()
+          ctx.globalAlpha = alpha * 0.55
+
+          const grad = ctx.createRadialGradient(bx, by, Math.max(1, s), bx, by, lenPx)
+          grad.addColorStop(0, '#fde68a')
+          grad.addColorStop(0.55, '#fb923c')
+          grad.addColorStop(1, 'rgba(239, 68, 68, 0)')
+          ctx.fillStyle = grad
+
+          ctx.beginPath()
+          ctx.moveTo(bx, by)
+          ctx.arc(bx, by, lenPx, ang - spread, ang + spread)
+          ctx.closePath()
+          ctx.fill()
+          ctx.restore()
+          continue
+        }
+
+        // --- Ring FX (grenade/mine/pulse/teleport burst) ---
+        const isPulse = fx.kind === 'pulse'
+        const isTeleport = fx.kind === 'teleport'
+        const outerFill = isPulse
+          ? '#67e8f9'
+          : isTeleport
+            ? '#c4b5fd'
+            : fx.kind === 'mine'
+              ? '#fca5a5'
+              : '#fb923c'
+        const innerFill = isPulse
+          ? '#cffafe'
+          : isTeleport
+            ? '#ede9fe'
+            : fx.kind === 'mine'
+              ? '#fee2e2'
+              : '#fde68a'
 
         ctx.save()
         ctx.globalAlpha = alpha * 0.16
@@ -438,6 +541,49 @@ export function ArenaCanvas({
         ctx.arc(x, y, innerRadiusPx, 0, Math.PI * 2)
         ctx.strokeStyle = ownerColor
         ctx.lineWidth = Math.max(1, Math.floor(0.35 * s))
+        ctx.stroke()
+
+        if (isPulse) {
+          // expanding shockwave ring
+          ctx.globalAlpha = alpha * 0.85
+          ctx.beginPath()
+          ctx.arc(x, y, outerRadiusPx * 0.75, 0, Math.PI * 2)
+          ctx.strokeStyle = '#22d3ee'
+          ctx.lineWidth = Math.max(2, Math.floor(0.6 * s))
+          ctx.stroke()
+        }
+        ctx.restore()
+      }
+    }
+
+    // Teleport ghosts (origin markers)
+    if (renderState.teleports?.length) {
+      for (const tp of renderState.teleports) {
+        const gx = worldToSnappedCssPx(tp.fromPos.x, s, dpr)
+        const gy = worldToSnappedCssPx(tp.fromPos.y, s, dpr)
+        const tx = worldToSnappedCssPx(tp.toPos.x, s, dpr)
+        const ty = worldToSnappedCssPx(tp.toPos.y, s, dpr)
+        const alpha = typeof tp.alpha === 'number' ? clamp(tp.alpha, 0, 1) : 0.9
+        const color = slotFallbackColor(tp.botId)
+
+        ctx.save()
+        // ghost outline at origin
+        ctx.globalAlpha = alpha * 0.5
+        ctx.beginPath()
+        ctx.arc(gx, gy, 8 * s, 0, Math.PI * 2)
+        ctx.strokeStyle = color
+        ctx.setLineDash([Math.max(2, s), Math.max(2, s)])
+        ctx.lineWidth = Math.max(1, Math.floor(0.5 * s))
+        ctx.stroke()
+        ctx.setLineDash([])
+
+        // warp streak origin -> destination
+        ctx.globalAlpha = alpha * 0.7
+        ctx.beginPath()
+        ctx.moveTo(gx, gy)
+        ctx.lineTo(tx, ty)
+        ctx.strokeStyle = '#c4b5fd'
+        ctx.lineWidth = Math.max(1, Math.floor(0.6 * s))
         ctx.stroke()
         ctx.restore()
       }
@@ -593,6 +739,70 @@ export function ArenaCanvas({
       ctx.strokeStyle = 'rgba(0,0,0,0.6)'
       ctx.lineWidth = Math.max(1, Math.floor(1 + s * 0.2))
       ctx.stroke()
+
+      // Facing indicator (small nose in movement/aim direction)
+      if (bot.alive && bot.facing) {
+        const fLen = Math.hypot(bot.facing.dx, bot.facing.dy) || 1
+        const ndx = bot.facing.dx / fLen
+        const ndy = bot.facing.dy / fLen
+        ctx.beginPath()
+        ctx.moveTo(x + ndx * botRadiusPx, y + ndy * botRadiusPx)
+        ctx.lineTo(x + ndx * (botRadiusPx + Math.max(3, 2 * s)), y + ndy * (botRadiusPx + Math.max(3, 2 * s)))
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.8 * s))
+        ctx.stroke()
+      }
+
+      // Cloak: shimmering translucent token
+      if (bot.cloaked && bot.alive) {
+        ctx.globalAlpha = alpha * 0.45
+        ctx.beginPath()
+        ctx.arc(x, y, botRadiusPx, 0, Math.PI * 2)
+        ctx.fillStyle = fill
+        ctx.fill()
+        ctx.globalAlpha = alpha * 0.8
+        ctx.beginPath()
+        ctx.arc(x, y, botRadiusPx + Math.max(2, s), 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(167, 139, 250, 0.8)'
+        ctx.setLineDash([Math.max(2, s), Math.max(2, s)])
+        ctx.lineWidth = Math.max(1, Math.floor(0.5 * s))
+        ctx.stroke()
+        ctx.setLineDash([])
+        ctx.globalAlpha = alpha
+      }
+
+      // Shield: cyan bubble ring
+      if (bot.shieldActive && bot.alive) {
+        ctx.beginPath()
+        ctx.arc(x, y, botRadiusPx + Math.max(3, 2 * s), 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.9)'
+        ctx.lineWidth = Math.max(2, Math.floor(0.8 * s))
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(x, y, botRadiusPx + Math.max(3, 2 * s), 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(165, 243, 252, 0.35)'
+        ctx.lineWidth = Math.max(4, Math.floor(1.6 * s))
+        ctx.stroke()
+      }
+
+      // Flamer active: orange aura flicker at facing side
+      if (bot.flamerActive && bot.alive) {
+        ctx.beginPath()
+        ctx.arc(x, y, botRadiusPx + Math.max(1, s * 0.5), 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(251, 146, 60, 0.75)'
+        ctx.lineWidth = Math.max(1, Math.floor(0.6 * s))
+        ctx.stroke()
+      }
+
+      // Stunned: yellow stars above token
+      if (bot.stunned && bot.alive) {
+        const starY = y - botRadiusPx - Math.max(4, 2 * s)
+        ctx.fillStyle = '#fde047'
+        ctx.font = `${Math.max(8, Math.floor(2.4 * s))}px ui-monospace, monospace`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText('* * *', x, starY)
+      }
 
       ctx.restore()
     }

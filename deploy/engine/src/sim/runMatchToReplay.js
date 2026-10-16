@@ -21,9 +21,12 @@ import {
   ROCKET_TTL_TICKS,
   TELEPORT_ENERGY_COST,
   TELEPORT_COOLDOWN_TICKS,
+  TELEPORT_BLINK_CONTACT_DAMAGE,
+  TELEPORT_BLINK_CONTACT_RANGE_PAD,
   FLAMER_RANGE,
   FLAMER_DAMAGE,
   FLAMER_ENERGY_DRAIN_PER_TICK,
+  FLAMER_CONE_COS,
   RAILGUN_AMMO_COST,
   RAILGUN_COOLDOWN_TICKS,
   RAILGUN_DAMAGE_FIRST,
@@ -32,6 +35,7 @@ import {
   PULSE_ENERGY_COST,
   PULSE_COOLDOWN_TICKS,
   PULSE_RADIUS,
+  PULSE_DAMAGE,
   PULSE_KNOCKBACK_UNITS,
   PULSE_STUN_TICKS,
   CLOAK_ENERGY_COST,
@@ -498,7 +502,7 @@ export function runMatchToReplay(params) {
           }
 
           if (mod === 'TELEPORT') {
-            const r = attemptUseTeleport(bot, slotIndex, eff.target, tickEvents)
+            const r = attemptUseTeleport(bot, slotIndex, eff.target, bots, tickEvents)
             if (!r.ok) {
               botExecResult = 'NOP'
               botExecReason = r.reason
@@ -751,6 +755,12 @@ function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) 
       ammo: b.ammo,
       energy: b.energy,
       alive: b.alive,
+      // Status flags consumed by the replay viewer for FX rendering.
+      shieldActive: Boolean(b.shieldActive),
+      flamerActive: Boolean(b.flamerActive),
+      stunned: b.stunTicksRemaining > 0,
+      cloaked: b.cloakTicksRemaining > 0,
+      facing: b.lastMoveDir ? { dx: b.lastMoveDir.dx, dy: b.lastMoveDir.dy } : null,
       pc: b.vm?.pc ?? 1,
       targetBulletId: typeof b.vm?.target?.bulletId === 'string' ? b.vm.target.bulletId : null,
       targetMineId: typeof b.vm?.target?.mineId === 'string' ? b.vm.target.mineId : null,
@@ -1028,6 +1038,19 @@ function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
         if (bot.slotCooldowns[idx] > 0) return false
         return bot.ammo >= MINE_AMMO_COST
       }
+      if (mod === 'RAILGUN') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.ammo >= RAILGUN_AMMO_COST
+      }
+      if (mod === 'PULSE') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.energy >= PULSE_ENERGY_COST
+      }
+      if (mod === 'CLOAK') {
+        if (bot.slotCooldowns[idx] > 0) return false
+        return bot.energy >= CLOAK_ENERGY_COST
+      }
+      if (mod === 'FLAMER') return bot.energy > FLAMER_ENERGY_DRAIN_PER_TICK
       if (mod === 'REPAIR_DRONE') {
         if (bot.slotCooldowns[idx] > 0) return false
         if (bot.ammo < REPAIR_DRONE_AMMO_COST) return false
@@ -1044,6 +1067,8 @@ function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
       const mod = bot.loadout[idx]
       if (mod === 'SHIELD' && idx === bot.shieldSlotIndex) return bot.shieldActive
       if (mod === 'SAW' && idx === bot.sawSlotIndex) return bot.sawActive
+      if (mod === 'FLAMER' && idx === bot.flamerSlotIndex) return Boolean(bot.flamerActive)
+      if (mod === 'CLOAK') return isBotCloaked(bot)
       if (mod === 'REPAIR_DRONE') return countRepairDrones(drones, bot.botId, idx) > 0
       return false
     },
@@ -1290,7 +1315,16 @@ function resolveMovement(bots, bullets, mines, powerupState, tickEvents) {
       y: Math.max(BOT_CENTER_MIN, Math.min(BOT_CENTER_MAX, candidate.y)),
     }
 
-    const bumpedWallFromClamp = clamped.x !== candidate.x || clamped.y !== candidate.y
+    // A wall bump only counts when the bot was NOT already flush against that
+    // wall bound before this step. Bots pinned in a corner (e.g. move-away goals)
+    // would otherwise take bump damage every tick while unable to move.
+    const atLeft = fromPos.x <= BOT_CENTER_MIN
+    const atRight = fromPos.x >= BOT_CENTER_MAX
+    const atTop = fromPos.y <= BOT_CENTER_MIN
+    const atBottom = fromPos.y >= BOT_CENTER_MAX
+    const flushX = (atLeft && candidate.x < fromPos.x) || (atRight && candidate.x > fromPos.x)
+    const flushY = (atTop && candidate.y < fromPos.y) || (atBottom && candidate.y > fromPos.y)
+    const bumpedWallFromClamp = (clamped.x !== candidate.x && !flushX) || (clamped.y !== candidate.y && !flushY)
 
     // Bot-bot overlap check along the movement segment.
     /** @type {any | null} */
@@ -1571,8 +1605,31 @@ function resolveMoveTarget(bot, target, bots, bullets, mines, powerupState, clea
       return null
     }
 
-    const dx = bot.pos.x - botTarget.pos.x
-    const dy = bot.pos.y - botTarget.pos.y
+    let dx = bot.pos.x - botTarget.pos.x
+    let dy = bot.pos.y - botTarget.pos.y
+
+    // Wall-escape assist: a bot pinned in a corner that keeps fleeing straight
+    // into the wall grinds itself to death on WALL_BUMP damage (the old bot7
+    // sniper died of wall bumps at (8,8) with full ammo). When we bumped a
+    // wall last tick, slide along the perpendicular of that wall instead so
+    // the escape route curves out of the corner.
+    if (bot.bumpedWallLastTick && bot.bumpedWallDirLastTick) {
+      const wdir = bot.bumpedWallDirLastTick
+      if (wdir === 'LEFT') {
+        dx = speed
+        dy = dy >= 0 ? speed : -speed
+      } else if (wdir === 'RIGHT') {
+        dx = -speed
+        dy = dy >= 0 ? speed : -speed
+      } else if (wdir === 'UP') {
+        dy = speed
+        dx = dx >= 0 ? speed : -speed
+      } else if (wdir === 'DOWN') {
+        dy = -speed
+        dx = dx >= 0 ? speed : -speed
+      }
+    }
+
     const scaled = scaleDeltaToMaxLen(dx, dy, speed)
     return { dx: scaled.dx, dy: scaled.dy, dir: dirFromDelta(dx, dy) }
   }
@@ -1940,6 +1997,8 @@ function attemptUseSniper(bot, slotIndex, targetToken, bots, tickEvents) {
     type: 'SNIPER_HIT',
     ownerBotId: bot.botId,
     targetBotId: targetBot.botId,
+    fromPos: clonePos(bot.pos),
+    targetPos: clonePos(targetBot.pos),
     damage,
   })
   tickEvents.push({
@@ -1957,7 +2016,7 @@ function attemptUseSniper(bot, slotIndex, targetToken, bots, tickEvents) {
   return { ok: true }
 }
 
-function attemptUseTeleport(bot, slotIndex, targetToken, tickEvents) {
+function attemptUseTeleport(bot, slotIndex, targetToken, bots, tickEvents) {
   if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
   if (bot.loadout[slotIndex] !== 'TELEPORT') return { ok: false, reason: 'NO_MODULE' }
   if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
@@ -1986,6 +2045,41 @@ function attemptUseTeleport(bot, slotIndex, targetToken, tickEvents) {
     cause: 'TELEPORT',
   })
   tickEvents.push({ type: 'BOT_TELEPORT', botId: bot.botId, fromPos, toPos: clonePos(bot.pos) })
+
+  // Blink-contact damage (ruleset 0.3.0 balance): arriving adjacent to an
+  // enemy is a commit, not a free reposition. The blinker takes fixed damage
+  // (shield/armor mitigated) so pure blink-rush builds pay for the jump.
+  const blinkContactRange = BOT_HALF_SIZE * 2 + TELEPORT_BLINK_CONTACT_RANGE_PAD
+  let blinkNeighbor = null
+  for (const other of bots) {
+    if (!other.alive || other.botId === bot.botId) continue
+    if (manhattan(bot.pos, other.pos) <= blinkContactRange) {
+      if (!blinkNeighbor || manhattan(bot.pos, other.pos) < manhattan(bot.pos, blinkNeighbor.pos)) {
+        blinkNeighbor = other
+      }
+    }
+  }
+  if (blinkNeighbor) {
+    const raw = TELEPORT_BLINK_CONTACT_DAMAGE
+    const shielded = bot.shieldActive ? raw - Math.floor(raw / 2) : raw
+    const damage = bot.armorEquipped ? applyArmorMitigation(shielded) : shielded
+    bot.lastDamageByBotId = blinkNeighbor.botId
+    bot.hp = Math.max(0, bot.hp - damage)
+    tickEvents.push({
+      type: 'DAMAGE',
+      victimBotId: bot.botId,
+      amount: damage,
+      source: 'TELEPORT_BLINK',
+      sourceBotId: blinkNeighbor.botId,
+      kind: 'DIRECT',
+      sourceRef: { type: 'TELEPORT', id: bot.botId },
+    })
+    if (bot.hp <= 0 && bot.alive) {
+      bot.alive = false
+      tickEvents.push({ type: 'BOT_DIED', victimBotId: bot.botId, creditedBotId: bot.lastDamageByBotId })
+    }
+  }
+
   return { ok: true }
 }
 
@@ -2143,6 +2237,32 @@ function attemptUsePulse(bot, slotIndex, bots, tickEvents) {
 
     affected.push(b.botId)
     b.stunTicksRemaining = PULSE_STUN_TICKS
+
+    // Blast damage (ruleset 0.3.0 balance pass): shockwaves hurt. Shield/armor
+    // mitigate as with other direct sources; kills are credited to the caster.
+    {
+      const raw = PULSE_DAMAGE
+      const shielded = b.shieldActive ? raw - Math.floor(raw / 2) : raw
+      const damage = b.armorEquipped ? applyArmorMitigation(shielded) : shielded
+
+      b.lastDamageByBotId = bot.botId
+      b.hp = Math.max(0, b.hp - damage)
+
+      tickEvents.push({
+        type: 'DAMAGE',
+        victimBotId: b.botId,
+        amount: damage,
+        source: 'PULSE',
+        sourceBotId: bot.botId,
+        kind: 'DIRECT',
+        sourceRef: { type: 'PULSE', id: bot.botId },
+      })
+
+      if (b.hp <= 0 && b.alive) {
+        b.alive = false
+        tickEvents.push({ type: 'BOT_DIED', victimBotId: b.botId, creditedBotId: bot.botId })
+      }
+    }
 
     let vx = ddx
     let vy = ddy
