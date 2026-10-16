@@ -31,10 +31,10 @@ TARGET_CLOSEST
 IF (AMMO < 30 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
 ; --- Volley logic: fire only in the sweet spot, respecting the 12-tick cooldown ---
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() >= 24 && DIST_TO_TARGET_BOT() <= 90 && AMMO >= 40) DO USE_SLOT1 TARGET
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() >= 24 && DIST_TO_TARGET_BOT() <= 90 && AMMO >= 30) DO USE_SLOT1 TARGET
 
 ; --- Close-in bail: don't trade bumps while reloading ---
-IF (DIST_TO_CLOSEST_BOT() <= 20) GOTO BACKOFF
+IF (!SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 20) GOTO BACKOFF
 
 WAIT 1
 GOTO LOOP

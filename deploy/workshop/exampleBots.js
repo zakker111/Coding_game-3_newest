@@ -435,42 +435,62 @@ GOTO LOOP
     id: 'bot7',
     displayName: 'Long-Range Sniper',
     sourceText: `;@slot1 SNIPER
-;@slot2 SHIELD
+;@slot2 BULLET
 ;@slot3 EMPTY
 ; bot7 — Long-Range Sniper
-; Loadout: SLOT1=SNIPER, SLOT2=SHIELD
-; Summary: keep distance; SNIPER the LOWEST_HEALTH_BOT (else CLOSEST_BOT); SHIELD against incoming bullets; run for AMMO when the reserve is low.
+; Loadout: SLOT1=SNIPER, SLOT2=BULLET
+; Balance note: the original SNIPER+SHIELD build had 0% survival in the league — shield drain (2/tick) left no fuel for teleport-free kiting and the bot had zero close-range defense. SNIPER+BULLET fixes both.
+; Summary: keep distance; SNIPER the LOWEST_HEALTH_BOT (else CLOSEST_BOT); BULLET anyone crowding in; run for AMMO when the reserve is low.
 
 LABEL LOOP
 
-; --- Ammo discipline: SNIPER costs ammo per shot, keep a reserve ---
-IF (AMMO < 40 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
+; --- Ammo discipline: SNIPER costs 6 ammo/shot, BULLET costs 2.
+; Old gate was AMMO >= 30 with a RESUPPLY trip under 40 — the bot spent every
+; tick between 30-39 walking to powerups and never fired (0 kills in league).
+; Fire whenever a shot is affordable; resupply only when truly dry. ---
+IF (AMMO < 12 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
-; --- Pick a victim: wounded first (TARGET_LOWEST_HEALTH also drives movement) ---
-TARGET_LOWEST_HEALTH
+; --- Pick a victim: wounded first, but only finish off weak prey (hp <= 60) ---
+IF (HAS_LOWEST_HEALTH_BOT() && TARGET_HEALTH <= 60) DO TARGET_LOWEST_HEALTH
 
-; --- Defensive SHIELD burst when a bullet gets dangerous ---
-TARGET_CLOSEST_BULLET
-IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 40 && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
-IF (!HAS_TARGET_BULLET() || DIST_TO_TARGET_BULLET() > 60) DO SHIELD OFF
+; --- Nobody worth finishing: hunt the closest enemy instead ---
+IF (!HAS_TARGET_BOT()) DO TARGET_CLOSEST
 
-; --- Fire the sniper (hitscan, 10-tick cooldown, gated on ammo) ---
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && AMMO >= 50) DO USE_SLOT1 TARGET
+; --- Always aim at whoever is crowding us: USE_SLOTx TARGET fires at the
+; target register, which may point at a distant/wounded bot — CLOSEST keeps
+; defensive fire honest. ---
+TARGET_CLOSEST
 
-; --- Maintain range: back off if enemies crowd in ---
-IF (DIST_TO_CLOSEST_BOT() <= 48) GOTO BACKOFF
+; --- Stay on the move every tick so rushers can't pin us in a corner ---
+SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
+
+; --- Defensive fire: shoot the bot that is actually in our face ---
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT2) && DIST_TO_CLOSEST_BOT() <= 60 && AMMO >= 4) DO USE_SLOT2 TARGET
+
+; --- Fire the sniper (hitscan, 12-tick cooldown); take any wounded-priority
+; shot even if it means dipping into the bullet reserve ---
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && AMMO >= 8) DO USE_SLOT1 TARGET
+
+; --- No shot available but enemies are crowding in: keep distance ---
+IF (!SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 48) GOTO BACKOFF
 
 WAIT 1
 GOTO LOOP
 
 LABEL BACKOFF
+TARGET_CLOSEST
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT2) && AMMO >= 10) DO USE_SLOT2 TARGET
+; --- Bubble up while backing away ONLY when energy is plentiful: shield
+; drains 2/tick and this loop runs WAIT 5 + ~7 instructions (~12 ticks),
+; which previously burned 100% of the energy reserve every pass and left
+; nothing for the sniper shots (0 kills in league). ---
+IF (ENERGY >= 80) DO SHIELD ON
 SET_MOVE_AWAY_FROM_BOT CLOSEST_BOT
-WAIT 3
-SET_MOVE_TO_BOT CLOSEST_BOT
+WAIT 5
+SHIELD OFF
 GOTO LOOP
 
 LABEL RESUPPLY
-SHIELD OFF
 TARGET_POWERUP AMMO
 MOVE_TO_TARGET
 IF (!POWERUP_EXISTS(AMMO) || AMMO >= 60) DO CLEAR_TARGET_POWERUP
@@ -499,10 +519,10 @@ TARGET_CLOSEST
 IF (AMMO < 30 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
 ; --- Volley logic: fire only in the sweet spot, respecting the 12-tick cooldown ---
-IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() >= 24 && DIST_TO_TARGET_BOT() <= 90 && AMMO >= 40) DO USE_SLOT1 TARGET
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && DIST_TO_TARGET_BOT() >= 24 && DIST_TO_TARGET_BOT() <= 90 && AMMO >= 30) DO USE_SLOT1 TARGET
 
 ; --- Close-in bail: don't trade bumps while reloading ---
-IF (DIST_TO_CLOSEST_BOT() <= 20) GOTO BACKOFF
+IF (!SLOT_READY(SLOT1) && DIST_TO_CLOSEST_BOT() <= 20) GOTO BACKOFF
 
 WAIT 1
 GOTO LOOP
@@ -527,29 +547,28 @@ GOTO LOOP
     displayName: 'Blink Teleporter',
     sourceText: `;@slot1 TELEPORT
 ;@slot2 SHIELD
-;@slot3 EMPTY
+;@slot3 BULLET
 ; bot9 — Blink Teleporter
-; Loadout: SLOT1=TELEPORT, SLOT2=SHIELD
-; Summary: chase CLOSEST_BOT on foot; when ENERGY >= 50 and the target is far, USE_SLOT1 SECTOR_5 to blink to center control; SHIELD on approach; farm ENERGY powerups to refill the jump fuel.
+; Loadout: SLOT1=TELEPORT, SLOT2=SHIELD, SLOT3=BULLET
+; Balance note: the original TELEPORT+SHIELD build survived well but recorded 0 kills / 8 dmg out in the league — blink-and-shield has no damage source. TELEPORT+BULLET gives it a way to actually win fights. The bubble lives on SLOT2 so the refuel branch's SHIELD ON/OFF gates still reference it.
+; Summary: chase CLOSEST_BOT on foot; when ENERGY >= 50 and the target is far, USE_SLOT1 SECTOR_5 to blink to center control; shoot the closest enemy with BULLET; farm ENERGY powerups to refill the jump fuel.
 
 LABEL LOOP
 
-; --- Fuel check first: TELEPORT costs 30 energy per jump ---
-IF (ENERGY < 50 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
+; --- Fuel check first: TELEPORT costs 25 energy per jump ---
+IF (ENERGY < 40 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
 
-; --- Defensive shield while closing distance ---
-TARGET_CLOSEST_BULLET
-IF (HAS_TARGET_BULLET() && DIST_TO_TARGET_BULLET() <= 40 && SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2)) DO SHIELD ON
-IF (!HAS_TARGET_BULLET() || DIST_TO_TARGET_BULLET() > 60) DO SHIELD OFF
+; --- Blink: cooldown 10 ticks, so only jump when it wins a race ---
+IF (DIST_TO_CLOSEST_BOT() >= 80 && ENERGY >= 40 && SLOT_READY(SLOT1)) DO USE_SLOT1 SECTOR_5
 
-; --- Blink: long cooldown (14 ticks), so only jump when it wins a race ---
-IF (DIST_TO_CLOSEST_BOT() >= 80 && ENERGY >= 50 && SLOT_READY(SLOT1)) DO USE_SLOT1 SECTOR_5
+; --- Finish the fight: shoot the closest enemy between jumps.
+; USE_SLOT3 TARGET only fires at the *target register*, which SET_MOVE_TO_TARGET
+; overwrites with powerups while refueling — pin CLOSEST every tick instead. ---
+TARGET_CLOSEST
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT3) && AMMO >= 10) DO USE_SLOT3 TARGET
 
-; --- Normal pursuit between jumps ---
-SET_MOVE_TO_BOT CLOSEST_BOT
-
-; --- Finish the fight up close with bumps once we've arrived ---
-IF (DIST_TO_CLOSEST_BOT() <= 24) DO SHIELD OFF
+; --- Normal pursuit between shots/jumps (follow the current target every tick) ---
+SET_MOVE_TO_TARGET
 
 WAIT 1
 GOTO LOOP
@@ -557,12 +576,187 @@ GOTO LOOP
 LABEL REFUEL
 TARGET_POWERUP ENERGY
 MOVE_TO_TARGET
+; --- Shield ON while walking to the pad: we are defenseless mid-refuel, and
+; SHIELD only drains energy while active — spend it here, not during jumps. ---
+IF (SLOT_READY(SLOT2) && !SLOT_ACTIVE(SLOT2) && ENERGY >= 45) DO SHIELD ON
 IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 70) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 70) DO SHIELD OFF
 IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 70) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
+
+  bot10: {
+    id: 'bot10',
+    displayName: 'Flame Close-Quarters',
+    sourceText: `;@slot1 FLAMER
+;@slot2 EMPTY
+;@slot3 SHIELD
+; bot10 — Flame Close-Quarters
+; Loadout: SLOT1=FLAMER, SLOT3=SHIELD
+; Summary: chase CLOSEST_BOT; shield up on approach; FLAMER ON whenever an enemy is within ~30 units in front; disengage for ENERGY when the tank is dry.
+
+LABEL LOOP
+
+; --- Energy discipline: flame costs 2/tick, keep a reserve for one more burn ---
+IF (ENERGY < 25 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
+
+; --- Pick prey and walk at it ---
+TARGET_CLOSEST
+SET_MOVE_TO_TARGET
+
+; --- Shield ON while closing (only if we can pay the drain) ---
+IF (DIST_TO_CLOSEST_BOT() <= 60 && SLOT_READY(SLOT3) && !SLOT_ACTIVE(SLOT3) && ENERGY >= 40) DO SHIELD ON
+
+; --- Burn when something is in arm's reach (FLAMER ON keeps streaming every tick) ---
+IF (DIST_TO_CLOSEST_BOT() <= 30 && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1)) DO FLAMER ON
+IF (DIST_TO_CLOSEST_BOT() > 34 && SLOT_ACTIVE(SLOT1)) DO FLAMER OFF
+
+; --- Drop shield when the tank gets low or nobody is near ---
+IF (ENERGY < 30 || DIST_TO_CLOSEST_BOT() > 70) DO SHIELD OFF
+
+WAIT 1
+GOTO LOOP
+
+LABEL REFUEL
+SHIELD OFF
+IF (SLOT_ACTIVE(SLOT1)) DO FLAMER OFF
+TARGET_POWERUP ENERGY
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 60) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 60) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
+
+  bot11: {
+    id: 'bot11',
+    displayName: 'Rail Sniper',
+    sourceText: `;@slot1 RAILGUN
+;@slot2 EMPTY
+;@slot3 ARMOR
+; bot11 — Rail Sniper
+; Loadout: SLOT1=RAILGUN, SLOT3=ARMOR
+; Summary: RAILGUN fires an instant piercing beam along the shooter's FACING direction,
+; and facing is derived from the target register (see computeBotFacingDir) — so this bot
+; pins CLOSEST_BOT as its target every tick and USE_SLOT1 TARGET lands the beam on it.
+; Farm AMMO when dry; ARMOR soaks damage for free.
+
+LABEL LOOP
+
+; --- Ammo discipline: 10/shot, keep one spare round ---
+IF (AMMO < 15 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
+
+; --- Pin prey: target register drives both movement AND railgun facing ---
+TARGET_CLOSEST
+
+; --- Keep ideal range ~40-90: back off if crowded, close in if very far ---
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 25) DO MOVE_AWAY_FROM_TARGET
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() > 90) DO SET_MOVE_TO_TARGET
+
+; --- Pull the trigger when a victim is locked and charged:
+; USE_SLOT1 TARGET resolves the target register into a BOT selector,
+; which orients the beam before it fires. ---
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && AMMO >= 15) DO USE_SLOT1 TARGET
+
+WAIT 1
+GOTO LOOP
+
+LABEL RESUPPLY
+TARGET_POWERUP AMMO
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(AMMO) || AMMO >= 40) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(AMMO) || AMMO >= 40) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
+
+  bot12: {
+    id: 'bot12',
+    displayName: 'Shock Warden',
+    sourceText: `;@slot1 PULSE
+;@slot2 BULLET
+;@slot3 SHIELD
+; bot12 — Shock Warden
+; Loadout: SLOT1=PULSE, SLOT2=BULLET, SLOT3=SHIELD
+; Summary: farm ENERGY until the pulse fund (35+) is banked; when CLOSEST_BOT is within ~38 units, USE_SLOT1 to blast+stun them, then shoot the frozen target with BULLET. Shield only as a last-ditch wall.
+
+LABEL LOOP
+
+; --- Pulse costs 35 energy; without a charge there is nothing to do but farm ---
+IF (ENERGY < 40 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
+
+TARGET_CLOSEST
+
+; --- Emergency shield when cornered AND healthy enough to pay both drains ---
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 20 && HEALTH <= 40 && SLOT_READY(SLOT3) && !SLOT_ACTIVE(SLOT3) && ENERGY >= 60) DO SHIELD ON
+IF (DIST_TO_TARGET_BOT() > 30 || ENERGY < 45) DO SHIELD OFF
+
+; --- Blast point-blank: stun + knockback, then punish with bullets.
+; PULSE is self-centered — the USE_SLOT target token is ignored by the engine,
+; so TARGET (the pinned victim) is a valid, readable trigger argument. ---
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 38 && SLOT_READY(SLOT1) && ENERGY >= 40) DO USE_SLOT1 TARGET
+
+; --- Punish window: stunned targets cannot move for 3 ticks — shoot them ---
+TARGET_CLOSEST
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT2) && AMMO >= 10) DO USE_SLOT2 TARGET
+
+SET_MOVE_TO_TARGET
+
+WAIT 1
+GOTO LOOP
+
+LABEL REFUEL
+SHIELD OFF
+TARGET_POWERUP ENERGY
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 75) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 75) DO SET_MOVE_TO_BOT CLOSEST_BOT
+GOTO LOOP
+`,
+  },
+
+  bot13: {
+    id: 'bot13',
+    displayName: 'Ghost Assassin',
+    sourceText: `;@slot1 CLOAK
+;@slot2 SNIPER
+;@slot3 EMPTY
+; bot13 — Ghost Assassin
+; Loadout: SLOT1=CLOAK, SLOT2=SNIPER
+; Summary: drop CLOAK when an enemy is near or wounded prey exists, hunt LOWEST_HEALTH_BOT (else CLOSEST), snipe with BULLET-cheap discipline on AMMO; refuel ENERGY between kills. Firing breaks cloak — that is the intended rhythm.
+
+LABEL LOOP
+
+; --- Cloak fund: 30 per drop, keep enough to vanish after the next shot ---
+IF (ENERGY < 35 && POWERUP_EXISTS(ENERGY)) GOTO REFUEL
+
+; --- Pick prey: finish the wounded, else whoever is closest ---
+IF (HAS_LOWEST_HEALTH_BOT()) DO TARGET_LOWEST_HEALTH
+IF (!HAS_TARGET_BOT()) DO TARGET_CLOSEST
+
+; --- Go dark when prey is in sniper range so their return fire can't lock us ---
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 80 && SLOT_READY(SLOT1) && ENERGY >= 35 && !SLOT_ACTIVE(SLOT1)) DO USE_SLOT1 TARGET
+
+; --- Ambush shot: instant hitscan; firing ends the cloak window ---
+IF (HAS_TARGET_BOT() && SLOT_READY(SLOT2) && AMMO >= 12) DO USE_SLOT2 TARGET
+
+; --- Kiting: hold ~50 units of distance from the target ---
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 35) DO MOVE_AWAY_FROM_TARGET
+IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() > 70) DO SET_MOVE_TO_TARGET
+
+WAIT 1
+GOTO LOOP
+
+LABEL REFUEL
+TARGET_POWERUP ENERGY
+MOVE_TO_TARGET
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 65) DO CLEAR_TARGET_POWERUP
+IF (!POWERUP_EXISTS(ENERGY) || ENERGY >= 65) DO SET_MOVE_TO_BOT CLOSEST_BOT
 GOTO LOOP
 `,
   },
 }
 
-export const OPPONENT_EXAMPLE_POOL_IDS = ['bot1', 'bot2', 'bot3', 'bot4', 'bot5', 'bot6', 'bot7', 'bot8', 'bot9']
+export const OPPONENT_EXAMPLE_POOL_IDS = ['bot1', 'bot2', 'bot3', 'bot4', 'bot5', 'bot6', 'bot7', 'bot8', 'bot9', 'bot10', 'bot11', 'bot12', 'bot13']
 export const DEFAULT_OPPONENT_EXAMPLE_IDS = ['bot2', 'bot3', 'bot4']
