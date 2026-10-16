@@ -15,7 +15,7 @@ import {
 } from '../src/index.js'
 
 test('ruleset constants match the current stable contract', () => {
-  assert.equal(RULESET_VERSION, '0.2.0')
+  assert.equal(RULESET_VERSION, '0.3.0')
   assert.equal(LOADOUT_SLOT_COUNT, 3)
   assert.deepStrictEqual(EMPTY_LOADOUT, [null, null, null])
   assert.deepStrictEqual(MODULE_IDS, [
@@ -29,6 +29,10 @@ test('ruleset constants match the current stable contract', () => {
     'SNIPER',
     'ROCKET',
     'TELEPORT',
+    'FLAMER',
+    'RAILGUN',
+    'PULSE',
+    'CLOAK',
   ])
 })
 
@@ -44,6 +48,10 @@ test('ruleset catalog is internally consistent', () => {
   assert.equal(isWeaponModuleId('MINE'), true)
   assert.equal(isWeaponModuleId('SNIPER'), true)
   assert.equal(isWeaponModuleId('ROCKET'), true)
+  assert.equal(isWeaponModuleId('FLAMER'), true)
+  assert.equal(isWeaponModuleId('RAILGUN'), true)
+  assert.equal(isWeaponModuleId('PULSE'), false)
+  assert.equal(isWeaponModuleId('CLOAK'), false)
   assert.equal(isWeaponModuleId('REPAIR_DRONE'), false)
   assert.equal(isWeaponModuleId('TELEPORT'), false)
   assert.equal(isWeaponModuleId('SHIELD'), false)
