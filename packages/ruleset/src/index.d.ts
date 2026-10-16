@@ -1,4 +1,4 @@
-export const RULESET_VERSION: '0.2.0'
+export const RULESET_VERSION: '0.3.0'
 
 export const LOADOUT_SLOT_COUNT: 3
 
@@ -15,6 +15,10 @@ export const MODULE_IDS: readonly [
   'SNIPER',
   'ROCKET',
   'TELEPORT',
+  'FLAMER',
+  'RAILGUN',
+  'PULSE',
+  'CLOAK',
 ]
 
 export type ModuleId = (typeof MODULE_IDS)[number]

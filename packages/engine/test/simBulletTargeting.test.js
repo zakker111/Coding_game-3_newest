@@ -40,8 +40,8 @@ test('Phase 3: TARGET_CLOSEST_BULLET + MOVE_AWAY_FROM_TARGET are wired (smoke)',
     ],
   })
 
-  assert.equal(replay.rulesetVersion, '0.2.0')
-  assert.equal(replay.schemaVersion, '0.2.0')
+  assert.equal(replay.rulesetVersion, '0.3.0')
+  assert.equal(replay.schemaVersion, '0.3.0')
 
   const anyBulletSpawn = replay.events.some((tick) => tick.some((e) => e?.type === 'BULLET_SPAWN'))
   assert.equal(anyBulletSpawn, true)

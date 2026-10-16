@@ -5,7 +5,7 @@ import { runMatchToReplay } from '@coding-game/engine'
 
 const SLOT_IDS = ['BOT1', 'BOT2', 'BOT3', 'BOT4']
 
-test('replay contract: header/state shape matches the documented 0.2.0 schema', () => {
+test('replay contract: header/state shape matches the documented 0.3.0 schema', () => {
   const replay = runMatchToReplay({
     seed: 7,
     tickCap: 5,
@@ -22,8 +22,8 @@ test('replay contract: header/state shape matches the documented 0.2.0 schema', 
     ],
   })
 
-  assert.equal(replay.schemaVersion, '0.2.0')
-  assert.equal(replay.rulesetVersion, '0.2.0')
+  assert.equal(replay.schemaVersion, '0.3.0')
+  assert.equal(replay.rulesetVersion, '0.3.0')
   assert.deepStrictEqual(
     replay.bots.map((bot) => bot.slotId),
     SLOT_IDS,

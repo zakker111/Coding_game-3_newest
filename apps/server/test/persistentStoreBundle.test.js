@@ -227,5 +227,5 @@ test('persistent stores survive server rebuilds for users, bots, sessions, and m
     url: `/api/matches/${dailyRunAfterRebuild.json().matchIds[0]}/replay`,
   })
   assert.equal(dailyReplayAfterRebuild.statusCode, 200)
-  assert.equal(dailyReplayAfterRebuild.json().schemaVersion, '0.2.0')
+  assert.equal(dailyReplayAfterRebuild.json().schemaVersion, '0.3.0')
 })

@@ -48,7 +48,7 @@ test('runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout
   }
 
   const rBullet = runMatchToReplay(bulletParams)
-  assert.equal(rBullet.rulesetVersion, '0.2.0')
+  assert.equal(rBullet.rulesetVersion, '0.3.0')
 
   const bulletEvents = bulletSpawnEvents(rBullet)
   assert.ok(bulletEvents.length > 0, 'expected at least one BULLET_SPAWN when BULLET is equipped')
@@ -69,7 +69,7 @@ test('runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout
   }
 
   const rEmpty = runMatchToReplay(emptyParams)
-  assert.equal(rEmpty.rulesetVersion, '0.2.0')
+  assert.equal(rEmpty.rulesetVersion, '0.3.0')
   assert.equal(bulletSpawnEvents(rEmpty).length, 0, 'expected no BULLET_SPAWN when loadout is empty')
 
   const omittedParams = {
@@ -84,7 +84,7 @@ test('runMatchToReplay: explicit loadout controls BULLET spawns; omitted loadout
   }
 
   const rOmitted = runMatchToReplay(omittedParams)
-  assert.equal(rOmitted.rulesetVersion, '0.2.0')
+  assert.equal(rOmitted.rulesetVersion, '0.3.0')
 
   for (const b of rOmitted.bots) {
     assert.deepStrictEqual(b.loadout, [null, null, null], `expected default-empty loadout for ${b.slotId}`)

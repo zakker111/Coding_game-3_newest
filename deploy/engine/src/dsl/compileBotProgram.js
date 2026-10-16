@@ -698,7 +698,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
     return { kind: 'CLEAR_MOVE' }
   }
 
-  if (op === 'SAW' || op === 'SHIELD') {
+  if (op === 'SAW' || op === 'SHIELD' || op === 'FLAMER') {
     const arg = parts[1]?.toUpperCase()
     if (arg !== 'ON' && arg !== 'OFF') {
       errors.push({ line: lineNo, message: `${op} expects: ${op} ON|OFF` })

@@ -1,4 +1,4 @@
-export const RULESET_VERSION = '0.2.0'
+export const RULESET_VERSION = '0.3.0'
 
 export const LOADOUT_SLOT_COUNT = 3
 
@@ -15,6 +15,10 @@ export const MODULE_IDS = /** @type {const} */ ([
   'SNIPER',
   'ROCKET',
   'TELEPORT',
+  'FLAMER',
+  'RAILGUN',
+  'PULSE',
+  'CLOAK',
 ])
 
 export const MODULE_DEFINITIONS = {
@@ -103,6 +107,40 @@ export const MODULE_DEFINITIONS = {
     activation: 'INSTANT',
     targetKinds: ['LOCATION'],
     uiLabel: 'Teleport',
+  },
+  FLAMER: {
+    id: 'FLAMER',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'TOGGLE',
+    targetKinds: ['NONE'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Flamer',
+  },
+  RAILGUN: {
+    id: 'RAILGUN',
+    itemKind: 'MODULE',
+    family: 'WEAPON',
+    activation: 'INSTANT',
+    targetKinds: ['BOT'],
+    exclusiveGroup: 'WEAPON',
+    uiLabel: 'Railgun',
+  },
+  PULSE: {
+    id: 'PULSE',
+    itemKind: 'MODULE',
+    family: 'UTILITY',
+    activation: 'INSTANT',
+    targetKinds: ['NONE'],
+    uiLabel: 'Pulse',
+  },
+  CLOAK: {
+    id: 'CLOAK',
+    itemKind: 'MODULE',
+    family: 'UTILITY',
+    activation: 'INSTANT',
+    targetKinds: ['SELF'],
+    uiLabel: 'Cloak',
   },
 }
 

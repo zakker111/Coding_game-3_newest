@@ -21,6 +21,22 @@ import {
   ROCKET_TTL_TICKS,
   TELEPORT_ENERGY_COST,
   TELEPORT_COOLDOWN_TICKS,
+  FLAMER_RANGE,
+  FLAMER_DAMAGE,
+  FLAMER_ENERGY_DRAIN_PER_TICK,
+  RAILGUN_AMMO_COST,
+  RAILGUN_COOLDOWN_TICKS,
+  RAILGUN_DAMAGE_FIRST,
+  RAILGUN_DAMAGE_SUBSEQUENT,
+  RAILGUN_MAX_HITS,
+  PULSE_ENERGY_COST,
+  PULSE_COOLDOWN_TICKS,
+  PULSE_RADIUS,
+  PULSE_KNOCKBACK_UNITS,
+  PULSE_STUN_TICKS,
+  CLOAK_ENERGY_COST,
+  CLOAK_COOLDOWN_TICKS,
+  CLOAK_DURATION_TICKS,
   GRENADE_AMMO_COST,
   GRENADE_COOLDOWN_TICKS,
   MINE_AMMO_COST,
@@ -32,17 +48,7 @@ import {
   WALL_BUMP_DAMAGE,
   BOT_BUMP_DAMAGE,
 } from './constants.js'
-import {
-  botsOverlap,
-  clonePos,
-  dirFromDelta,
-  locToWorld,
-  manhattan,
-  oppositeDir,
-  scaleDeltaToMaxLen,
-  sectorFromPos,
-  zoneFromPos,
-} from './arenaMath.js'
+import { botsOverlap, clampInt, clonePos, dirFromDelta, locToWorld, manhattan, oppositeDir, pointInBotAabb, scaleDeltaToMaxLen, sectorFromPos, zoneFromPos } from './arenaMath.js'
 import { createBullet, stepBullets } from './bulletSim.js'
 import {
   countRepairDrones,
@@ -134,7 +140,7 @@ export function runMatchToReplay(params) {
   bumpedBotLastTick:boolean, bumpedBotThisTick:boolean, bumpedBotIdLastTick:('BOT1'|'BOT2'|'BOT3'|'BOT4'|null), bumpedBotIdThisTick:('BOT1'|'BOT2'|'BOT3'|'BOT4'|null), bumpedBotDirLastTick:any, bumpedBotDirThisTick:any,
   bumpedWallLastTick:boolean, bumpedWallThisTick:boolean, bumpedWallDirLastTick:any, bumpedWallDirThisTick:any,
   loadout:[any,any,any], bulletSlotIndex:number, sawSlotIndex:number, shieldSlotIndex:number, armorEquipped:boolean,
-  sawActive:boolean, shieldActive:boolean}>} */
+  sawActive:boolean, shieldActive:boolean, flamerActive:boolean, flamerSlotIndex:number, lastMoveDir:any, stunTicksRemaining:number, cloakTicksRemaining:number}>} */
   const bots = SLOT_IDS.map((botId) => {
     const header = headerBots.find((b) => b.slotId === botId)
 
@@ -146,6 +152,7 @@ export function runMatchToReplay(params) {
     const bulletSlotIndex = findSlotIndex(loadout, 'BULLET')
     const sawSlotIndex = findSlotIndex(loadout, 'SAW')
     const shieldSlotIndex = findSlotIndex(loadout, 'SHIELD')
+    const flamerSlotIndex = findSlotIndex(loadout, 'FLAMER')
     const armorEquipped = findSlotIndex(loadout, 'ARMOR') !== -1
     const inactive = inactiveSlots.has(botId)
 
@@ -179,10 +186,15 @@ export function runMatchToReplay(params) {
       bulletSlotIndex,
       sawSlotIndex,
       shieldSlotIndex,
+      flamerSlotIndex,
       armorEquipped,
 
       sawActive: false,
       shieldActive: false,
+      flamerActive: false,
+      lastMoveDir: 'UP',
+      stunTicksRemaining: 0,
+      cloakTicksRemaining: 0,
     }
   })
 
@@ -237,6 +249,22 @@ export function runMatchToReplay(params) {
       const prevTargetSelector = vmBefore?.target?.botSelector ?? null
       const prevTargetBullet = vmBefore?.target?.bulletId ?? null
       const prevTargetMine = vmBefore?.target?.mineId ?? null
+
+      // Stunned bots (PULSE hit) skip their whole instruction phase this tick.
+      if (bot.stunTicksRemaining > 0) {
+        bot.pendingMove = null
+        tickEvents.push({ type: 'BOT_STUNNED', botId: bot.botId, ticksRemaining: bot.stunTicksRemaining })
+        tickEvents.push({
+          type: 'BOT_EXEC',
+          botId: bot.botId,
+          pcBefore: vmBefore?.pc ?? 1,
+          pcAfter: vmBefore?.pc ?? 1,
+          instrText: formatInstr(instrBefore),
+          result: 'NOP',
+          reason: 'STUNNED',
+        })
+        continue
+      }
 
       const { vm: vmAfter, effects, debug } = stepBotVm(vmBefore, observation)
       bot.vm = vmAfter
@@ -303,6 +331,24 @@ export function runMatchToReplay(params) {
             continue
           }
 
+          if (eff.module === 'FLAMER') {
+            if (bot.flamerSlotIndex === -1) {
+              botExecResult = 'NOP'
+              botExecReason = 'NO_MODULE'
+              continue
+            }
+
+            if (wantsOn && bot.energy <= 0) {
+              botExecResult = 'NOP'
+              botExecReason = 'NO_ENERGY'
+              bot.flamerActive = false
+              continue
+            }
+
+            bot.flamerActive = wantsOn
+            continue
+          }
+
           botExecResult = 'NOP'
           botExecReason = 'NO_MODULE'
           continue
@@ -314,6 +360,11 @@ export function runMatchToReplay(params) {
 
           if (mod === 'SAW' && slotIndex === bot.sawSlotIndex) {
             bot.sawActive = false
+            continue
+          }
+
+          if (mod === 'FLAMER' && slotIndex === bot.flamerSlotIndex) {
+            bot.flamerActive = false
             continue
           }
 
@@ -374,6 +425,18 @@ export function runMatchToReplay(params) {
             }
 
             bot.sawActive = true
+            continue
+          }
+
+          if (mod === 'FLAMER') {
+            if (bot.energy <= 0) {
+              botExecResult = 'NOP'
+              botExecReason = 'NO_ENERGY'
+              bot.flamerActive = false
+              continue
+            }
+
+            bot.flamerActive = true
             continue
           }
 
@@ -441,6 +504,39 @@ export function runMatchToReplay(params) {
               botExecReason = r.reason
             } else {
               bot.slotCooldowns[slotIndex] = TELEPORT_COOLDOWN_TICKS
+            }
+            continue
+          }
+
+          if (mod === 'RAILGUN') {
+            const r = attemptUseRailgun(bot, slotIndex, bots, tickEvents)
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+            } else {
+              bot.slotCooldowns[slotIndex] = RAILGUN_COOLDOWN_TICKS
+            }
+            continue
+          }
+
+          if (mod === 'PULSE') {
+            const r = attemptUsePulse(bot, slotIndex, bots, tickEvents)
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+            } else {
+              bot.slotCooldowns[slotIndex] = PULSE_COOLDOWN_TICKS
+            }
+            continue
+          }
+
+          if (mod === 'CLOAK') {
+            const r = attemptUseCloak(bot, slotIndex, tickEvents)
+            if (!r.ok) {
+              botExecResult = 'NOP'
+              botExecReason = r.reason
+            } else {
+              bot.slotCooldowns[slotIndex] = CLOAK_COOLDOWN_TICKS
             }
             continue
           }
@@ -515,8 +611,21 @@ export function runMatchToReplay(params) {
       })
     }
 
-    // 2) Toggle drains (SAW/SHIELD)
+    // 2) Toggle drains (SAW/SHIELD/FLAMER) and per-tick stun/cloak decay.
     stepToggleDrains(bots, tickEvents)
+
+    for (const bot of bots) {
+      if (!bot.alive) continue
+
+      if (bot.stunTicksRemaining > 0) bot.stunTicksRemaining--
+
+      if (bot.cloakTicksRemaining > 0) {
+        bot.cloakTicksRemaining--
+        if (bot.cloakTicksRemaining === 0) {
+          tickEvents.push({ type: 'BOT_CLOAK_END', botId: bot.botId, reason: 'EXPIRED' })
+        }
+      }
+    }
 
     // 3) Movement + collision resolution
     resolveMovement(bots, bullets, mines, powerupState, tickEvents)
@@ -621,7 +730,7 @@ export function runMatchToReplay(params) {
   }
 
   return {
-    schemaVersion: '0.2.0',
+    schemaVersion: RULESET_VERSION,
     rulesetVersion: RULESET_VERSION,
     ticksPerSecond: DEFAULT_TICKS_PER_SECOND,
     matchSeed: params.seed,
@@ -735,7 +844,10 @@ function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
   const zone = zoneFromPos(bot.pos)
   const sector = sectorFromPos(bot.pos)
   const closestBotDist = distToClosestBot(bot, bots)
-  const aliveEnemies = bots.reduce((count, other) => count + (other.alive && other.botId !== bot.botId ? 1 : 0), 0)
+  const aliveEnemies = bots.reduce(
+    (count, other) => count + (other.alive && other.botId !== bot.botId && !isBotCloaked(other) ? 1 : 0),
+    0,
+  )
 
   const bulletThreat = computeBulletThreat(bot.botId, sector, bullets)
 
@@ -1635,6 +1747,7 @@ function findLowestResourceLivingBot(fromId, bots, field) {
   for (const b of bots) {
     if (!b.alive) continue
     if (b.botId === fromId) continue
+    if (isBotCloaked(b)) continue // CLOAK: cloaked bots cannot be acquired by targeting tokens.
     if (!best || b[field] < best[field] || (b[field] === best[field] && b.botId < best.botId)) best = b
   }
   return best
@@ -1647,6 +1760,7 @@ function findClosestLivingBot(fromId, fromPos, bots) {
   for (const b of bots) {
     if (!b.alive) continue
     if (b.botId === fromId) continue
+    if (isBotCloaked(b)) continue // CLOAK: cloaked bots cannot be acquired by targeting tokens.
     const d = manhattan(fromPos, b.pos)
     if (!best || d < best.d || (d === best.d && b.botId < best.bot.botId)) best = { bot: b, d }
   }
@@ -1661,6 +1775,7 @@ function findLowestHealthLivingBot(fromId, bots) {
   for (const b of bots) {
     if (!b.alive) continue
     if (b.botId === fromId) continue
+    if (isBotCloaked(b)) continue // CLOAK: cloaked bots cannot be acquired by targeting tokens.
 
     if (!best || b.hp < best.hp || (b.hp === best.hp && b.botId < best.botId)) best = b
   }
@@ -1673,6 +1788,8 @@ function attemptUseBullet(bot, slotIndex, targetToken, bots, bullets, nextBullet
   if (bot.loadout[slotIndex] !== 'BULLET') return { ok: false, reason: 'NO_MODULE' }
   if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
   if (bot.ammo < BULLET_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+
+  breakCloak(bot, tickEvents)
 
   const isBotKind =
     targetToken === 'TARGET' ||
@@ -1872,6 +1989,209 @@ function attemptUseTeleport(bot, slotIndex, targetToken, tickEvents) {
   return { ok: true }
 }
 
+// Deterministic facing vector (unit-ish integer pair) for a bot: last actual
+// movement direction this/previous tick, else direction toward its target
+// register, else the botId-relative diagonal constant. Never zero.
+function computeBotFacingDir(bot, bots) {
+  if (bot.bumpedBotDirThisTick) return bot.bumpedBotDirThisTick
+  if (bot.bumpedWallDirThisTick) return bot.bumpedWallDirThisTick
+  if (bot.bumpedBotDirLastTick) return bot.bumpedBotDirLastTick
+  if (bot.bumpedWallDirLastTick) return bot.bumpedWallDirLastTick
+
+  const targetId = bot.vm?.target?.botSelector
+  const target =
+    targetId === 'BOT1' || targetId === 'BOT2' || targetId === 'BOT3' || targetId === 'BOT4'
+      ? botsById(bots, targetId)
+      : null
+
+  if (target && target.alive && !(target.pos.x === bot.pos.x && target.pos.y === bot.pos.y)) {
+    return dirFromDelta(target.pos.x - bot.pos.x, target.pos.y - bot.pos.y)
+  }
+
+  switch (bot.botId) {
+    case 'BOT1':
+      return 'UP_RIGHT'
+    case 'BOT2':
+      return 'DOWN_LEFT'
+    case 'BOT3':
+      return 'UP_LEFT'
+    default:
+      return 'DOWN_RIGHT'
+  }
+}
+
+/** True while a bot is under an active CLOAK invisibility window. */
+function isBotCloaked(bot) {
+  return Boolean(bot && typeof bot.cloakTicksRemaining === 'number' && bot.cloakTicksRemaining > 0)
+}
+
+// RAILGUN (ruleset 0.3.0): instant piercing beam along the bot's facing dir.
+// Hits up to RAILGUN_MAX_HITS living bots whose center lies within
+// BOT_HALF_SIZE of the ray; first hit takes full damage, later hits less.
+function attemptUseRailgun(bot, slotIndex, bots, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'RAILGUN') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.ammo < RAILGUN_AMMO_COST) return { ok: false, reason: 'NO_AMMO' }
+
+  const facing = computeBotFacingDir(bot, bots)
+  const dirVec = deltaForMoveDir(facing, 100)
+  const dx = dirVec.dx
+  const dy = dirVec.dy
+
+  if (dx === 0 && dy === 0) return { ok: false, reason: 'NO_EFFECT' }
+
+  /** @type {Array<{ bot: any, along: number }>} */
+  const hits = []
+  for (const b of bots) {
+    if (!b.alive) continue
+    if (b.botId === bot.botId) continue
+
+    const relx = b.pos.x - bot.pos.x
+    const rely = b.pos.y - bot.pos.y
+    const along = relx * dx + rely * dy
+    if (along <= 0) continue // behind the shooter
+
+    // Perpendicular distance from the ray line.
+    const perpAbs = Math.abs(relx * dy - rely * dx)
+    if (perpAbs > BOT_HALF_SIZE) continue
+
+    hits.push({ bot: b, along })
+  }
+
+  hits.sort((a, b) => a.along - b.along || (a.bot.botId < b.bot.botId ? -1 : 1))
+  const targets = hits.slice(0, RAILGUN_MAX_HITS)
+
+  if (targets.length === 0) return { ok: false, reason: 'INVALID_TARGET' }
+
+  breakCloak(bot, tickEvents)
+
+  bot.ammo -= RAILGUN_AMMO_COST
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: -RAILGUN_AMMO_COST,
+    energyDelta: 0,
+    healthDelta: 0,
+    cause: 'FIRE_RAILGUN',
+  })
+  tickEvents.push({
+    type: 'RAILGUN_SHOT',
+    botId: bot.botId,
+    fromPos: clonePos(bot.pos),
+    dir: facing,
+    hitBotIds: targets.map((h) => h.bot.botId),
+  })
+
+  for (let i = 0; i < targets.length; i++) {
+    const victim = targets[i].bot
+    const raw = i === 0 ? RAILGUN_DAMAGE_FIRST : RAILGUN_DAMAGE_SUBSEQUENT
+    const shielded = victim.shieldActive ? raw - Math.floor(raw / 2) : raw
+    const damage = victim.armorEquipped ? applyArmorMitigation(shielded) : shielded
+
+    victim.lastDamageByBotId = bot.botId
+    victim.hp = Math.max(0, victim.hp - damage)
+
+    tickEvents.push({
+      type: 'DAMAGE',
+      victimBotId: victim.botId,
+      amount: damage,
+      source: 'RAILGUN',
+      sourceBotId: bot.botId,
+      kind: 'DIRECT',
+      sourceRef: { type: 'RAILGUN', id: bot.botId },
+    })
+
+    if (victim.hp <= 0 && victim.alive) {
+      victim.alive = false
+      tickEvents.push({ type: 'BOT_DIED', victimBotId: victim.botId, creditedBotId: bot.botId })
+    }
+  }
+
+  return { ok: true }
+}
+
+// PULSE (ruleset 0.3.0): radial shockwave. Stuns and knocks back every living
+// enemy within PULSE_RADIUS (Euclidean). Knockback is clamped to arena bounds.
+function attemptUsePulse(bot, slotIndex, bots, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'PULSE') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.energy < PULSE_ENERGY_COST) return { ok: false, reason: 'NO_ENERGY' }
+
+  breakCloak(bot, tickEvents)
+
+  bot.energy -= PULSE_ENERGY_COST
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: 0,
+    energyDelta: -PULSE_ENERGY_COST,
+    healthDelta: 0,
+    cause: 'FIRE_PULSE',
+  })
+
+  const affected = []
+  for (const b of bots) {
+    if (!b.alive) continue
+    if (b.botId === bot.botId) continue
+
+    const ddx = b.pos.x - bot.pos.x
+    const ddy = b.pos.y - bot.pos.y
+    const dist2 = ddx * ddx + ddy * ddy
+    if (dist2 > PULSE_RADIUS * PULSE_RADIUS) continue
+
+    affected.push(b.botId)
+    b.stunTicksRemaining = PULSE_STUN_TICKS
+
+    let vx = ddx
+    let vy = ddy
+    if (vx === 0 && vy === 0) {
+      // Exactly overlapping: deterministic push by victim slot order sign.
+      vx = b.botId < bot.botId ? -1 : 1
+      vy = 0
+    }
+
+    const scaled = scaleDeltaToMaxLen(vx, vy, PULSE_KNOCKBACK_UNITS)
+    b.pos = {
+      x: clampInt(Math.round(b.pos.x + scaled.dx), BOT_CENTER_MIN, BOT_CENTER_MAX),
+      y: clampInt(Math.round(b.pos.y + scaled.dy), BOT_CENTER_MIN, BOT_CENTER_MAX),
+    }
+  }
+
+  tickEvents.push({ type: 'PULSE_BLAST', botId: bot.botId, radius: PULSE_RADIUS, affectedBotIds: affected })
+  return { ok: true }
+}
+
+// CLOAK (ruleset 0.3.0): self-invisibility for CLOAK_DURATION_TICKS. Cloaked
+// bots cannot be acquired by enemy targeting tokens; attacking breaks cloak.
+function attemptUseCloak(bot, slotIndex, tickEvents) {
+  if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
+  if (bot.loadout[slotIndex] !== 'CLOAK') return { ok: false, reason: 'NO_MODULE' }
+  if (bot.slotCooldowns[slotIndex] > 0) return { ok: false, reason: 'COOLDOWN' }
+  if (bot.energy < CLOAK_ENERGY_COST) return { ok: false, reason: 'NO_ENERGY' }
+
+  bot.energy -= CLOAK_ENERGY_COST
+  bot.cloakTicksRemaining = CLOAK_DURATION_TICKS
+  tickEvents.push({
+    type: 'RESOURCE_DELTA',
+    botId: bot.botId,
+    ammoDelta: 0,
+    energyDelta: -CLOAK_ENERGY_COST,
+    healthDelta: 0,
+    cause: 'ACTIVATE_CLOAK',
+  })
+  tickEvents.push({ type: 'BOT_CLOAK_START', botId: bot.botId, ticks: CLOAK_DURATION_TICKS })
+  return { ok: true }
+}
+
+function breakCloak(bot, tickEvents) {
+  if (bot.cloakTicksRemaining > 0) {
+    bot.cloakTicksRemaining = 0
+    tickEvents.push({ type: 'BOT_CLOAK_END', botId: bot.botId, reason: 'ATTACK' })
+  }
+}
+
 function attemptUseMine(bot, slotIndex, targetToken, mines, nextMineId, tickEvents) {
   if (slotIndex < 0 || slotIndex > 2) return { ok: false, reason: 'NO_MODULE' }
   if (bot.loadout[slotIndex] !== 'MINE') return { ok: false, reason: 'NO_MODULE' }
@@ -2028,7 +2348,78 @@ function stepToggleDrains(bots, tickEvents) {
     if (bot.energy <= 0) {
       bot.sawActive = false
       bot.shieldActive = false
+      bot.flamerActive = false
       continue
+    }
+
+    // FLAMER (ruleset 0.3.0): continuous cone damage in the bot's facing dir.
+    if (bot.flamerActive) {
+      const drain = Math.min(FLAMER_ENERGY_DRAIN_PER_TICK, bot.energy)
+      bot.energy -= drain
+
+      tickEvents.push({
+        type: 'RESOURCE_DELTA',
+        botId: bot.botId,
+        ammoDelta: 0,
+        energyDelta: -drain,
+        healthDelta: 0,
+        cause: 'FLAMER_DRAIN',
+      })
+
+      const facing = computeBotFacingDir(bot, bots)
+      const fv = deltaForMoveDir(facing, 100)
+      const fLen2 = fv.dx * fv.dx + fv.dy * fv.dy
+
+      const burned = []
+      for (const victim of bots) {
+        if (!victim.alive) continue
+        if (victim.botId === bot.botId) continue
+
+        const rx = victim.pos.x - bot.pos.x
+        const ry = victim.pos.y - bot.pos.y
+        const d2 = rx * rx + ry * ry
+        if (d2 > FLAMER_RANGE * FLAMER_RANGE) continue
+
+        // Facing cone: dot product >= FLAMER_CONE_COS * |r| * |f| (scaled ints).
+        const dot = rx * fv.dx + ry * fv.dy
+        if (dot < FLAMER_CONE_COS * Math.sqrt(d2 * fLen2)) continue
+
+        burned.push(victim.botId)
+
+        const raw = FLAMER_DAMAGE
+        const shielded = victim.shieldActive ? raw - Math.floor(raw / 2) : raw
+        const damage = victim.armorEquipped ? applyArmorMitigation(shielded) : shielded
+
+        victim.lastDamageByBotId = bot.botId
+        victim.hp = Math.max(0, victim.hp - damage)
+
+        tickEvents.push({
+          type: 'DAMAGE',
+          victimBotId: victim.botId,
+          amount: damage,
+          source: 'FLAMER',
+          sourceBotId: bot.botId,
+          kind: 'DIRECT',
+          sourceRef: { type: 'FLAMER', id: bot.botId },
+        })
+
+        if (victim.hp <= 0 && victim.alive) {
+          victim.alive = false
+          tickEvents.push({ type: 'BOT_DIED', victimBotId: victim.botId, creditedBotId: bot.botId })
+        }
+      }
+
+      if (burned.length > 0) {
+        breakCloak(bot, tickEvents)
+        tickEvents.push({ type: 'FLAMER_BURN', botId: bot.botId, victimBotIds: burned })
+      }
+
+      if (bot.energy <= 0) {
+        bot.flamerActive = false
+        bot.sawActive = false
+        bot.shieldActive = false
+        continue
+      }
     }
 
     if (bot.sawActive) {
