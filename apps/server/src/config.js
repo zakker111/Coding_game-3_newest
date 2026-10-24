@@ -35,7 +35,8 @@ export function getServerConfig(env = process.env) {
     databaseSsl: env.DATABASE_SSL === '1' || env.DATABASE_SSL === 'require',
     webDistPath: env.NOWT_WEB_DIST || null,
     sessionTtlMs: parseIntEnv(env.NOWT_SESSION_TTL_MS, DEFAULT_SESSION_TTL_MS, 'NOWT_SESSION_TTL_MS'),
-    requireStrongAdminPassword: env.NODE_ENV === 'production' && env.NOWT_ALLOW_DEFAULT_ADMIN !== '1',
+    adminPassword: env.NOWT_ADMIN_PASSWORD || null,
+    requireStrongAdminPassword: env.NODE_ENV === 'production',
   }
 
   return Object.freeze(config)

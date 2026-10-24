@@ -123,7 +123,7 @@ Implemented now
 Still open
 - [x] Phase 9 balance pass (SNIPER/ROCKET/TELEPORT) + admin ranked-controls UI. (Balance harness: `scripts/balance-report.mjs`; SNIPER nerfed to `ammoCost = 6` / `cooldownTicks = 12`; see "Phase 9 balance pass notes".)
 - [x] Durable storage verified end-to-end: server boots with `NOWT_SERVER_DATA_FILE=.nowt/server-state.json`, state survives restarts, `.nowt/` is gitignored.
-      Production-mode guard (`NODE_ENV=production` refuses default admin without `NOWT_ALLOW_DEFAULT_ADMIN=1`) verified working.
+      Production-mode guard: in production the admin password comes from `NOWT_ADMIN_PASSWORD` (superseded: `admin/admin` is never created in production; see Server 0.0.8).
       One-command preview boot documented in README ("Preview deployment" section).
 - [ ] Persistent *public* hosting: quick tunnels (`trycloudflare.com`) are session-scoped and URLs rotate on restart.
       For a stable domain, deploy the same two processes (server :3000 + `serve-deploy.mjs` :4173 with `API_PROXY_TARGET`) to any always-on host

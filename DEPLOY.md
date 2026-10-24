@@ -25,9 +25,12 @@ You need: a GitHub account that can see `zakker111/Coding_game-3_newest`, and a 
 If the build or the page fails, copy the error from the **Logs** tab of `nowt-game` and send it to the agent.
 
 ## 4. Before you share it widely (important)
-The config currently enables a default admin account: username `admin`, password `admin`.
-Anyone who finds the URL can log in as admin. Fix this before sharing widely. The agent can
-make that change in code; tell it to do so.
+The game now needs an admin password of your choice. Render asks for it when you create the
+Blueprint (step 2): enter `NOWT_ADMIN_PASSWORD` with at least 12 characters. Keep it secret.
+The admin account is the only one that can start the daily league.
+
+If Render doesn't ask for it, or you skipped it, open `nowt-game` → **Environment**, add `NOWT_ADMIN_PASSWORD`, and save.
+The service restarts and applies the password.
 
 ## 5. Things to know about the free plan
 - **Database expires after 30 days.** Render's free Postgres is deleted after 30 days. Either upgrade `nowt-db` to a paid plan in the Render dashboard, or ask the agent to add a backup/export step.

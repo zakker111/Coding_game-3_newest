@@ -29,6 +29,13 @@ export function createInMemoryUserStore() {
       return cloneRecord(usersByUsername.get(username) ?? null)
     },
 
+    setPasswordHash(username, passwordHash) {
+      const user = usersByUsername.get(username)
+      if (!user) return null
+      user.passwordHash = passwordHash
+      return cloneRecord(user)
+    },
+
     getUserById(userId) {
       return cloneRecord(usersById.get(userId) ?? null)
     },

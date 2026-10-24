@@ -75,6 +75,17 @@ function validateAuthBody(body) {
   }
 }
 
+const MIN_ADMIN_PASSWORD_LENGTH = 12
+
+function validateAdminPasswordStrength(password) {
+  if (password.length < MIN_ADMIN_PASSWORD_LENGTH) {
+    throw new Error(`NOWT_ADMIN_PASSWORD must be at least ${MIN_ADMIN_PASSWORD_LENGTH} characters`)
+  }
+  if (password === DEFAULT_ADMIN_PASSWORD) {
+    throw new Error('NOWT_ADMIN_PASSWORD must not be the default password')
+  }
+}
+
 function toSessionUser(user) {
   return {
     id: user.id,
@@ -94,29 +105,41 @@ export function createAuthService({ store, config = {} } = {}) {
   const cookieFlags = `Path=/; HttpOnly; SameSite=Lax${secureCookie ? '; Secure' : ''}`
 
   return {
+    // Production: the admin password comes from config.adminPassword (NOWT_ADMIN_PASSWORD) and is
+    // applied on every start, so an old default password can never survive. With no admin
+    // password configured in production, no admin account is created at all.
+    // Development/tests: admin/admin is created when missing, as before.
     ensureDefaultAdmin() {
-      const existing = store.getUserByUsername(DEFAULT_ADMIN_USERNAME)
-      if (existing) {
-        if (requireStrongAdminPassword && verifyPassword(DEFAULT_ADMIN_PASSWORD, existing.passwordHash)) {
-          throw new Error(
-            'Refusing to start in production with the default admin/admin credentials. ' +
-              'Rotate the admin password or set NOWT_ALLOW_DEFAULT_ADMIN=1 for preview deployments.'
-          )
-        }
-        return null
-      }
+      const configuredPassword = typeof config.adminPassword === 'string' && config.adminPassword !== '' ? config.adminPassword : null
 
       if (requireStrongAdminPassword) {
-        throw new Error(
-          'Refusing to auto-create the default admin account in production. ' +
-            'Create an admin out-of-band or set NOWT_ALLOW_DEFAULT_ADMIN=1 for preview deployments.'
-        )
+        if (!configuredPassword) {
+          console.warn('NOWT_ADMIN_PASSWORD is not set: no admin account is available in production.')
+          return null
+        }
+        validateAdminPasswordStrength(configuredPassword)
+        const existing = store.getUserByUsername(DEFAULT_ADMIN_USERNAME)
+        if (!existing) {
+          return toSessionUser(
+            store.createUser({
+              username: DEFAULT_ADMIN_USERNAME,
+              passwordHash: hashPassword(configuredPassword),
+            })
+          )
+        }
+        if (!verifyPassword(configuredPassword, existing.passwordHash)) {
+          store.setPasswordHash(DEFAULT_ADMIN_USERNAME, hashPassword(configuredPassword))
+        }
+        return toSessionUser(store.getUserByUsername(DEFAULT_ADMIN_USERNAME))
       }
 
+      const devPassword = configuredPassword ?? DEFAULT_ADMIN_PASSWORD
+      const existing = store.getUserByUsername(DEFAULT_ADMIN_USERNAME)
+      if (existing) return null
       return toSessionUser(
         store.createUser({
           username: DEFAULT_ADMIN_USERNAME,
-          passwordHash: hashPassword(DEFAULT_ADMIN_PASSWORD),
+          passwordHash: hashPassword(devPassword),
         })
       )
     },

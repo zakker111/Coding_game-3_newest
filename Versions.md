@@ -6,6 +6,14 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Server 0.0.8 — production admin password — 2026-10-24T06:32:44Z
+
+### Changed
+- In production (`NODE_ENV=production`) the admin password comes from `NOWT_ADMIN_PASSWORD` (at least 12 characters, not `admin`). It is applied on every start, so an old `admin/admin` password is replaced.
+- Without `NOWT_ADMIN_PASSWORD` in production, no admin account is created.
+- `NOWT_ALLOW_DEFAULT_ADMIN` is removed.
+- `render.yaml` sets `NODE_ENV=production` and asks for `NOWT_ADMIN_PASSWORD` when the Blueprint is created.
+
 ## Server 0.0.7 — Postgres storage — 2026-10-24T06:27:37Z
 
 ### Added

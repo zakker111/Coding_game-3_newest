@@ -263,7 +263,7 @@ Run the built frontend with an `/api` reverse proxy in front of the backend:
 
 ```bash
 # 1. Backend (durable JSON state under .nowt/ — gitignored)
-NOWT_ALLOW_DEFAULT_ADMIN=1 NOWT_SERVER_DATA_FILE=.nowt/server-state.json \
+NOWT_ADMIN_PASSWORD='choose-a-long-password' NOWT_SERVER_DATA_FILE=.nowt/server-state.json \
 NODE_ENV=production HOST=0.0.0.0 PORT=3000 node apps/server/src/index.js &
 
 # 2. Frontend + /api proxy on one origin
@@ -274,4 +274,4 @@ API_PROXY_TARGET=http://127.0.0.1:3000 node scripts/serve-deploy.mjs --root apps
 - Seed a demo league: `node scripts/seed-demo.mjs` (then trigger a run as admin via `POST /api/runs/daily`).
 - Public exposure from a sandbox/dev box: `cloudflared tunnel --url http://localhost:4173` (quick-tunnel URLs are temporary;
   for a stable domain use a named tunnel or deploy to Fly.io/Render/Railway/VPS — same two processes).
-- Production note: without `NOWT_ALLOW_DEFAULT_ADMIN=1`, the server refuses to start/create the default `admin/admin` account when `NODE_ENV=production`.
+- Production note: with `NODE_ENV=production`, the admin account uses `NOWT_ADMIN_PASSWORD` (at least 12 characters, applied on every start). Without it no admin account exists. `admin/admin` is never created in production.

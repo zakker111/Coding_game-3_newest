@@ -148,6 +148,14 @@ export function createPersistentStoreBundle({ filePath, storage: providedStorage
       return cloneRecord(state.users.find((user) => user.username === username) ?? null)
     },
 
+    setPasswordHash(username, passwordHash) {
+      const user = state.users.find((entry) => entry.username === username)
+      if (!user) return null
+      user.passwordHash = passwordHash
+      persist()
+      return cloneRecord(user)
+    },
+
     getUserById(userId) {
       return cloneRecord(state.users.find((user) => user.id === userId) ?? null)
     },
