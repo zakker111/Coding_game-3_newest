@@ -7,6 +7,10 @@ export function isStaticNoApiHost(hostname: string) {
   return /\.github\.io$/.test(hostname) || hostname.endsWith('.githubusercontent.com')
 }
 
+function isLoopbackHost(hostname: string) {
+  return hostname === 'localhost' || hostname.startsWith('127.') || hostname === '[::1]' || hostname === '::1'
+}
+
 export function getDefaultServerBaseUrl() {
   if (typeof window === 'undefined') return DEFAULT_SERVER_BASE_URL
   const { protocol, hostname } = window.location
@@ -20,6 +24,9 @@ export function getDefaultServerBaseUrl() {
   if (tunnelMatch) {
     return `${protocol}//${tunnelMatch[1]}-3000.trycloudflare.com`
   }
+  // Remote viewers (anything that is not this machine's loopback) cannot reach the sandbox's
+  // 127.0.0.1 API, so use same-origin /api calls; the dev/preview server proxies /api to the server.
+  if (!isLoopbackHost(hostname)) return `${protocol}//${window.location.host}`
   // When served through the static server's /api proxy (e.g. remote preview), use same origin.
   try {
     const override = localStorage.getItem('nowt.serverBaseUrl')

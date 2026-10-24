@@ -25,3 +25,49 @@ if (typeof window !== 'undefined') {
     writable: true,
   })
 }
+
+// Node 25+ exposes a `localStorage` global that is undefined unless --localstorage-file is
+// passed, and it shadows jsdom's implementation. Install a minimal in-memory Storage so tests
+// behave the same on every Node version.
+function hasWorkingStorage(value: unknown): boolean {
+  return (
+    value != null &&
+    typeof (value as Storage).getItem === 'function' &&
+    typeof (value as Storage).setItem === 'function' &&
+    typeof (value as Storage).clear === 'function'
+  )
+}
+
+if (!hasWorkingStorage(globalThis.localStorage)) {
+  const store = new Map<string, string>()
+  const memoryStorage: Storage = {
+    get length() {
+      return store.size
+    },
+    clear() {
+      store.clear()
+    },
+    getItem(key: string) {
+      return store.has(key) ? store.get(key)! : null
+    },
+    key(index: number) {
+      return Array.from(store.keys())[index] ?? null
+    },
+    removeItem(key: string) {
+      store.delete(key)
+    },
+    setItem(key: string, value: string) {
+      store.set(String(key), String(value))
+    },
+  }
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: memoryStorage,
+  })
+  if (typeof window !== 'undefined') {
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: memoryStorage,
+    })
+  }
+}

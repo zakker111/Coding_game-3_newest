@@ -29,11 +29,25 @@ export default defineConfig({
     },
   },
   server: {
+    // Sandbox/preview hosts (*.cosine.computer) must be allowed or Vite blocks the request.
+    allowedHosts: ['.cosine.computer', '.e2b.app', '.trycloudflare.com', 'localhost'],
+    proxy: {
+      '/api': {
+        target: process.env.NOWT_SERVER_URL ?? 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
+    },
     fs: {
       allow: [repoRoot],
     },
   },
   preview: {
+    proxy: {
+      '/api': {
+        target: process.env.NOWT_SERVER_URL ?? 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
+    },
     allowedHosts: ['4173-uknkc4ygdpnmvktw.cosine.computer'],
   },
   define: {
