@@ -43,12 +43,14 @@ import {
   describeRankedStatus,
   fetchServerBotSource,
   fetchServerMe,
+  forkServerBot,
   listServerBots,
   loginServerUser,
   logoutServerUser,
   registerServerUser,
   saveServerBot,
   type ServerBotSummary,
+  type ServerBotVisibility,
   type ServerUser,
 } from '../serverClient'
 import { runLocalInWorker } from '../worker/runLocalInWorker'
@@ -582,6 +584,9 @@ export function WorkshopPage() {
   const [selectedServerBotSourceText, setSelectedServerBotSourceText] = React.useState<string | null>(null)
   const [serverSaveBusy, setServerSaveBusy] = React.useState(false)
   const [serverSaveNotice, setServerSaveNotice] = React.useState<{ tone: 'good' | 'warn' | 'bad'; text: string } | null>(null)
+  const [serverForkSourceId, setServerForkSourceId] = React.useState('')
+  const [serverForkBusy, setServerForkBusy] = React.useState(false)
+  const [serverVisibilityDraft, setServerVisibilityDraft] = React.useState<ServerBotVisibility | null>(null)
 
   const [showAllTickEvents, setShowAllTickEvents] = React.useState(false)
   const [showRawTickEvents, setShowRawTickEvents] = React.useState(false)
@@ -1657,6 +1662,38 @@ export function WorkshopPage() {
     }
   }
 
+  // Forks a public bot into the selected server slot. The slot's previous source
+  // stays in version history, so it is recoverable; the user confirms first.
+  async function handleForkIntoSelectedSlot() {
+    if (!serverUser || !serverForkSourceId) return
+    const source = serverBots.find((bot) => bot.botId === serverForkSourceId)
+    if (!source) return
+    const slot = selectedServerBotName
+    const ok = window.confirm(
+      `Fork ${source.botId} into ${serverUser.username}/${slot}? This replaces ${slot} with a copy of ${source.botId}. The previous source stays in its version history.`,
+    )
+    if (!ok) return
+
+    const baseUrl = serverBaseUrl === "" ? "" : normalizeServerBaseUrl(serverBaseUrl)
+    setServerForkBusy(true)
+    setServerSaveNotice(null)
+    try {
+      const forked = await forkServerBot(baseUrl, source.ownerUsername, source.name, { name: slot, overwrite: true })
+      const listed = await listServerBots(baseUrl)
+      setServerBots(listed.bots)
+      await importServerBotAsBot1(forked)
+      setServerSaveNotice({
+        tone: 'good',
+        text: `Forked ${source.botId} into ${forked.botId}. Ranked: pending until you save a change.`,
+      })
+      pushServerActivity('good', `Forked ${source.botId} into ${forked.botId}.`)
+    } catch (err) {
+      setServerSaveNotice({ tone: 'bad', text: err instanceof Error ? err.message : String(err) })
+    } finally {
+      setServerForkBusy(false)
+    }
+  }
+
   function loadStarter() {
     const loadout = deriveLoadoutFromScriptOrDefault(starterSourceText)
 
@@ -1866,7 +1903,9 @@ export function WorkshopPage() {
         sourceText: selectedMyBot.sourceText,
         loadout: selectedMyBot.loadout ?? DEFAULT_WORKSHOP_LOADOUT,
         saveMessage: `Saved from ${selectedMyBot.name}`,
+        visibility: serverVisibilityDraft ?? selectedServerBot?.visibility ?? 'public',
       })
+      setServerVisibilityDraft(null)
 
       const listed = await listServerBots(baseUrl)
       setServerBots(listed.bots)
@@ -2639,7 +2678,62 @@ export function WorkshopPage() {
                   ) : (
                     'Choose one of your three server bots to edit source and loadout.'
                   )}
+                  {selectedServerBot?.forkedFrom ? (
+                    <>
+                      {' '}· forked from <strong style={{ color: 'var(--text)' }}>{selectedServerBot.forkedFrom}</strong>
+                    </>
+                  ) : null}
                 </div>
+
+                {selectedServerBot ? (
+                  <label className="mini-field" style={{ marginTop: 8 }}>
+                    <div className="mini-label">Visibility</div>
+                    <select
+                      aria-label="Bot visibility"
+                      className="mini-input workshop-select"
+                      value={serverVisibilityDraft ?? selectedServerBot.visibility ?? 'public'}
+                      onChange={(e) => setServerVisibilityDraft(e.target.value as ServerBotVisibility)}
+                      disabled={serverSaveBusy}
+                    >
+                      <option value="public">Public (others can view and fork)</option>
+                      <option value="private">Private (hidden, not forkable)</option>
+                    </select>
+                  </label>
+                ) : null}
+
+                {serverBots.some((bot) => bot.ownerUsername !== serverUser.username && (bot.ownerUsername === 'builtin' || bot.visibility !== 'private')) ? (
+                  <div style={{ marginTop: 12 }}>
+                    <label className="mini-field">
+                      <div className="mini-label">Fork a public bot into {selectedServerBotName}</div>
+                      <select
+                        aria-label="Bot to fork"
+                        className="mini-input workshop-select"
+                        value={serverForkSourceId}
+                        onChange={(e) => setServerForkSourceId(e.target.value)}
+                        disabled={serverForkBusy || !selectedServerBot}
+                      >
+                        <option value="">Select a bot to fork…</option>
+                        {serverBots
+                          .filter((bot) => bot.ownerUsername !== serverUser.username && (bot.ownerUsername === 'builtin' || bot.visibility !== 'private'))
+                          .map((bot) => (
+                            <option key={bot.botId} value={bot.botId}>
+                              {bot.botId}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    <button
+                      className="ui-button ui-button-secondary"
+                      type="button"
+                      style={{ marginTop: 8 }}
+                      onClick={handleForkIntoSelectedSlot}
+                      disabled={!serverForkSourceId || !selectedServerBot || serverForkBusy}
+                      title="Copy this bot into the selected server slot"
+                    >
+                      {serverForkBusy ? 'Forking…' : `Fork into ${selectedServerBotName}`}
+                    </button>
+                  </div>
+                ) : null}
 
                 {ownServerBots.length ? (
                   <div className="muted" style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>

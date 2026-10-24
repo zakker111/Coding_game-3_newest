@@ -617,10 +617,10 @@ Rules for this phase
 - Acceptance: no module is an always-win or always-lose in the matrix; the league top 5 contains at least 3 distinct loadout families.
 
 ### 10.5 Fork and edit
-- [ ] "Fork" action on any builtin or public player bot: copies source and loadout into the forker's account as a new bot with `forkedFrom` metadata.
-- [ ] Forked bots start as `pending` in the daily league until the owner saves a change.
-- [ ] Attribution shown on the bot page (original owner and bot name).
-- [ ] Permission: only public bots are forkable; players can make a bot private.
+- [x] "Fork" action on any builtin or public player bot: copies source and loadout into the forker's account as a new bot with `forkedFrom` metadata.
+- [x] Forked bots start as `pending` in the daily league until the owner saves a change.
+- [x] Attribution shown on the bot page (original owner and bot name).
+- [x] Permission: only public bots are forkable; players can make a bot private.
 - Acceptance: a player can fork `bot11` from the Workshop, change one line, and save; the fork shows `forkedFrom: builtin/bot11`.
 
 ### 10.6 Replay viewer for daily results

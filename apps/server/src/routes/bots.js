@@ -27,6 +27,14 @@ export async function registerBotRoutes(app) {
     return reply.code(200).send(bot)
   })
 
+  app.post('/api/bots/:owner/:name/fork', async (request, reply) => {
+    const { owner, name } = request.params
+    const bot = app.botService.forkBot(owner, name, request.body, {
+      currentUser: request.currentUser,
+    })
+    return reply.code(201).send(bot)
+  })
+
   app.get('/api/bots/:owner/:name/versions', async (request) => {
     const { owner, name } = request.params
     return app.botService.listVersions(owner, name, {

@@ -35,6 +35,8 @@ export type ServerBotSummary = {
   loadout: Loadout
   rankedEnabled: boolean
   rankedStatus: 'active' | 'pending' | 'dropped'
+  visibility?: ServerBotVisibility
+  forkedFrom?: string | null
   rankedPoints: number
   rating?: number
   ratingDeviation?: number
@@ -94,10 +96,18 @@ export type ServerBotSourceResponse = {
   loadout: Loadout
 }
 
+export type ServerBotVisibility = 'public' | 'private'
+
 export type ServerSaveBotRequest = {
   sourceText: string
   loadout: Loadout
   saveMessage?: string
+  visibility?: ServerBotVisibility
+}
+
+export type ServerForkBotRequest = {
+  name: string
+  overwrite?: boolean
 }
 
 export type ServerDailyRunSummary = {
@@ -309,6 +319,24 @@ export async function saveServerBot(
     `/api/bots/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
     {
       method: 'PUT',
+      body: JSON.stringify(body),
+    },
+    fetchImpl,
+  )
+}
+
+export async function forkServerBot(
+  baseUrl: string,
+  owner: string,
+  name: string,
+  body: ServerForkBotRequest,
+  fetchImpl?: FetchLike,
+): Promise<ServerBotSummary> {
+  return requestJson<ServerBotSummary>(
+    baseUrl,
+    `/api/bots/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/fork`,
+    {
+      method: 'POST',
       body: JSON.stringify(body),
     },
     fetchImpl,

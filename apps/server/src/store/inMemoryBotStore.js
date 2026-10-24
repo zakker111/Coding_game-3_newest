@@ -1,6 +1,13 @@
 import { loadBuiltinExampleBots } from '../services/exampleBots.js'
 import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
-import { ratingFields } from '../services/rating.js'
+import { defaultRatingState, ratingFields } from '../services/rating.js'
+import {
+  botMetaFields,
+  nextRankedStatusAfterSave,
+  normalizeForkBaseline,
+  normalizeForkedFrom,
+  normalizeVisibility,
+} from '../services/botMeta.js'
 
 function cloneRecord(record) {
   return record == null ? null : structuredClone(record)
@@ -8,6 +15,11 @@ function cloneRecord(record) {
 
 function botKey(ownerUsername, name) {
   return `${ownerUsername}/${name}`
+}
+
+function ratingFieldsFromDefault() {
+  const fresh = defaultRatingState()
+  return { ...ratingFields(fresh) }
 }
 
 function rankedFields(bot) {
@@ -33,6 +45,7 @@ function botSummary(bot) {
     sourceHash: bot.sourceHash,
     loadout: normalizeLoadout(bot.loadout ?? EMPTY_LOADOUT).loadout,
     ...rankedFields(bot),
+    ...botMetaFields(bot),
   }
 }
 
@@ -118,7 +131,7 @@ export function createInMemoryBotStore() {
       })
     },
 
-    saveBot({ ownerUsername, name, sourceText, sourceHash, loadout, saveMessage }) {
+    saveBot({ ownerUsername, name, sourceText, sourceHash, loadout, saveMessage, visibility, forkedFrom, forkBaseline, resetRating }) {
       const key = botKey(ownerUsername, name)
       const existing = bots.get(key)
       const timestamp = new Date().toISOString()
@@ -134,7 +147,15 @@ export function createInMemoryBotStore() {
       }
 
       const ranked = rankedFields(existing)
-      const nextRankedStatus = ranked.rankedStatus === 'dropped' ? 'pending' : ranked.rankedStatus
+      const forked = forkBaseline != null
+      const baseline = forked ? normalizeForkBaseline(forkBaseline) : normalizeForkBaseline(existing?.forkBaseline)
+      const nextRankedStatus = nextRankedStatusAfterSave({
+        existing,
+        sourceHash,
+        loadout: normalizeLoadout(loadout ?? existing?.loadout ?? EMPTY_LOADOUT).loadout,
+        forked,
+      })
+      const freshRating = resetRating || forked ? { ...ratingFieldsFromDefault(), rankedPoints: 0, lastRankedRunId: null } : {}
       const next = {
         ownerUsername,
         name,
@@ -145,8 +166,12 @@ export function createInMemoryBotStore() {
         createdAt: existing?.createdAt ?? timestamp,
         updatedAt: timestamp,
         ...ranked,
+        ...freshRating,
         rankedStatus: nextRankedStatus,
         lastSubmittedAt: timestamp,
+        visibility: normalizeVisibility(visibility, existing ? normalizeVisibility(existing.visibility) : 'public'),
+        forkedFrom: forked ? normalizeForkedFrom(forkedFrom) : (existing?.forkedFrom ?? null),
+        forkBaseline: baseline,
         versions,
       }
 

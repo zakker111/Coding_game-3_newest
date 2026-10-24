@@ -6,6 +6,20 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Server 0.3.0 / Web 0.0.10 — Fork and edit (10.5) — 2026-10-24
+
+### Added
+- Bots have `visibility` (`public` | `private`, default `public`). Private bots are hidden from other users in lists, source, and version endpoints (404). Set it with `visibility` on `PUT /api/bots/:owner/:name`.
+- `POST /api/bots/:owner/:name/fork` (body `{ name, overwrite? }`): copies a builtin or public bot into the caller's account. The copy records `forkedFrom: "owner/name"` (e.g. `builtin/bot11`), starts `pending` in the daily league with its rating reset, and flips to `active` after the owner saves a change to source or loadout. Saving the same source keeps it pending.
+- Web: "Fork a public bot into <slot>" in the Workshop (confirms first), a Visibility selector applied on Save, and "forked from" attribution on the selected server bot.
+
+### Notes
+- Users always have three starter bots, so a fork replaces one of them (`overwrite: true`). The replaced source stays in version history. Without a free slot a new name returns `MAX_BOTS_REACHED`.
+- Forking a private bot returns 404 to non-owners; the owner of a private bot cannot fork it either (only public bots are forkable).
+
+### Tests
+- `forkBots.test.js`: fork copy and pending/active transitions, `BOT_EXISTS`, `MAX_BOTS_REACHED`, private hiding, unauthenticated fork, invalid visibility.
+
 ## Server 0.2.0 / Web 0.0.9 — Glicko-style ratings — 2026-10-24
 
 ### Added
