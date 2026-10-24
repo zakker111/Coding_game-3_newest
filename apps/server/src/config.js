@@ -31,6 +31,8 @@ export function getServerConfig(env = process.env) {
     ),
     bodyLimit: parseIntEnv(env.NOWT_SERVER_BODY_LIMIT, DEFAULT_BODY_LIMIT, 'NOWT_SERVER_BODY_LIMIT'),
     dataFilePath: env.NOWT_SERVER_DATA_FILE || DEFAULT_DATA_FILE,
+    databaseUrl: env.DATABASE_URL || null,
+    databaseSsl: env.DATABASE_SSL === '1' || env.DATABASE_SSL === 'require',
     webDistPath: env.NOWT_WEB_DIST || null,
     sessionTtlMs: parseIntEnv(env.NOWT_SESSION_TTL_MS, DEFAULT_SESSION_TTL_MS, 'NOWT_SESSION_TTL_MS'),
     requireStrongAdminPassword: env.NODE_ENV === 'production' && env.NOWT_ALLOW_DEFAULT_ADMIN !== '1',

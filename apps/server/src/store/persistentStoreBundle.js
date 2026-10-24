@@ -1,9 +1,8 @@
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
 
 import { loadBuiltinExampleBots } from '../services/exampleBots.js'
+import { createFileStorage } from './fileStorage.js'
 
 function cloneRecord(record) {
   return record == null ? null : structuredClone(record)
@@ -66,31 +65,18 @@ function normalizeState(raw) {
   }
 }
 
-function readState(filePath) {
-  try {
-    const raw = JSON.parse(readFileSync(filePath, 'utf8'))
-    return normalizeState(raw)
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return createInitialState()
-    }
-    throw error
-  }
-}
+// storage: { load(): rawState | null, save(state), flush(), close() } — see fileStorage.js and postgresStorage.js.
+export function createPersistentStoreBundle({ filePath, storage: providedStorage } = {}) {
+  const storage =
+    providedStorage ??
+    (() => {
+      if (typeof filePath !== 'string' || filePath.trim() === '') {
+        throw new Error('createPersistentStoreBundle requires a storage or a non-empty filePath')
+      }
+      return createFileStorage(filePath)
+    })()
 
-function writeState(filePath, state) {
-  mkdirSync(dirname(filePath), { recursive: true })
-  const tempPath = `${filePath}.tmp`
-  writeFileSync(tempPath, JSON.stringify(state, null, 2))
-  renameSync(tempPath, filePath)
-}
-
-export function createPersistentStoreBundle({ filePath }) {
-  if (typeof filePath !== 'string' || filePath.trim() === '') {
-    throw new Error('createPersistentStoreBundle requires a non-empty filePath')
-  }
-
-  const state = readState(filePath)
+  const state = normalizeState(storage.load())
   const builtinBots = new Map()
   let transactionDepth = 0
   let transactionDirty = false
@@ -106,12 +92,17 @@ export function createPersistentStoreBundle({ filePath }) {
     })
   }
 
+  function commit() {
+    // Storage may return a promise (Postgres); its own queue logs failures, so nothing is thrown here.
+    return storage.save(state)
+  }
+
   function persist() {
     if (transactionDepth > 0) {
       transactionDirty = true
       return
     }
-    writeState(filePath, state)
+    commit()
   }
 
   function transact(fn) {
@@ -122,7 +113,7 @@ export function createPersistentStoreBundle({ filePath }) {
       transactionDepth -= 1
       if (transactionDepth === 0 && transactionDirty) {
         transactionDirty = false
-        writeState(filePath, state)
+        commit()
       }
     }
   }
@@ -464,5 +455,7 @@ export function createPersistentStoreBundle({ filePath }) {
     botStore,
     matchStore,
     dailyRunStore,
+    flush: () => storage.flush(),
+    close: () => storage.close(),
   }
 }

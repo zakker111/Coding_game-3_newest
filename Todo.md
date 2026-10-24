@@ -624,9 +624,9 @@ Rules for this phase
 - Acceptance: a player who lost a match can open the replay and see the tick where they took the most damage.
 
 ### 10.7 Durable storage
-- [ ] Move bots, replays, and daily results out of the local JSON file into a managed database (Postgres or the platform's DB; decide before coding).
-- [ ] Migration path: one-time import of the existing `.nowt/server-state.json`.
-- [ ] Keep the in-memory store for tests; add an integration test against the real database.
+- [x] Move bots, replays, and daily results out of the local JSON file into a managed database (Postgres or the platform's DB; decide before coding).
+- [x] Migration path: one-time import of the existing `.nowt/server-state.json`.
+- [x] Keep the in-memory store for tests; add an integration test against the real database (`TEST_DATABASE_URL`).
 - [ ] Store replays as blobs or compressed JSON with a size cap; document the retention policy.
 - Acceptance: restart or redeploy the server and bots, runs, and replays are all still there.
 

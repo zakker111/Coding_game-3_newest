@@ -6,6 +6,17 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Server 0.0.7 — Postgres storage — 2026-10-24T06:27:37Z
+
+### Added
+- Game state (users, sessions, bots, matches, daily runs) is stored in Postgres when `DATABASE_URL` is set. Without it the server keeps using the JSON file (`NOWT_SERVER_DATA_FILE`), as before.
+- First start on an empty database imports the existing JSON file.
+- Writes are per record: only changed records are upserted, removed records are deleted. Pending writes are flushed on SIGTERM/SIGINT.
+- `render.yaml` provisions a free Render Postgres (`nowt-db`) and sets `DATABASE_URL`.
+
+### Not included
+- Replay compression and a size cap / retention policy (Phase 10.7, still open).
+
 ## 0.3.0 — ruleset 0.3.0 (new weapons and abilities)
 
 ### Added
