@@ -79,9 +79,11 @@ export async function createPostgresStorage({ connectionString, ssl, importFromF
   }
 
   // `intended` is the snapshot we have queued to be written. Diffs are taken against it,
-  // so a write that is still in flight is never repeated. After a failed write it is reset
-  // to empty, which forces a full rewrite on the next save.
+  // so a write that is still in flight is never repeated. After a failed write we cannot know
+  // what the database holds (rows removed in memory may still be there), so the next save
+  // replaces the whole database contents instead of diffing.
   let intended = emptyIndex()
+  let needsFullSync = false
   let writeChain = Promise.resolve()
 
   function indexState(state) {
@@ -101,6 +103,13 @@ export async function createPostgresStorage({ connectionString, ssl, importFromF
 
   function diff(state) {
     const next = indexState(state)
+    if (needsFullSync) {
+      const all = []
+      for (const name of Object.keys(next)) {
+        for (const [id, json] of next[name]) all.push({ collection: name, id, json })
+      }
+      return { changes: all, next, full: true }
+    }
     const changes = []
     for (const name of Object.keys(next)) {
       const before = intended[name] ?? new Map()
@@ -111,13 +120,14 @@ export async function createPostgresStorage({ connectionString, ssl, importFromF
         if (!next[name].has(id)) changes.push({ collection: name, id, json: null })
       }
     }
-    return { changes, next }
+    return { changes, next, full: false }
   }
 
-  async function applyChanges(changes) {
+  async function applyChanges(changes, full) {
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
+      if (full) await client.query('DELETE FROM nowt_records')
       for (const change of changes) {
         if (change.json === null) {
           await client.query('DELETE FROM nowt_records WHERE collection = $1 AND id = $2', [change.collection, change.id])
@@ -145,13 +155,14 @@ export async function createPostgresStorage({ connectionString, ssl, importFromF
     },
 
     save(state) {
-      const { changes, next } = diff(state)
-      if (changes.length === 0) return writeChain
+      const { changes, next, full } = diff(state)
+      if (changes.length === 0 && !full) return writeChain
       intended = next
+      needsFullSync = false
       writeChain = writeChain.then(() =>
-        applyChanges(changes).catch((error) => {
-          log.error?.('Failed to write game state to Postgres; the next save will rewrite everything', error)
-          intended = emptyIndex()
+        applyChanges(changes, full).catch((error) => {
+          log.error?.('Failed to write game state to Postgres; the next save will replace all stored data', error)
+          needsFullSync = true
         })
       )
       return writeChain

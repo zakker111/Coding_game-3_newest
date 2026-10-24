@@ -76,3 +76,49 @@ test('first start imports an existing JSON state file into an empty database', {
   assert.ok(createPersistentStoreBundle({ storage: again }).userStore.getUserByUsername('carol'))
   await again.close()
 })
+
+test('a failed write does not bring back a session that was deleted before the next good write', { skip }, async () => {
+  await resetDatabase()
+  const quiet = { log() {}, error() {} }
+  const state = (sessions) => ({
+    version: 1,
+    nextUserId: 2,
+    nextMatchId: 1,
+    users: [],
+    sessions,
+    bots: [],
+    matches: [],
+    dailyRuns: [],
+  })
+  const kept = { sessionId: 'S-kept', userId: 'u_000001', createdAt: '2026-01-01T00:00:00.000Z' }
+  const loggedOut = { sessionId: 'S-logged-out', userId: 'u_000001', createdAt: '2026-01-01T00:00:00.000Z' }
+  const boom = { sessionId: 'S-boom', userId: 'u_000001', createdAt: '2026-01-01T00:00:00.000Z' }
+
+  const storage = await createPostgresStorage({ connectionString: url, log: quiet })
+  await storage.save(state([kept, loggedOut]))
+
+  // Make the next write fail once, by raising an error for one specific row.
+  const admin = new pg.Client({ connectionString: url })
+  await admin.connect()
+  await admin.query(
+    `CREATE OR REPLACE FUNCTION nowt_test_fail() RETURNS trigger AS $$
+     BEGIN RAISE EXCEPTION 'simulated write failure'; END $$ LANGUAGE plpgsql`
+  )
+  await admin.query(
+    `CREATE TRIGGER nowt_test_fail BEFORE INSERT OR UPDATE ON nowt_records
+     FOR EACH ROW WHEN (NEW.id = 'S-boom') EXECUTE FUNCTION nowt_test_fail()`
+  )
+  await storage.save(state([kept, boom])) // fails and rolls back
+  await admin.query('DROP TRIGGER nowt_test_fail ON nowt_records')
+
+  // The user logs out: the session is gone from memory and the next save must remove it in the database too.
+  await storage.save(state([kept]))
+  await storage.flush()
+  await storage.close()
+  await admin.end()
+
+  const restarted = await createPostgresStorage({ connectionString: url, log: quiet })
+  const sessionIds = restarted.load().sessions.map((session) => session.sessionId).sort()
+  assert.deepEqual(sessionIds, ['S-kept'])
+  await restarted.close()
+})

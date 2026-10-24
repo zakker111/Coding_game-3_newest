@@ -56,6 +56,7 @@ Set these in Render under `nowt-game` → **Environment** only if you need to ch
 - `NOWT_TRUST_PROXY=1` (already set in `render.yaml`): tells the server it runs behind Render's proxy, so rate limits apply per visitor, not per proxy. Do not remove.
 - `NOWT_RATE_LIMIT_AUTH_PER_MINUTE` (default 20): login/register attempts per visitor per minute. `0` turns it off.
 - `NOWT_RATE_LIMIT_SIMULATIONS_PER_MINUTE` (default 30): simulation runs per visitor per minute. `0` turns it off.
+- `NOWT_REPLAY_RETENTION` (default 500): how many sandbox match replays keep their frames. Older matches keep their result and score but their replay is removed to save space. `0` keeps all replays.
 
 ## Local run (optional, for testing on your computer)
 ```

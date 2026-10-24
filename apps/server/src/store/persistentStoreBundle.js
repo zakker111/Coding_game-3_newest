@@ -1,3 +1,4 @@
+import { packReplay, readStoredReplay } from './replayCodec.js'
 import { randomBytes } from 'node:crypto'
 import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
 
@@ -349,7 +350,7 @@ export function createPersistentStoreBundle({ filePath, storage: providedStorage
       match.status = 'complete'
       match.result = payload.result
       if (typeof payload.replay !== 'undefined') {
-        match.replay = payload.replay
+        Object.assign(match, { replay: null }, packReplay(payload.replay))
       }
       match.updatedAt = new Date().toISOString()
       persist()
@@ -373,9 +374,24 @@ export function createPersistentStoreBundle({ filePath, storage: providedStorage
     },
 
     getReplay(matchId) {
-      const match = state.matches.find((entry) => entry.matchId === matchId)
-      if (!match || match.replay == null) return null
-      return cloneRecord(match.replay)
+      const replay = readStoredReplay(state.matches.find((entry) => entry.matchId === matchId))
+      return replay == null ? null : cloneRecord(replay)
+    },
+
+    // Drops the stored frames of the oldest sandbox replays beyond `keep`. Match results stay.
+    pruneReplays(keep) {
+      if (!(keep > 0)) return 0
+      const stored = state.matches
+        .filter((match) => match.kind === 'sandbox' && (match.replayGz || match.replay))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.matchId.localeCompare(a.matchId))
+      let dropped = 0
+      for (const match of stored.slice(keep)) {
+        match.replayGz = null
+        match.replay = null
+        dropped += 1
+      }
+      if (dropped > 0) persist()
+      return dropped
     },
 
     listMatches({ dailyRunId, kind } = {}) {

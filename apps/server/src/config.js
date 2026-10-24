@@ -39,6 +39,8 @@ export function getServerConfig(env = process.env) {
     // Number of reverse-proxy hops in front of the server (Render = 1). Without this, every
     // visitor looks like the proxy's IP and shares one rate-limit bucket.
     trustProxy: parseIntEnv(env.NOWT_TRUST_PROXY, 0, 'NOWT_TRUST_PROXY'),
+    // Newest sandbox replays kept with their frames; older ones keep only their result. 0 = keep all.
+    replayRetentionCount: parseIntEnv(env.NOWT_REPLAY_RETENTION, 500, 'NOWT_REPLAY_RETENTION'),
     rateLimitAuthPerMinute: parseIntEnv(env.NOWT_RATE_LIMIT_AUTH_PER_MINUTE, 20, 'NOWT_RATE_LIMIT_AUTH_PER_MINUTE'),
     rateLimitSimulationsPerMinute: parseIntEnv(
       env.NOWT_RATE_LIMIT_SIMULATIONS_PER_MINUTE,

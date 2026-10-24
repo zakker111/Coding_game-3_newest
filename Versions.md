@@ -6,6 +6,22 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Server 0.1.0 / Web 0.0.8 — security, replay storage, why-did-I-lose — 2026-10-24
+
+### Added
+- Per-visitor rate limits on login/register and on simulation runs (`NOWT_RATE_LIMIT_AUTH_PER_MINUTE`, `NOWT_RATE_LIMIT_SIMULATIONS_PER_MINUTE`). `NOWT_TRUST_PROXY=1` (set in `render.yaml`) makes the limit use the real visitor IP behind Render's proxy.
+- Replay retention (`NOWT_REPLAY_RETENTION`, default 500 sandbox replays keep their frames).
+- Web: "Your matches in this run" panel with a "Match summary" per bot (first damage, most damage tick, last instructions, how it ended). Uses `summarizeBotMatch` from `@coding-game/replay`.
+
+### Changed
+- New passwords need 8 characters. Existing accounts with 5+ character passwords still log in.
+- Replays are stored gzip-compressed (a typical 4-bot match goes from ~200 KB to a few KB). Old stored replays still load.
+
+### Fixed
+- Failed Postgres write could bring back a logged-out session after a restart. The next save now replaces stored data instead of diffing against a stale snapshot. Regression test in `postgresStorage.test.js`.
+- One failed-login burst locked out every visitor when the server ran behind Render's proxy (all requests shared the proxy IP). Fixed by `NOWT_TRUST_PROXY`.
+- CLOAK did not break on SNIPER/ROCKET/SAW damage (engine fix, see entry below).
+
 ## Engine fix (ruleset 0.3.0 unchanged) — balance step 3 — 2026-10-24T06:53:15Z
 
 ### Fixed

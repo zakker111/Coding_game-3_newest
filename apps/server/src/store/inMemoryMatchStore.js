@@ -1,3 +1,5 @@
+import { packReplay, readStoredReplay } from './replayCodec.js'
+
 function cloneRecord(record) {
   return record == null ? null : structuredClone(record)
 }
@@ -48,7 +50,7 @@ export function createInMemoryMatchStore() {
       match.status = 'complete'
       match.result = payload.result
       if (typeof payload.replay !== 'undefined') {
-        match.replay = payload.replay
+        Object.assign(match, { replay: null }, packReplay(payload.replay))
       }
       match.updatedAt = new Date().toISOString()
       return cloneRecord(match)
@@ -67,9 +69,23 @@ export function createInMemoryMatchStore() {
     },
 
     getReplay(matchId) {
-      const match = matches.get(matchId)
-      if (!match || match.replay == null) return null
-      return cloneRecord(match.replay)
+      const replay = readStoredReplay(matches.get(matchId))
+      return replay == null ? null : cloneRecord(replay)
+    },
+
+    // Drops the stored frames of the oldest sandbox replays beyond `keep`. Match results stay.
+    pruneReplays(keep) {
+      if (!(keep > 0)) return 0
+      const stored = [...matches.values()]
+        .filter((match) => match.kind === 'sandbox' && (match.replayGz || match.replay))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.matchId.localeCompare(a.matchId))
+      let dropped = 0
+      for (const match of stored.slice(keep)) {
+        match.replayGz = null
+        match.replay = null
+        dropped += 1
+      }
+      return dropped
     },
 
     listMatches({ dailyRunId, kind } = {}) {

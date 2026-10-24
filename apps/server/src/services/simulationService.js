@@ -245,10 +245,12 @@ export function createSimulationService({
               }
             : replay
 
-        return store.markComplete(match.matchId, {
+        const completed = store.markComplete(match.matchId, {
           result,
           replay: storedReplay,
         })
+        if (typeof store.pruneReplays === 'function') store.pruneReplays(config.replayRetentionCount ?? 0)
+        return completed
       } catch (error) {
         store.markFailed(match.matchId, {
           code: error?.code ?? 'SIMULATION_FAILED',

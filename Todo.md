@@ -626,7 +626,7 @@ Rules for this phase
 ### 10.6 Replay viewer for daily results
 - [ ] Each daily run page lists the player's matches with win/loss and points.
 - [ ] Clicking a match opens the existing replay viewer for that server-run match (depends on Phase 8 "Render the server replay").
-- [ ] Add a "why did I lose" summary per match: first damage taken, last bot alive, final energy/ammo, and the bot's last 5 instructions executed.
+- [x] Add a "why did I lose" summary per match: first damage taken, last bot alive, final energy/ammo, and the bot's last 5 instructions executed.
 - Acceptance: a player who lost a match can open the replay and see the tick where they took the most damage.
 
 ### 10.7 Durable storage
@@ -634,7 +634,8 @@ Rules for this phase
 - [x] Migration path: one-time import of the existing `.nowt/server-state.json`.
 - [x] Keep the in-memory store for tests; add an integration test against the real database (`TEST_DATABASE_URL`).
 - [x] Backup/export tool and restore (`apps/server/src/tools/backup.js`); steps in `DEPLOY.md` section 6.
-- [ ] Store replays as blobs or compressed JSON with a size cap; document the retention policy.
+- [x] Store replays as gzip+base64 with a size cap (`MAX_STORED_REPLAY_BYTES`, 2 MB compressed); old plain replays still load.
+- [x] Retention: keep the newest `NOWT_REPLAY_RETENTION` sandbox replays (default 500, 0 = keep all). Older matches keep their result but lose their frames. Documented in `DEPLOY.md`.
 - Acceptance: restart or redeploy the server and bots, runs, and replays are all still there.
 
 ### 10.8 Elo-style ranking
