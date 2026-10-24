@@ -1,7 +1,10 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 
 const USERNAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/
-const MIN_PASSWORD_LENGTH = 5
+// Existing accounts may have shorter passwords, so login accepts MIN_LOGIN_PASSWORD_LENGTH.
+// New accounts must meet MIN_PASSWORD_LENGTH.
+const MIN_LOGIN_PASSWORD_LENGTH = 5
+const MIN_PASSWORD_LENGTH = 8
 const SESSION_COOKIE_NAME = 'nowt_session'
 const DEFAULT_ADMIN_USERNAME = 'admin'
 const DEFAULT_ADMIN_PASSWORD = 'admin'
@@ -49,29 +52,29 @@ function normalizeUsername(value) {
   return value
 }
 
-function validatePassword(value) {
-  if (typeof value !== 'string' || value.length < MIN_PASSWORD_LENGTH) {
+function validatePassword(value, minLength) {
+  if (typeof value !== 'string' || value.length < minLength) {
     throw createHttpError(
       400,
       'INVALID_REQUEST',
-      `password must be a string with at least ${MIN_PASSWORD_LENGTH} characters`,
+      `password must be a string with at least ${minLength} characters`,
       {
         field: 'password',
-        minLength: MIN_PASSWORD_LENGTH,
+        minLength,
       }
     )
   }
   return value
 }
 
-function validateAuthBody(body) {
+function validateAuthBody(body, passwordMinLength) {
   if (typeof body !== 'object' || body == null || Array.isArray(body)) {
     throw createHttpError(400, 'INVALID_REQUEST', 'request body must be a JSON object')
   }
 
   return {
     username: normalizeUsername(body.username),
-    password: validatePassword(body.password),
+    password: validatePassword(body.password, passwordMinLength),
   }
 }
 
@@ -162,7 +165,7 @@ export function createAuthService({ store, config = {} } = {}) {
     },
 
     register(body) {
-      const { username, password } = validateAuthBody(body)
+      const { username, password } = validateAuthBody(body, MIN_PASSWORD_LENGTH)
 
       if (store.getUserByUsername(username)) {
         throw createHttpError(409, 'USER_EXISTS', 'username is already registered', {
@@ -186,7 +189,7 @@ export function createAuthService({ store, config = {} } = {}) {
     },
 
     login(body) {
-      const { username, password } = validateAuthBody(body)
+      const { username, password } = validateAuthBody(body, MIN_LOGIN_PASSWORD_LENGTH)
       const user = store.getUserByUsername(username)
 
       if (!user || !verifyPassword(password, user.passwordHash)) {
