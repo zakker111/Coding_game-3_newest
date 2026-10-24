@@ -36,6 +36,15 @@ export function getServerConfig(env = process.env) {
     webDistPath: env.NOWT_WEB_DIST || null,
     sessionTtlMs: parseIntEnv(env.NOWT_SESSION_TTL_MS, DEFAULT_SESSION_TTL_MS, 'NOWT_SESSION_TTL_MS'),
     adminPassword: env.NOWT_ADMIN_PASSWORD || null,
+    // Number of reverse-proxy hops in front of the server (Render = 1). Without this, every
+    // visitor looks like the proxy's IP and shares one rate-limit bucket.
+    trustProxy: parseIntEnv(env.NOWT_TRUST_PROXY, 0, 'NOWT_TRUST_PROXY'),
+    rateLimitAuthPerMinute: parseIntEnv(env.NOWT_RATE_LIMIT_AUTH_PER_MINUTE, 20, 'NOWT_RATE_LIMIT_AUTH_PER_MINUTE'),
+    rateLimitSimulationsPerMinute: parseIntEnv(
+      env.NOWT_RATE_LIMIT_SIMULATIONS_PER_MINUTE,
+      30,
+      'NOWT_RATE_LIMIT_SIMULATIONS_PER_MINUTE'
+    ),
     requireStrongAdminPassword: env.NODE_ENV === 'production',
   }
 

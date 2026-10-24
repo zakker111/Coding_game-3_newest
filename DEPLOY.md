@@ -51,6 +51,12 @@ To restore into an empty or disposable database (refuses to overwrite without `-
 DATABASE_URL="postgres://...target-url..." DATABASE_SSL=1 node src/tools/backup.js restore backups/nowt-2025-01-01.json --replace
 ```
 
+## Settings you can tune (optional)
+Set these in Render under `nowt-game` → **Environment** only if you need to change them. Defaults are fine.
+- `NOWT_TRUST_PROXY=1` (already set in `render.yaml`): tells the server it runs behind Render's proxy, so rate limits apply per visitor, not per proxy. Do not remove.
+- `NOWT_RATE_LIMIT_AUTH_PER_MINUTE` (default 20): login/register attempts per visitor per minute. `0` turns it off.
+- `NOWT_RATE_LIMIT_SIMULATIONS_PER_MINUTE` (default 30): simulation runs per visitor per minute. `0` turns it off.
+
 ## Local run (optional, for testing on your computer)
 ```
 corepack enable

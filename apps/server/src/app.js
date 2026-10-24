@@ -29,6 +29,38 @@ function formatErrorPayload(error) {
   }
 }
 
+const RATE_LIMIT_WINDOW_MS = 60_000
+
+// Returns a function that, for a matching request over its limit, sends 429 and returns the reply.
+// Otherwise returns undefined. A limit of 0 or less disables the limiter.
+function createRateLimiter({ limit, match, message }) {
+  const buckets = new Map()
+  const enabled = Number.isFinite(limit) && limit > 0
+  if (enabled) {
+    setInterval(() => {
+      const now = Date.now()
+      for (const [key, bucket] of buckets) {
+        if (bucket.resetAt <= now) buckets.delete(key)
+      }
+    }, RATE_LIMIT_WINDOW_MS).unref?.()
+  }
+
+  return (request, reply, path) => {
+    if (!enabled || !match(path, request.method)) return undefined
+    const key = request.ip || 'unknown'
+    const now = Date.now()
+    let bucket = buckets.get(key)
+    if (!bucket || bucket.resetAt <= now) {
+      bucket = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
+      buckets.set(key, bucket)
+    }
+    bucket.count += 1
+    if (bucket.count <= limit) return undefined
+    reply.header('retry-after', Math.ceil((bucket.resetAt - now) / 1000))
+    return reply.code(429).send({ error: { code: 'RATE_LIMITED', message } })
+  }
+}
+
 export async function buildApp({
   config = getServerConfig(),
   store = createInMemoryMatchStore(),
@@ -39,6 +71,7 @@ export async function buildApp({
   const app = Fastify({
     logger: false,
     bodyLimit: config.bodyLimit,
+    trustProxy: config.trustProxy > 0 ? config.trustProxy : false,
     disableRequestLogging: true,
     routerOptions: {
       ignoreTrailingSlash: true,
@@ -83,34 +116,22 @@ export async function buildApp({
   )
   app.decorateRequest('currentUser', null)
 
-  // Simple in-memory fixed-window rate limiter for auth endpoints (per IP).
-  const RATE_LIMIT_WINDOW_MS = 60_000
-  const RATE_LIMIT_MAX_AUTH = Number.isFinite(config.rateLimitMaxAuth) ? config.rateLimitMaxAuth : 20
-  const authRateBuckets = new Map()
-  setInterval(() => {
-    const cutoff = Date.now() - 5 * RATE_LIMIT_WINDOW_MS
-    for (const [key, bucket] of authRateBuckets) {
-      if (bucket.resetAt <= cutoff) authRateBuckets.delete(key)
-    }
-  }, RATE_LIMIT_WINDOW_MS).unref?.()
+  // Per-client-IP limits. The client IP comes from request.ip, which depends on NOWT_TRUST_PROXY.
+  const authLimiter = createRateLimiter({
+    limit: config.rateLimitAuthPerMinute,
+    match: (path, method) => method === 'POST' && (path === '/api/auth/login' || path === '/api/auth/register'),
+    message: 'Too many auth attempts, slow down.',
+  })
+  const simulationLimiter = createRateLimiter({
+    limit: config.rateLimitSimulationsPerMinute,
+    match: (path, method) => method === 'POST' && path === '/api/simulations',
+    message: 'Too many simulation requests, slow down.',
+  })
 
   app.addHook('onRequest', async (request, reply) => {
-    if (/^\/api\/auth\/(login|register)$/.test(request.url.split('?')[0])) {
-      const ip = request.ip || 'unknown'
-      const now = Date.now()
-      let bucket = authRateBuckets.get(ip)
-      if (!bucket || bucket.resetAt <= now) {
-        bucket = { count: 0, resetAt: now + RATE_LIMIT_WINDOW_MS }
-        authRateBuckets.set(ip, bucket)
-      }
-      bucket.count += 1
-      if (bucket.count > RATE_LIMIT_MAX_AUTH) {
-        reply.header('retry-after', Math.ceil((bucket.resetAt - now) / 1000))
-        return reply.code(429).send({
-          error: { code: 'RATE_LIMITED', message: 'Too many auth attempts, slow down.' },
-        })
-      }
-    }
+    const path = request.url.split('?')[0].replace(/\/+$/, '') || '/'
+    const limited = authLimiter(request, reply, path) || simulationLimiter(request, reply, path)
+    if (limited) return limited
     request.currentUser = app.authService.getCurrentUser(request.headers.cookie)
   })
 

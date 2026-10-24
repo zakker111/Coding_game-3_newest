@@ -21,6 +21,8 @@ services:
         value: apps/web/dist
       - key: NODE_ENV
         value: production
+      - key: NOWT_TRUST_PROXY
+        value: "1"
       - key: NOWT_ADMIN_PASSWORD
         sync: false
       - key: DATABASE_URL
