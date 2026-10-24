@@ -80,12 +80,15 @@ export const FLAMER_DAMAGE = 2
 export const FLAMER_ENERGY_DRAIN_PER_TICK = 3
 
 // RAILGUN (ruleset 0.3.0): piercing Bresenham beam along the shot direction.
-// Balance pass: cost 12 + cooldown 22 keeps a maxed-ammo railgun at ~8 shots
-// (~160 dmg) per match instead of the previous unlimited-feel 10/18 rhythm.
-export const RAILGUN_AMMO_COST = 12
-export const RAILGUN_COOLDOWN_TICKS = 22
-export const RAILGUN_DAMAGE_FIRST = 20
-export const RAILGUN_DAMAGE_SUBSEQUENT = 12
+// Balance pass (scripts/balance-weapons-duel.mjs): at cost 12 / 20 dmg the
+// railgun did ~160 dmg per 100 AMMO single-target, about 40% of SNIPER (~400)
+// and ROCKET (~420), and it only paid off with 2+ bots in line. Cost 8, cooldown
+// 18, 24 first hit and 10 per pierced bot put single-target at ~290 per match
+// (on par with GRENADE) while a 3-bot line still gives ~44 per shot.
+export const RAILGUN_AMMO_COST = 8
+export const RAILGUN_COOLDOWN_TICKS = 18
+export const RAILGUN_DAMAGE_FIRST = 24
+export const RAILGUN_DAMAGE_SUBSEQUENT = 10
 export const RAILGUN_MAX_HITS = 3
 
 // PULSE (ruleset 0.3.0): radial blast — damage + knockback + brief stun.

@@ -6,6 +6,20 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## 0.3.0 — ruleset 0.3.0 (new weapons and abilities)
+
+### Added
+- Modules `FLAMER`, `RAILGUN`, `PULSE`, `CLOAK` (see `Ruleset.md` section A).
+- Weapon duel harness `scripts/balance-weapons-duel.mjs` (1v1 per weapon against a passive dummy).
+
+### Changed
+- `rulesetVersion` and `schemaVersion` are `0.3.0`.
+- `RAILGUN` tuned from cost 10/12, cooldown 18/22, 20/12 dmg to cost 8, cooldown 18, 24/10 dmg after the duel run showed ~160 dmg per 100 AMMO single-target (≈40% of SNIPER/ROCKET).
+- Bump damage only applies on contact with a wall, not on every tick a bot stays pinned against it.
+
+### Not included
+- `JETPACK` (in the proposal, not in this track). `DECOY`, `SWARM`, and tier-3 modules are deferred.
+
 ## Release discipline (required)
 
 - Every deployable build (client and/or server) must have a **version string**.

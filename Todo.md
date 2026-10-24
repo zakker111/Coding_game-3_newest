@@ -139,7 +139,8 @@ Do next
 
 Ready after audit
 - [x] Admin `/admin` ranked controls: ranked-status table (Activate/Pending/Drop) shipped in `AdminServerPage.tsx`; `rankedActiveLimit` is shown read-only from the latest run.
-- [ ] Balance new modules via seeded daily leagues (`scripts/seed-demo.mjs`).
+- [x] Balance new modules (ruleset 0.3.0): 1v1 duel harness `scripts/balance-weapons-duel.mjs` + league `scripts/balance-report.mjs`. Railgun retuned; see "Phase 9 balance pass notes".
+- [ ] Balance new modules via seeded daily leagues (`scripts/seed-demo.mjs`) with real player data (not yet run).
 
 ### Checklist (done vs. not done)
 
@@ -228,6 +229,12 @@ See `Ruleset.md` §5.
   - ROCKET stalemates: high center damage + slow travel means rockets trade well defensively; example bot is built to survive, not close. Balance target met after sniper nerf (rocket dmg/game now comparable to top DPS bots without dominating wins).
   - TELEPORT zero kills: teleport is a mobility/utility module; kill contribution comes from bumps/follow-up weapons. Example bot loadout intentionally has no damaging slot.
 - Golden fixtures unaffected (`node --test test/golden`: 4/4 pass); deploy mirror re-synced with `node scripts/sync-deploy.mjs`.
+- Ruleset 0.3.0 pass (`scripts/balance-weapons-duel.mjs`, 20 seeds, passive 100-HP dummy, tickCap 240):
+  - Per-100-AMMO single-target ceiling (cost × cooldown math, before duel): BULLET ~500, ROCKET ~420, SNIPER ~400, GRENADE ~290, RAILGUN was ~160.
+  - Action: RAILGUN `ammoCost 12→8`, `cooldown 22→18`, `damage 20/12→24/10`. Single-target ceiling is now ~290 (on par with GRENADE). Killing the dummy: 53→41 ticks.
+  - League after the change (`balance-report.mjs`, 10 seeds): RAILGUN bot (bot11) still wins 10/10, kills 20→10, dmg/game 88→94.
+  - Open: SNIPER bot (bot7) is still the top league performer (151 dmg/game, 20 kills, 10/10 survival). Not changed here because SNIPER is outside the 0.3.0 track.
+  - Open: PULSE bot (bot12) has 0 kills and 0 survival in the league. PULSE is a utility/stun module by design, so direct damage is kept at 10.
 
 ---
 

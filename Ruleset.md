@@ -1,6 +1,6 @@
-# Ruleset.md — Core Gameplay Rules (rulesetVersion `0.2.0`, schemaVersion `0.2.0`)
+# Ruleset.md — Core Gameplay Rules (rulesetVersion `0.3.0`, schemaVersion `0.3.0`)
 
-This document describes the deterministic match simulation currently implemented by `packages/engine` (`rulesetVersion = 0.2.0`).
+This document describes the deterministic match simulation currently implemented by `packages/engine` (`rulesetVersion = 0.3.0`).
 
 Implemented simulation code lives in:
 - `packages/ruleset/src/index.js` (authoritative ruleset catalog + loadout normalization)
@@ -10,8 +10,8 @@ Implemented simulation code lives in:
 - `packages/engine/src/sim/constants.js`
 
 Replays emitted by `packages/engine` currently use:
-- `schemaVersion = 0.2.0` (event/state schema)
-- `rulesetVersion = 0.2.0` (simulation behavior)
+- `schemaVersion = 0.3.0` (event/state schema)
+- `rulesetVersion = 0.3.0` (simulation behavior)
 
 Related docs:
 - `BotInstructions.md` (bot language)
@@ -21,6 +21,15 @@ Related docs:
 ---
 
 ## A) rulesetVersion notes
+
+- `0.3.0` — **implemented** (current behavior): adds four modules to the WEAPON / UTILITY catalog.
+  - `FLAMER` (WEAPON, toggle): 180° cone, range 26, 2 dmg/tick, drains 3 ENERGY/tick while ON.
+  - `RAILGUN` (WEAPON, instant, BOT target): piercing Bresenham beam, 8 AMMO, cooldown 18, 24 dmg to the first bot and 10 to each further bot (max 3 hits).
+  - `PULSE` (UTILITY, instant, no target): radial blast within 40 units. 35 ENERGY, cooldown 25, 10 dmg, 12-unit knockback, 3-tick stun.
+  - `CLOAK` (UTILITY, instant, self): 30 ENERGY, cooldown 24, invisible to enemy targeting for 14 ticks. Attacking breaks the cloak.
+  - Wall bumps: a bot already flush against a wall no longer takes bump damage on every tick it is pinned there. Damage applies on contact only.
+  - Balance numbers come from `scripts/balance-weapons-duel.mjs` and `scripts/balance-report.mjs`. See `Todo.md` "Phase 9 balance pass notes".
+  - Not in 0.3.0: JETPACK, DECOY, SWARM (deferred in `docs/NewWeaponsProposal.md`).
 
 - `0.2.0` — **implemented** (current behavior):
   - explicit per-bot 3-slot `loadout` (default-empty)
