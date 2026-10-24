@@ -1,4 +1,7 @@
 import Fastify from 'fastify'
+import fastifyStatic from '@fastify/static'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
 
 import { getServerConfig } from './config.js'
 import { registerAuthRoutes } from './routes/auth.js'
@@ -132,7 +135,16 @@ export async function buildApp({
     reply.code(statusCode).send(formatErrorPayload(error))
   })
 
+  const webDistPath = config.webDistPath ? path.resolve(config.webDistPath) : null
+  const serveWeb = Boolean(webDistPath && existsSync(path.join(webDistPath, 'index.html')))
+  if (serveWeb) {
+    await app.register(fastifyStatic, { root: webDistPath, wildcard: true })
+  }
+
   app.setNotFoundHandler((request, reply) => {
+    if (serveWeb && request.method === 'GET' && !request.url.startsWith('/api/') && !request.url.startsWith('/assets/')) {
+      return reply.type('text/html').sendFile('index.html')
+    }
     reply.code(404).send({
       error: {
         code: 'NOT_FOUND',

@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: nowt-game
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: node apps/server/src/index.js
+    healthCheckPath: /api/ruleset
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: NOWT_WEB_DIST
+        value: apps/web/dist
+      - key: NOWT_ALLOW_DEFAULT_ADMIN
+        value: "1"
