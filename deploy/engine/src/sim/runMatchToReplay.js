@@ -1929,6 +1929,7 @@ function attemptUseGrenade(bot, slotIndex, targetToken, bots, grenades, nextGren
   grenade.grenadeId = grenadeId
 
   bot.ammo -= ammoCost
+  breakCloak(bot, tickEvents) // CLOAK: any attack ends the invisibility window
 
   tickEvents.push({
     type: 'RESOURCE_DELTA',
@@ -1979,6 +1980,7 @@ function attemptUseSniper(bot, slotIndex, targetToken, bots, tickEvents) {
   if (!targetBot || !targetBot.alive) return { ok: false, reason: 'INVALID_TARGET' }
 
   bot.ammo -= SNIPER_AMMO_COST
+  breakCloak(bot, tickEvents) // CLOAK: any attack ends the invisibility window
   tickEvents.push({
     type: 'RESOURCE_DELTA',
     botId: bot.botId,
@@ -2592,6 +2594,7 @@ function stepSawDamage(bots, tickEvents) {
     const victim = findClosestLivingBotInSawRange(bot.botId, bot.pos, bots)
     if (!victim) continue
 
+    breakCloak(bot, tickEvents) // CLOAK: any attack ends the invisibility window
     const raw = SAW_DAMAGE
     const damage = victim.armorEquipped ? applyArmorMitigation(raw) : raw
 

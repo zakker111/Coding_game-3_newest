@@ -6,6 +6,16 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Engine fix (ruleset 0.3.0 unchanged) — balance step 3 — 2026-10-24T06:53:15Z
+
+### Fixed
+- CLOAK now breaks on SNIPER, GRENADE/ROCKET and SAW damage, as the ruleset already said. `rulesetVersion` stays `0.3.0` because no documented constant or rule changed.
+- Regression test in `packages/engine/test/simNewModules.test.js`.
+
+### Changed
+- `scripts/balance-weapons-duel.mjs`: active matchup vs BULLET hunter (win / loss / mutual / timeout).
+- Balance result table is in `Todo.md` ("Step 3 balance pass").
+
 ## Server 0.0.9 / Web 0.0.7 — backups and reliability checks — 2026-10-24T06:46:16Z
 
 ### Added

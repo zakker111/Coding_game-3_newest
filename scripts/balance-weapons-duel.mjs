@@ -5,6 +5,11 @@
 // noise from scripts/balance-report.mjs, so per-module damage and time-to-kill
 // can be compared directly.
 //
+// Two matchups:
+//   passive: attacker vs WAIT-loop dummy (per-weapon damage and time-to-kill).
+//   active:  attacker vs a BULLET hunter that moves, targets and fires back
+//            (win rate and HP left; this is where CLOAK can matter).
+//
 // Usage: node scripts/balance-weapons-duel.mjs   (env: DUEL_SEEDS=20, DUEL_TICK_CAP=240)
 
 import path from 'node:path'
@@ -83,6 +88,55 @@ const PROGRAMS = {
   ],
 }
 
+// Active opponent: hunts the closest bot and fires bullets back.
+const HUNTER = {
+  slotId: 'BOT2',
+  loadout: ['BULLET', null, null],
+  sourceText: [
+    'LABEL LOOP',
+    'TARGET_CLOSEST',
+    'IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() > 40) DO SET_MOVE_TO_TARGET',
+    'IF (HAS_TARGET_BOT() && SLOT_READY(SLOT1) && AMMO >= 2) DO USE_SLOT1 TARGET',
+    'WAIT 1',
+    'GOTO LOOP',
+  ].join('\n') + '\n',
+}
+
+// Attacker programs for the active matchup. The CLOAK+SNIPER program uses
+// SLOT1=CLOAK and SLOT2=SNIPER; it goes dark, then fires from the cloak window.
+const ACTIVE_PROGRAMS = {
+  BULLET: { loadout: ['BULLET', null, null], src: PROGRAMS.BULLET },
+  SNIPER: { loadout: ['SNIPER', null, null], src: PROGRAMS.SNIPER },
+  RAILGUN: { loadout: ['RAILGUN', null, null], src: PROGRAMS.RAILGUN },
+  PULSE: { loadout: ['PULSE', 'BULLET', null], src: PROGRAMS.PULSE },
+  'CLOAK+SNIPER': {
+    loadout: ['CLOAK', 'SNIPER', null],
+    src: [
+      'LABEL LOOP',
+      'TARGET_CLOSEST',
+      'IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() > 90) DO SET_MOVE_TO_TARGET',
+      'IF (HAS_TARGET_BOT() && DIST_TO_TARGET_BOT() <= 120 && SLOT_READY(SLOT1) && !SLOT_ACTIVE(SLOT1) && ENERGY >= 30) DO USE_SLOT1 TARGET',
+      'IF (HAS_TARGET_BOT() && SLOT_READY(SLOT2) && AMMO >= 6) DO USE_SLOT2 TARGET',
+      'WAIT 1',
+      'GOTO LOOP',
+    ],
+  },
+}
+
+function runActive(name, seed) {
+  const cfg = ACTIVE_PROGRAMS[name]
+  const attacker = { slotId: 'BOT1', loadout: cfg.loadout, sourceText: cfg.src.join('\n') + '\n' }
+  const replay = runMatchToReplay({ seed, tickCap: TICK_CAP, bots: [attacker, HUNTER] })
+  const last = replay.state[replay.state.length - 1].bots
+  const a = last.find((b) => b.botId === 'BOT1')
+  const h = last.find((b) => b.botId === 'BOT2')
+  let outcome = 'timeout'
+  if (a.alive && !h.alive) outcome = 'win'
+  else if (!a.alive && h.alive) outcome = 'loss'
+  else if (!a.alive && !h.alive) outcome = 'mutual'
+  return { outcome, hpLeft: a.hp, ticks: replay.state.length - 1 }
+}
+
 function attackerFor(mod) {
   return { slotId: 'BOT1', loadout: [mod, null, null], sourceText: PROGRAMS[mod].join('\n') + '\n' }
 }
@@ -135,3 +189,28 @@ for (const mod of Object.keys(PROGRAMS)) {
 
 console.log(`Weapon duel vs passive dummy: ${SEEDS} seeds, tickCap=${TICK_CAP}`)
 console.table(rows)
+
+const activeRows = []
+for (const name of Object.keys(ACTIVE_PROGRAMS)) {
+  const c = { win: 0, loss: 0, mutual: 0, timeout: 0 }
+  let hpSum = 0
+  let tickSum = 0
+  for (let s = 1; s <= SEEDS; s++) {
+    const r = runActive(name, s)
+    c[r.outcome]++
+    hpSum += r.hpLeft
+    tickSum += r.ticks
+  }
+  const f = (n) => (n / SEEDS).toFixed(2)
+  activeRows.push({
+    attacker: name,
+    win: f(c.win),
+    loss: f(c.loss),
+    mutualKill: f(c.mutual),
+    timeout: f(c.timeout),
+    avgHpLeft: (hpSum / SEEDS).toFixed(0),
+    avgTicks: (tickSum / SEEDS).toFixed(0),
+  })
+}
+console.log(`Attacker vs active BULLET hunter: ${SEEDS} seeds, tickCap=${TICK_CAP}`)
+console.table(activeRows)

@@ -26,7 +26,7 @@ Related docs:
   - `FLAMER` (WEAPON, toggle): 180° cone, range 26, 2 dmg/tick, drains 3 ENERGY/tick while ON.
   - `RAILGUN` (WEAPON, instant, BOT target): piercing Bresenham beam, 8 AMMO, cooldown 18, 24 dmg to the first bot and 10 to each further bot (max 3 hits).
   - `PULSE` (UTILITY, instant, no target): radial blast within 40 units. 35 ENERGY, cooldown 25, 10 dmg, 12-unit knockback, 3-tick stun.
-  - `CLOAK` (UTILITY, instant, self): 30 ENERGY, cooldown 24, invisible to enemy targeting for 14 ticks. Attacking breaks the cloak.
+  - `CLOAK` (UTILITY, instant, self): 30 ENERGY, cooldown 24, invisible to enemy targeting for 14 ticks. Attacking of any kind breaks the cloak (BULLET, RAILGUN, PULSE, FLAMER, SNIPER, GRENADE/ROCKET, SAW). Fixed in engine to match this rule; SNIPER, ROCKET and SAW previously did not break it.
   - Wall bumps: a bot already flush against a wall no longer takes bump damage on every tick it is pinned there. Damage applies on contact only.
   - Balance numbers come from `scripts/balance-weapons-duel.mjs` and `scripts/balance-report.mjs`. See `Todo.md` "Phase 9 balance pass notes".
   - Not in 0.3.0: JETPACK, DECOY, SWARM (deferred in `docs/NewWeaponsProposal.md`).

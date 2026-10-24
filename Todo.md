@@ -235,6 +235,12 @@ See `Ruleset.md` §5.
   - League after the change (`balance-report.mjs`, 10 seeds): RAILGUN bot (bot11) still wins 10/10, kills 20→10, dmg/game 88→94.
   - Open: SNIPER bot (bot7) is still the top league performer (151 dmg/game, 20 kills, 10/10 survival). Not changed here because SNIPER is outside the 0.3.0 track.
   - Open: PULSE bot (bot12) has 0 kills and 0 survival in the league. PULSE is a utility/stun module by design, so direct damage is kept at 10.
+- Step 3 balance pass (engine fix + harness, no constant changes):
+  - Bug fixed: CLOAK was not broken by SNIPER, GRENADE/ROCKET or SAW damage. Before the fix, CLOAK+SNIPER beat an active BULLET hunter 20/20 (42 HP left). After the fix it is 20/20 mutual kills, 0 wins. Regression test: `simNewModules.test.js` "attacking while cloaked breaks the cloak (SNIPER)".
+  - `scripts/balance-weapons-duel.mjs` now has an active matchup (attacker vs BULLET hunter that moves and fires back), reporting win / loss / mutualKill / timeout.
+  - Active duel (20 seeds, after fix): BULLET 0 wins / 1.00 mutual; SNIPER 0.10 win; RAILGUN 1.00 mutual; PULSE 0.90 mutual / 0.10 loss; CLOAK+SNIPER 1.00 mutual. CLOAK adds little in these duels.
+  - SNIPER still leads the league (bot7: 1.00 win, 151 dmg/game over 30 seeds). Tested and reverted: `SNIPER_DAMAGE` 25→20 (dmg/game rose to 163, no gain); `SNIPER_COOLDOWN_TICKS` 12→16 (no change). Conclusion: no clean constant change is supported yet.
+  - Open: CLOAK buff or keep as niche module (decision pending).
 
 ---
 

@@ -57,3 +57,24 @@ test('runMatchToReplay: TELEPORT moves to sector target and spends energy', () =
   assert.deepStrictEqual(teleport.toPos, { x: 96, y: 96 })
   assert.ok(flatEvents(replay).some((event) => event.type === 'RESOURCE_DELTA' && event.cause === 'TELEPORT'))
 })
+
+test('runMatchToReplay: attacking while cloaked breaks the cloak (SNIPER)', () => {
+  // CLOAK then SNIPER in the same program: the snipe must end the cloak before or at the hit.
+  const replay = runMatchToReplay({
+    seed: 123,
+    tickCap: 6,
+    bots: [
+      { slotId: 'BOT1', sourceText: 'USE_SLOT1 NONE\nUSE_SLOT2 BOT2\nWAIT 4\n', loadout: ['CLOAK', 'SNIPER', null] },
+      { slotId: 'BOT2', sourceText: 'WAIT 6\n', loadout: [null, null, null] },
+      { slotId: 'BOT3', sourceText: 'WAIT 6\n', inactive: true },
+      { slotId: 'BOT4', sourceText: 'WAIT 6\n', inactive: true },
+    ],
+  })
+
+  const events = flatEvents(replay)
+  const started = events.some((event) => event.type === 'BOT_CLOAK_START' && event.botId === 'BOT1')
+  const broke = events.find((event) => event.type === 'BOT_CLOAK_END' && event.botId === 'BOT1' && event.reason === 'ATTACK')
+  const hit = events.some((event) => event.type === 'SNIPER_HIT' && event.targetBotId === 'BOT2')
+  if (started && hit) assert.ok(broke, 'SNIPER fired while cloaked but cloak did not end with ATTACK')
+  assert.ok(started, 'test setup: CLOAK never started (check the USE_SLOT1 target token)')
+})
