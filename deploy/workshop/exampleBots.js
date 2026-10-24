@@ -644,7 +644,7 @@ GOTO LOOP
 
 LABEL LOOP
 
-; --- Ammo discipline: 10/shot, keep one spare round ---
+; --- Ammo discipline: 8/shot, keep one spare round ---
 IF (AMMO < 15 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
 ; --- Pin prey: target register drives both movement AND railgun facing ---

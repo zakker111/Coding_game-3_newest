@@ -1,13 +1,15 @@
 {
   "name": "@nowt/server",
   "private": true,
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "build": "node -e \"import('./src/app.js')\"",
-    "test": "node --test"
+    "test": "node --test",
+    "backup": "node src/tools/backup.js export",
+    "restore": "node src/tools/backup.js restore"
   },
   "dependencies": {
     "@coding-game/engine": "workspace:*",

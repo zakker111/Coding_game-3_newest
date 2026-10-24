@@ -6,7 +6,7 @@
 - `SLOT3 = ARMOR`
 
 **Intended behavior**
-- Line-clearing artillery: **RAILGUN** fires an instant piercing beam along the bot's facing direction — it hits up to 3 bots in a line (20 dmg first, 12 after) for 10 ammo per shot.
+- Line-clearing artillery: **RAILGUN** fires an instant piercing beam along the bot's facing direction — it hits up to 3 bots in a line (24 dmg to the first, 10 to each after) for 8 ammo per shot, cooldown 18 ticks.
 - Because the beam follows *facing*, not a homing reticle, this bot pins `CLOSEST_BOT` in its target register every tick — facing is derived from the target, so `USE_SLOT1 TARGET` lands the beam straight down the line at whoever it is hunting.
 - ARMOR passively soaks damage — no energy management needed, so every spare unit goes into farming `AMMO`.
 - Keeps mid-range: too close and enemies strafe out of the beam line; too far and the Bresenham ray thins out.
@@ -26,7 +26,7 @@
 
 LABEL LOOP
 
-; --- Ammo discipline: 10/shot, keep one spare round ---
+; --- Ammo discipline: 8/shot, keep one spare round ---
 IF (AMMO < 15 && POWERUP_EXISTS(AMMO)) GOTO RESUPPLY
 
 ; --- Pin prey: target register drives both movement AND railgun facing ---

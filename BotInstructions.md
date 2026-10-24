@@ -1,5 +1,6 @@
 # Bot Instruction List (v1)
 
+> Current engine: `rulesetVersion = 0.3.0`. Module stats for `FLAMER`, `RAILGUN`, `PULSE`, `CLOAK` are in `Ruleset.md` section A. Notes below that say `0.2.0` still apply to loadout rules and ARMOR/SHIELD.
 > Canonical **stable v1 bot language** reference.
 > For future-proof planning (lasers/snipers/teleport/grenades/mines/helpers) without bloating the opcode list, see `BotLanguageDesign.md`.
 
@@ -130,9 +131,9 @@ Notes:
 
 Loadout notes (v1):
 - The language supports 3 slots (`SLOT1..SLOT3`) and slot-addressed actions.
-- **Current engine (`rulesetVersion = 0.2.0`)**: module availability comes only from the per-bot match-input `loadout` (or equivalent structured UI state). The engine does **not** infer modules from `sourceText` (no scanning for `SAW`/`SHIELD`), and it does not treat `;@slot*` directives as authoritative gameplay input.
+- **Current engine (`rulesetVersion = 0.3.0`, loadout rules unchanged since 0.2.0)**: module availability comes only from the per-bot match-input `loadout` (or equivalent structured UI state). The engine does **not** infer modules from `sourceText` (no scanning for `SAW`/`SHIELD`), and it does not treat `;@slot*` directives as authoritative gameplay input.
 - Workshop/UI may generate locked source headers (`;@slot1`, `;@slot2`, `;@slot3`) as the first 3 non-blank lines (see §0); these are UI-derived comments for UX/editor ergonomics and are not authoritative.
-- **rulesetVersion `0.2.0` (current engine behavior):** explicit per-bot loadout is authoritative and comes from match config (or Workshop structured state).
+- **rulesetVersion `0.2.0` and later (current engine behavior):** explicit per-bot loadout is authoritative and comes from match config (or Workshop structured state).
   - If `loadout` is missing/omitted, it defaults to `EMPTY/EMPTY/EMPTY`.
   - Invalid loadouts are **deterministically normalized** (the match does not fail solely due to loadout shape/content):
     1. Coerce to 3 slots: take the first 3 entries; if fewer, pad with `EMPTY`.
@@ -396,14 +397,14 @@ Collisions:
 | Instruction | Resource | Notes |
 |---|---:|---|
 | `SAW ON` / `SAW OFF` | energy | When ON, drains energy per tick; auto-OFF at `ENERGY==0`. |
-| `SHIELD ON` / `SHIELD OFF` | energy | When ON, drains energy per tick; auto-OFF at `ENERGY==0`. Current engine (`rulesetVersion = 0.2.0`): mitigates bullet damage by **50%**. |
+| `SHIELD ON` / `SHIELD OFF` | energy | When ON, drains energy per tick; auto-OFF at `ENERGY==0`. Current engine (`rulesetVersion = 0.3.0`): mitigates bullet damage by **50%**. |
 
 Legacy note:
 - `FIRE_BULLET <BOT_TARGET>` is still accepted as a compatibility alias for `USE_SLOT1 <BOT_TARGET>`.
 
 Armor note:
 - `ARMOR` is a passive module (no active use).
-- In rulesetVersion `0.2.0` (current engine behavior), if equipped in any slot:
+- In rulesetVersion `0.2.0` and later (current engine behavior), if equipped in any slot:
   - mitigates **all incoming damage**: `amount := amount - floor(amount/3)`
   - applies a movement speed penalty: `speedUnitsPerTick = floor(12 * 3/4) = 9`
   - bullet mitigation ordering when both apply: apply `SHIELD` first, then `ARMOR`

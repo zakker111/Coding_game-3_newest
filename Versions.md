@@ -6,6 +6,16 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Server 0.0.9 / Web 0.0.7 — backups and reliability checks — 2026-10-24T06:46:16Z
+
+### Added
+- `apps/server/src/tools/backup.js`: `export [file]` writes all game data (format `nowt-backup` v1) and `restore <file> --replace` restores it. Restore refuses to run without `--replace`. See `DEPLOY.md` section 6.
+- Server test `backup.test.js` (round-trip and refuse-without-`--replace`; needs `TEST_DATABASE_URL`).
+
+### Changed
+- Web: `serverBaseUrl` set to `same-origin` in localStorage is honored, so the web app can talk to the server it was served from.
+- Docs: `examples/bot11.md` RAILGUN numbers match ruleset 0.3.0 (24/10 dmg, 8 ammo, cooldown 18). `BotInstructions.md` names 0.3.0 as the current engine.
+
 ## Server 0.0.8 — production admin password — 2026-10-24T06:32:44Z
 
 ### Changed

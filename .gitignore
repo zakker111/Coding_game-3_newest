@@ -10,3 +10,6 @@ package-lock.json
 
 # Runtime server data
 apps/server/.nowt/
+
+# Database backups (made by the export command)
+backups/

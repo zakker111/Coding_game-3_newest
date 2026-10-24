@@ -38,6 +38,19 @@ The service restarts and applies the password.
 - **Updating the game:** push changes to GitHub `main`. Render redeploys automatically (check **Settings → Auto-Deploy** if it doesn't).
 - **Where the data lives:** bots, accounts, matches, and daily runs are in `nowt-db`. Redeploys keep the data now.
 
+## 6. Backups (do this before the 30-day mark)
+Export the whole game state to a JSON file. Run it on a computer that can reach the database, with the **External Database URL** from `nowt-db` → Connect:
+```
+cd apps/server
+DATABASE_URL="postgres://...external-url..." DATABASE_SSL=1 node src/tools/backup.js export backups/nowt-$(date +%F).json
+```
+The file holds accounts (password hashes, not passwords), bots, matches, and daily runs. Keep it somewhere private; `backups/` is git-ignored.
+
+To restore into an empty or disposable database (refuses to overwrite without `--replace`):
+```
+DATABASE_URL="postgres://...target-url..." DATABASE_SSL=1 node src/tools/backup.js restore backups/nowt-2025-01-01.json --replace
+```
+
 ## Local run (optional, for testing on your computer)
 ```
 corepack enable

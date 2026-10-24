@@ -30,7 +30,8 @@ export function getDefaultServerBaseUrl() {
   // When served through the static server's /api proxy (e.g. remote preview), use same origin.
   try {
     const override = localStorage.getItem('nowt.serverBaseUrl')
-    if (override === 'same-origin' || override === hostname) return `${protocol}//${hostname}`
+    if (override === 'same-origin') return `${protocol}//${window.location.host}`
+    if (override === hostname) return `${protocol}//${hostname}`
   } catch {
     /* ignore */
   }

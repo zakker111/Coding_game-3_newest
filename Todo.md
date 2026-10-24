@@ -627,6 +627,7 @@ Rules for this phase
 - [x] Move bots, replays, and daily results out of the local JSON file into a managed database (Postgres or the platform's DB; decide before coding).
 - [x] Migration path: one-time import of the existing `.nowt/server-state.json`.
 - [x] Keep the in-memory store for tests; add an integration test against the real database (`TEST_DATABASE_URL`).
+- [x] Backup/export tool and restore (`apps/server/src/tools/backup.js`); steps in `DEPLOY.md` section 6.
 - [ ] Store replays as blobs or compressed JSON with a size cap; document the retention policy.
 - Acceptance: restart or redeploy the server and bots, runs, and replays are all still there.
 
