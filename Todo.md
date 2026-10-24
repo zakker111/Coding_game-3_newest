@@ -573,4 +573,75 @@ QA checklist
 - [ ] Harden persistent submissions/versioning beyond the current server baseline.
 - [ ] Durable replay/match storage.
 - [ ] Production-grade auth/session hardening + rate limiting.
-- [ ] Scheduled daily runs and admin tooling.
+- [x] Scheduled daily runs (once a day, `NOWT_DAILY_RUN_HOUR_UTC`, default 03:00 UTC; commit `412cf85`).
+- [ ] Admin tooling for daily runs (manual trigger UI, run history).
+
+## Phase 10 — Game expansion (proposed)
+
+Rules for this phase
+- Language and module changes that alter simulation results bump `rulesetVersion` (next: `0.4.0`) and need golden-replay updates.
+- Every new feature ships with tests and a `Versions.md` entry.
+- Balance changes go through `scripts/balance-weapons-duel.mjs` and `scripts/balance-report.mjs` before merging.
+
+### 10.1 Bot language: sensor queries
+- [ ] Add arena sensors: `DIST_TO_WALL()`, `MY_SECTOR()`, `ENEMY_COUNT()`, `ALLY_COUNT()` (if team modes land), `SECTOR_OF(<LOC>)`.
+- [ ] Define each sensor in `BotInstructions.md` §2 with its exact return values and edge cases.
+- [ ] Compiler: accept sensors in `IF (...)` conditions; reject them as targets with a clear compile error.
+- [ ] Tests: sensor values at walls, corners, sector borders; determinism across seeds.
+- Acceptance: a bot can write `IF (DIST_TO_WALL() < 5) DO MOVE_AWAY_FROM_WALL` and the match replays identically on every run.
+
+### 10.2 Bot language: variables and memory
+- [ ] Add spare registers (`V1..V4`) with `SET_V<n> <value>`, `ADD_V<n> <value>`, and read in conditions.
+- [ ] Add event memory: `LAST_HIT_TICK()`, `LAST_HIT_SECTOR()`, `LAST_HIT_BY()` so a bot can remember where and by whom it was hit.
+- [ ] Registers reset at match start and are included in replay bot state for debugging.
+- [ ] Cap the number of register writes per tick at 1 (keeps one-instruction-per-tick rule intact).
+- Acceptance: a bot can flee to its last safe sector after being hit twice in 10 ticks.
+
+### 10.3 New modules (finish `docs/NewWeaponsProposal.md`)
+- [ ] JETPACK (movement): short burst movement with energy cost and cooldown; counters slow-moving weapons (ROCKET, RAILGUN lines), loses to SAW at close range.
+- [ ] DECOY (fake target): spawns a bot-shaped decoy that enemy `TARGET_CLOSEST` can pick; counters aimed weapons, loses to SHIELD/ARMOR builds that ignore targeting.
+- [ ] SWARM: multiple small drones with limited lifetime; counters single-target weapons, loses to MINE and GRENADE area damage.
+- [ ] Each module: ruleset constants, sim implementation, duel-harness numbers, one example bot in `examples/`.
+- [ ] Update the module catalog in `packages/ruleset` and fix the stale module lists in `Ruleset.md` and `BotInstructions.md` in the same change.
+
+### 10.4 Counter design rule
+- [ ] Write the rule in `Ruleset.md` §A: every module must have at least one named counter it beats and one it loses to.
+- [ ] Add a "counter matrix" check to the balance harness: for each module pair, a 1v1 duel with fixed loadouts; fail CI if any module wins more than 70% of its duels across seeds or loses 100%.
+- [ ] Re-run the matrix on every balance change; publish the result table in `Versions.md`.
+- Acceptance: no module is an always-win or always-lose in the matrix; the league top 5 contains at least 3 distinct loadout families.
+
+### 10.5 Fork and edit
+- [ ] "Fork" action on any builtin or public player bot: copies source and loadout into the forker's account as a new bot with `forkedFrom` metadata.
+- [ ] Forked bots start as `pending` in the daily league until the owner saves a change.
+- [ ] Attribution shown on the bot page (original owner and bot name).
+- [ ] Permission: only public bots are forkable; players can make a bot private.
+- Acceptance: a player can fork `bot11` from the Workshop, change one line, and save; the fork shows `forkedFrom: builtin/bot11`.
+
+### 10.6 Replay viewer for daily results
+- [ ] Each daily run page lists the player's matches with win/loss and points.
+- [ ] Clicking a match opens the existing replay viewer for that server-run match (depends on Phase 8 "Render the server replay").
+- [ ] Add a "why did I lose" summary per match: first damage taken, last bot alive, final energy/ammo, and the bot's last 5 instructions executed.
+- Acceptance: a player who lost a match can open the replay and see the tick where they took the most damage.
+
+### 10.7 Durable storage
+- [ ] Move bots, replays, and daily results out of the local JSON file into a managed database (Postgres or the platform's DB; decide before coding).
+- [ ] Migration path: one-time import of the existing `.nowt/server-state.json`.
+- [ ] Keep the in-memory store for tests; add an integration test against the real database.
+- [ ] Store replays as blobs or compressed JSON with a size cap; document the retention policy.
+- Acceptance: restart or redeploy the server and bots, runs, and replays are all still there.
+
+### 10.8 Elo-style ranking
+- [ ] Replace raw points with an Elo or Glicko-style rating per bot, updated from each match result (4-player matches: use placement-based pairwise updates).
+- [ ] Start new bots at a provisional rating with high volatility; reduce volatility after a set number of matches.
+- [ ] Keep the old points for history; show rating and provisional flag on the leaderboard.
+- [ ] Unit tests with fixed inputs; a backfill script that recomputes ratings from stored results.
+- Acceptance: when the daily field size changes from 4 to 20 bots, a stronger bot's rating still rises faster than a weaker one's, verified with the seeded demo data.
+
+### Suggested order
+1. 10.7 Durable storage (everything else depends on stored results).
+2. 10.8 Elo ranking (needs stored results; changes what "winning" means).
+3. 10.6 Replay viewer for daily results (needs stored replays).
+4. 10.5 Fork and edit (small, high player value).
+5. 10.1 Sensor queries, then 10.2 variables (language, bumps ruleset to 0.4.0).
+6. 10.4 Counter rule and 10.3 new modules (balance work, after the language is stable).
+
