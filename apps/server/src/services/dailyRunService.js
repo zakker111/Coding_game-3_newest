@@ -1,4 +1,5 @@
 import { RULESET_VERSION } from '@coding-game/ruleset'
+import { applyMatchesToRatings, ratingFields, ratingStateFromRecord } from './rating.js'
 
 const DEFAULT_TICK_CAP = 600
 const DEFAULT_MAX_ROUNDS = 1
@@ -62,6 +63,7 @@ function rankedFields(bot) {
     rankedEnabled: source.rankedEnabled !== false,
     rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
     rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
+    ...ratingFields(source),
     lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,
     lastSubmittedAt: typeof source.lastSubmittedAt === 'string' ? source.lastSubmittedAt : null,
     droppedAt: typeof source.droppedAt === 'string' ? source.droppedAt : null,
@@ -69,16 +71,23 @@ function rankedFields(bot) {
   }
 }
 
+// Ordering used for the daily field and the leaderboard: rating descending, then
+// points (kept for history), then botId ascending.
+function compareByRating(a, b) {
+  if (b.rating !== a.rating) return b.rating - a.rating
+  if (b.rankedPoints !== a.rankedPoints) return b.rankedPoints - a.rankedPoints
+  return a.botId.localeCompare(b.botId)
+}
+
 // Deterministic eligibility selection per Todo.md "Daily run size control":
-// pending bots first, then active bots by previous rankedPoints descending,
+// pending bots first, then active bots by rating descending,
 // then botId ascending; take the first rankedActiveLimit.
 function selectRankedParticipants(eligibleBots, rankedActiveLimit) {
   const selected = [...eligibleBots].sort((a, b) => {
     const aPending = a.rankedStatus === 'pending' ? 0 : 1
     const bPending = b.rankedStatus === 'pending' ? 0 : 1
     if (aPending !== bPending) return aPending - bPending
-    if (b.rankedPoints !== a.rankedPoints) return b.rankedPoints - a.rankedPoints
-    return a.botId.localeCompare(b.botId)
+    return compareByRating(a, b)
   })
   return selected.slice(0, rankedActiveLimit)
 }
@@ -152,10 +161,11 @@ function buildParticipants(botStore, bots) {
   })
 }
 
-function summarizeRun(matches) {
+function summarizeRun(matches, startingStates = new Map()) {
   const pointsByBotId = {}
   const matchesByBotId = {}
   const winsByBotId = {}
+  const ratingStates = applyMatchesToRatings(matches, startingStates)
 
   for (const match of matches) {
     const participantBySlot = new Map(match.participants.map((participant) => [participant.slot, participant]))
@@ -172,17 +182,21 @@ function summarizeRun(matches) {
   }
 
   const leaderboard = Object.entries(matchesByBotId)
-    .map(([botId, matchesPlayed]) => ({
-      botId,
-      matchesPlayed,
-      points: pointsByBotId[botId] ?? 0,
-      wins: winsByBotId[botId] ?? 0,
-      averagePoints: matchesPlayed > 0 ? (pointsByBotId[botId] ?? 0) / matchesPlayed : 0,
-    }))
-    .sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points
-      return a.botId.localeCompare(b.botId)
+    .map(([botId, matchesPlayed]) => {
+      const state = ratingStateFromRecord(ratingStates.get(botId))
+      return {
+        botId,
+        matchesPlayed,
+        rating: state.rating,
+        ratingDeviation: state.ratingDeviation,
+        ratingMatches: state.ratingMatches,
+        provisional: ratingFields(state).provisional,
+        points: pointsByBotId[botId] ?? 0,
+        wins: winsByBotId[botId] ?? 0,
+        averagePoints: matchesPlayed > 0 ? (pointsByBotId[botId] ?? 0) / matchesPlayed : 0,
+      }
     })
+    .sort(compareByRating)
 
   return {
     matchCount: matches.length,
@@ -211,10 +225,7 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         .listBots()
         .filter((bot) => bot.ownerUsername !== 'builtin')
         .map((bot) => ({ ...bot, ...rankedFields(bot) }))
-        .sort((a, b) => {
-          if (b.rankedPoints !== a.rankedPoints) return b.rankedPoints - a.rankedPoints
-          return a.botId.localeCompare(b.botId)
-        })
+        .sort(compareByRating)
       return {
         rankedActiveLimit,
         latestRunId: latestRun?.runId ?? null,
@@ -307,6 +318,11 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
         })
       }
 
+      // Ratings carry over from each bot's stored state; the run's matches update them in order.
+      const startingRatings = new Map(
+        eligibleBots.map((bot) => [bot.botId, ratingStateFromRecord(bot)])
+      )
+
       const runDaily = () => {
         const run = store.createRun({
           runDate,
@@ -352,7 +368,7 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
 
           return store.markComplete(run.runId, {
             matchIds,
-            summary: summarizeRun(matches),
+            summary: summarizeRun(matches, startingRatings),
           })
         } catch (error) {
           store.markFailed(run.runId, {
@@ -376,12 +392,16 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
           if (!identity) return
           const entry = leaderboardByBotId.get(bot.botId)
           const rankedPoints = entry?.points ?? 0
+          const ratingState = entry
+            ? { rating: entry.rating, ratingDeviation: entry.ratingDeviation, ratingMatches: entry.ratingMatches }
+            : ratingStateFromRecord(bot)
 
           if (index < rankedActiveLimit) {
             botStore.updateRankedStatus(identity.ownerUsername, identity.name, {
               rankedEnabled: true,
               rankedStatus: 'active',
               rankedPoints,
+              ...ratingState,
               lastRankedRunId: completedRun.runId,
               ...(bot.rankedStatus === 'dropped'
                 ? { droppedAt: null, dropReason: null }
@@ -394,6 +414,7 @@ export function createDailyRunService({ store, botStore, matchStore, simulationS
             rankedEnabled: true,
             rankedStatus: 'dropped',
             rankedPoints,
+            ...ratingState,
             lastRankedRunId: completedRun.runId,
             droppedAt,
             dropReason: 'below_daily_cut',

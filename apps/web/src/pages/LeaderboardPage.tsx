@@ -13,6 +13,10 @@ import {
   type ServerUser,
 } from '../serverClient'
 
+export function formatRating(rating: number | null | undefined): string {
+  return rating == null ? '—' : String(Math.round(rating))
+}
+
 export function LeaderboardPage() {
   const [run, setRun] = React.useState<ServerDailyRun | null>(null)
   const [user, setUser] = React.useState<ServerUser | null>(null)
@@ -61,7 +65,8 @@ export function LeaderboardPage() {
           <div>
             <h1 className="workshop-title">Daily leaderboard</h1>
             <p className="subtitle">
-              Latest daily results from saved server bots. Your bots are highlighted when you are logged in.
+              Latest daily results from saved server bots, ranked by rating. Points are kept for history. Your bots are highlighted when you are logged in.
+              Provisional means the bot has played fewer than 10 ranked matches, so its rating can still move a lot.
             </p>
           </div>
           <button className="ui-button ui-button-secondary" type="button" onClick={refresh} disabled={loading}>
@@ -78,7 +83,7 @@ export function LeaderboardPage() {
               const rank = standing ? leaderboard.indexOf(standing) + 1 : null
               const detail =
                 badge.tone === 'good' && rank
-                  ? `${badge.detail} Current rank #${rank}, ${standing?.points ?? bot.rankedPoints} pts.`
+                  ? `${badge.detail} Current rank #${rank}, rating ${formatRating(standing?.rating ?? bot.rating)}${standing?.provisional ?? bot.provisional ? ' (provisional)' : ''}.`
                   : badge.detail
               return (
                 <span
@@ -94,7 +99,7 @@ export function LeaderboardPage() {
                   }}
                 >
                   {bot.name}: {badge.label}
-                  {rank ? ` · #${rank}` : bot.rankedPoints ? ` · ${bot.rankedPoints} pts` : ''}
+                  {rank ? ` · #${rank} · ${formatRating(standing?.rating ?? bot.rating)}` : bot.rankedPoints ? ` · ${bot.rankedPoints} pts` : ''}
                 </span>
               )
             })}
@@ -128,6 +133,7 @@ export function LeaderboardPage() {
             <div className="leaderboard-row leaderboard-row--header">
               <span>Rank</span>
               <span>Bot</span>
+              <span>Rating</span>
               <span>Points</span>
               <span>Wins</span>
               <span>Matches</span>
@@ -139,7 +145,17 @@ export function LeaderboardPage() {
                 <div className={['leaderboard-row', isMine ? 'leaderboard-row--mine' : ''].filter(Boolean).join(' ')} key={entry.botId}>
                   <span>#{index + 1}</span>
                   <span>{entry.botId}</span>
-                  <strong>{entry.points}</strong>
+                  <span>
+                    {entry.rating == null ? (
+                      '—'
+                    ) : (
+                      <>
+                        <strong>{formatRating(entry.rating)}</strong>
+                        {entry.provisional ? <span className="muted"> (provisional)</span> : null}
+                      </>
+                    )}
+                  </span>
+                  <span>{entry.points}</span>
                   <span>{entry.wins}</span>
                   <span>{entry.matchesPlayed}</span>
                   <span>{entry.averagePoints.toFixed(2)}</span>

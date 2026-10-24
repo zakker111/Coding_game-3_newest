@@ -36,6 +36,10 @@ export type ServerBotSummary = {
   rankedEnabled: boolean
   rankedStatus: 'active' | 'pending' | 'dropped'
   rankedPoints: number
+  rating?: number
+  ratingDeviation?: number
+  ratingMatches?: number
+  provisional?: boolean
   lastRankedRunId: string | null
   lastSubmittedAt: string | null
   droppedAt: string | null
@@ -104,6 +108,11 @@ export type ServerDailyRunSummary = {
     matchesPlayed: number
     wins: number
     averagePoints: number
+    // Absent on runs made before ratings existed.
+    rating?: number
+    ratingDeviation?: number
+    ratingMatches?: number
+    provisional?: boolean
   }>
 }
 

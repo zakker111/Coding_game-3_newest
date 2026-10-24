@@ -639,11 +639,11 @@ Rules for this phase
 - Acceptance: restart or redeploy the server and bots, runs, and replays are all still there.
 
 ### 10.8 Elo-style ranking
-- [ ] Replace raw points with an Elo or Glicko-style rating per bot, updated from each match result (4-player matches: use placement-based pairwise updates).
-- [ ] Start new bots at a provisional rating with high volatility; reduce volatility after a set number of matches.
-- [ ] Keep the old points for history; show rating and provisional flag on the leaderboard.
-- [ ] Unit tests with fixed inputs; a backfill script that recomputes ratings from stored results.
-- Acceptance: when the daily field size changes from 4 to 20 bots, a stronger bot's rating still rises faster than a weaker one's, verified with the seeded demo data.
+- [x] Replace raw points with an Elo or Glicko-style rating per bot, updated from each match result (4-player matches: use placement-based pairwise updates).
+- [x] Start new bots at a provisional rating with high volatility; reduce volatility after a set number of matches.
+- [x] Keep the old points for history; show rating and provisional flag on the leaderboard.
+- [x] Unit tests with fixed inputs; a backfill script that recomputes ratings from stored results.
+- [x] Acceptance: when the daily field size changes from 4 to 20 bots, a stronger bot's rating still rises faster than a weaker one's, verified with the seeded demo data.
 
 ### Suggested order
 1. 10.7 Durable storage (everything else depends on stored results).

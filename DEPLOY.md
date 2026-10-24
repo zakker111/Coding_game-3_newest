@@ -51,6 +51,15 @@ To restore into an empty or disposable database (refuses to overwrite without `-
 DATABASE_URL="postgres://...target-url..." DATABASE_SSL=1 node src/tools/backup.js restore backups/nowt-2025-01-01.json --replace
 ```
 
+## 7. Ratings backfill (once, after updating to server 0.2.0)
+Ratings are kept per bot and updated after each daily run. Bots that already played before 0.2.0 start at 1500 until you recompute them from the stored daily results. Run this with the server stopped, from a computer that can reach the database:
+```
+cd apps/server
+DATABASE_URL="postgres://...external-url..." DATABASE_SSL=1 node src/tools/recomputeRatings.js --dry-run
+DATABASE_URL="postgres://...external-url..." DATABASE_SSL=1 node src/tools/recomputeRatings.js
+```
+The first run only prints the table. The second writes the ratings.
+
 ## Settings you can tune (optional)
 Set these in Render under `nowt-game` → **Environment** only if you need to change them. Defaults are fine.
 - `NOWT_TRUST_PROXY=1` (already set in `render.yaml`): tells the server it runs behind Render's proxy, so rate limits apply per visitor, not per proxy. Do not remove.

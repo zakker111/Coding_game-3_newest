@@ -330,7 +330,7 @@ a:hover {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) repeat(4, auto);
+  grid-template-columns: 64px minmax(0, 1fr) repeat(5, auto);
   gap: 12px;
   align-items: center;
   padding: 10px;

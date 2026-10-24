@@ -6,6 +6,18 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Server 0.2.0 / Web 0.0.9 — Glicko-style ratings — 2026-10-24
+
+### Added
+- Each ranked bot has a rating (default 1500), a rating deviation (volatility) and a match count. Ratings update after every daily match. A 4-bot match is turned into pairwise results from placement (`apps/server/src/services/rating.js`, Glicko-1 style).
+- New bots are provisional (first 10 matches) with high volatility. Volatility is capped lower after the provisional period.
+- Leaderboard shows rating and a "provisional" flag. Points stay in the run summary for history.
+- Backfill: `npm run recompute-ratings` (dry run: `node src/tools/recomputeRatings.js --dry-run`) recomputes every rating from the stored daily results.
+- Tests: `rating.test.js` (fixed inputs, Glicko paper example, seeded 4-bot vs 20-bot check), `recomputeRatings.test.js`, `dailyRatings.test.js` (live ratings equal the backfill).
+
+### Changed
+- The daily field (which bots get the next run when there are more than `rankedActiveLimit`) and the leaderboard order are now by rating instead of points. Points tie-break.
+
 ## Server 0.1.0 / Web 0.0.8 — security, replay storage, why-did-I-lose — 2026-10-24
 
 ### Added

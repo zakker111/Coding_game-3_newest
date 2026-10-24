@@ -1,7 +1,7 @@
 {
   "name": "@nowt/server",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "node --watch src/index.js",
@@ -9,7 +9,8 @@
     "build": "node -e \"import('./src/app.js')\"",
     "test": "node --test",
     "backup": "node src/tools/backup.js export",
-    "restore": "node src/tools/backup.js restore"
+    "restore": "node src/tools/backup.js restore",
+    "recompute-ratings": "node src/tools/recomputeRatings.js"
   },
   "dependencies": {
     "@coding-game/engine": "workspace:*",

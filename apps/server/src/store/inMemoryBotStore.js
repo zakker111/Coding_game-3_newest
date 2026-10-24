@@ -1,5 +1,6 @@
 import { loadBuiltinExampleBots } from '../services/exampleBots.js'
 import { EMPTY_LOADOUT, normalizeLoadout } from '@coding-game/ruleset'
+import { ratingFields } from '../services/rating.js'
 
 function cloneRecord(record) {
   return record == null ? null : structuredClone(record)
@@ -15,6 +16,7 @@ function rankedFields(bot) {
     rankedEnabled: source.rankedEnabled !== false,
     rankedStatus: source.rankedStatus === 'pending' || source.rankedStatus === 'dropped' ? source.rankedStatus : 'active',
     rankedPoints: Number.isFinite(source.rankedPoints) ? source.rankedPoints : 0,
+    ...ratingFields(source),
     lastRankedRunId: typeof source.lastRankedRunId === 'string' ? source.lastRankedRunId : null,
     lastSubmittedAt: typeof source.lastSubmittedAt === 'string' ? source.lastSubmittedAt : null,
     droppedAt: typeof source.droppedAt === 'string' ? source.droppedAt : null,
