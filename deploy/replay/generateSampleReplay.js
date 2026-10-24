@@ -1399,8 +1399,8 @@ GOTO LOOP
   }
 
   return {
-    schemaVersion: '0.2.0',
-    rulesetVersion: '0.2.0',
+    schemaVersion: '0.3.0',
+    rulesetVersion: '0.3.0',
     ticksPerSecond: 1,
     matchSeed: seed,
     tickCap,
