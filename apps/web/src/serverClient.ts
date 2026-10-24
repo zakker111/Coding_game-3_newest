@@ -1,3 +1,4 @@
+import type { Replay } from '@coding-game/replay'
 import { normalizeServerBaseUrl } from './serverSimulation'
 import type { Loadout } from '@coding-game/ruleset'
 
@@ -369,6 +370,19 @@ export async function fetchServerDailyRunMatches(
   return requestJson<ServerDailyRunMatchesResponse>(
     baseUrl,
     `/api/runs/${encodeURIComponent(runId)}/matches`,
+    { method: 'GET' },
+    fetchImpl,
+  )
+}
+
+export async function fetchServerMatchReplay(
+  baseUrl: string,
+  matchId: string,
+  fetchImpl?: FetchLike,
+): Promise<Replay> {
+  return requestJson<Replay>(
+    baseUrl,
+    `/api/matches/${encodeURIComponent(matchId)}/replay`,
     { method: 'GET' },
     fetchImpl,
   )

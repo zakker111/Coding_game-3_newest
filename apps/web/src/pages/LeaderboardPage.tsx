@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { getDefaultServerBaseUrl } from '../config'
+import { MyMatches } from './MyMatches'
 import {
   describeRankedStatus,
   fetchLatestServerDailyRun,
@@ -146,6 +147,16 @@ export function LeaderboardPage() {
               )
             })}
           </div>
+        </section>
+      ) : null}
+
+      {user && run ? (
+        <section className="panel" style={{ marginTop: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Your matches in this run</h2>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Open a match to see when you took the most damage and your last instructions.
+          </p>
+          <MyMatches baseUrl={getDefaultServerBaseUrl()} runId={run.runId} username={user.username} />
         </section>
       ) : null}
     </div>

@@ -499,3 +499,20 @@ export declare function createRng(seed: number | string): () => number
 export declare function rngInt(rng: () => number, minInclusive: number, maxInclusive: number): number
 
 export declare function rngChoice<T>(rng: () => number, items: T[]): T
+
+export type BotMatchSummary = {
+  botId: string
+  endReason: string | null
+  endTick: number | null
+  survivedToEnd: boolean
+  finalState: { hp: number; ammo: number; energy: number; alive: boolean } | null
+  aliveAtEnd: string[]
+  totalDamageTaken: number
+  totalDamageDealt: number
+  firstDamageTaken: { tick: number; amount: number; source: string | null; attackerBotId: string | null } | null
+  mostDamageTick: { tick: number; amount: number; bySource: Record<string, number> } | null
+  died: { tick: number; killedBy: string | null } | null
+  lastInstructions: { tick: number; instrText: string; result: string; reason: string | null }[]
+}
+
+export function summarizeBotMatch(replay: unknown, botId: string, options?: { lastInstructions?: number }): BotMatchSummary
