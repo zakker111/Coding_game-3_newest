@@ -696,6 +696,39 @@ export function WorkshopPage() {
     setSelectedBotId(visibleReplaySlots[0] ?? 'BOT1')
   }, [selectedBotId, visibleReplaySlots])
 
+  // Deep link from "My matches" on the leaderboard: /workshop?replayMatch=<matchId>&slot=BOT2
+  // Loads the stored server replay into the real viewer and focuses the player's slot.
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const matchId = params.get('replayMatch')
+    if (!matchId) return
+    const slotParam = params.get('slot')
+    let cancelled = false
+    setServerRunning(true)
+    setServerRunError(null)
+    const baseUrl = getDefaultServerBaseUrl()
+    Promise.all([fetchServerMatch(baseUrl, matchId), fetchServerReplay(baseUrl, matchId)])
+      .then(([match, replay]) => {
+        if (cancelled) return
+        setServerMatch(match)
+        setServerReplay(replay)
+        setAppliedRun(null)
+        setReplaySource('server')
+        dispatch({ type: 'LOAD_REPLAY', replay })
+        if (slotParam && SLOT_IDS.includes(slotParam as SlotId)) setSelectedBotId(slotParam as SlotId)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setServerRunError(`Could not load replay ${matchId}: ${err instanceof Error ? err.message : String(err)}`)
+      })
+      .finally(() => {
+        if (!cancelled) setServerRunning(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const sourcesBySlot: Record<SlotId, string> = React.useMemo(() => {
     return {
       BOT1: selectedMyBot.sourceText,
@@ -2180,6 +2213,12 @@ export function WorkshopPage() {
         </div>
       ) : null}
 
+      {serverRunning && !serverRunError ? (
+        <div className="muted" style={{ marginBottom: 8 }}>Loading server replay…</div>
+      ) : null}
+      {serverRunError ? (
+        <div style={{ marginBottom: 8, color: '#fecaca', fontSize: 13 }}>{serverRunError}</div>
+      ) : null}
       {replaySource === 'local' && playback.replay && !previewUpToDate ? (
         <div className="panel" style={{ marginTop: 16, borderColor: 'rgba(34, 197, 94, 0.22)' }}>
           <strong style={{ color: 'var(--text)' }}>Preview out of date</strong>

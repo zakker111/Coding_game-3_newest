@@ -28,7 +28,7 @@ it('renders the leaderboard page', async () => {
   render(<RouterProvider router={router} />)
 
   expect(await screen.findByRole('heading', { name: 'Daily leaderboard' })).toBeInTheDocument()
-  expect(await screen.findByText(/Rank|No daily results yet/i)).toBeInTheDocument()
+  expect((await screen.findAllByText(/Rank|No daily results yet/i)).length).toBeGreaterThan(0)
 })
 
 it('workshop layout surfaces setup, hides opponent code, and keeps tick events scrollable', () => {

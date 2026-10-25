@@ -624,8 +624,8 @@ Rules for this phase
 - Acceptance: a player can fork `bot11` from the Workshop, change one line, and save; the fork shows `forkedFrom: builtin/bot11`.
 
 ### 10.6 Replay viewer for daily results
-- [ ] Each daily run page lists the player's matches with win/loss and points.
-- [ ] Clicking a match opens the existing replay viewer for that server-run match (depends on Phase 8 "Render the server replay").
+- [x] Each daily run page lists the player's matches with win/loss and points.
+- [x] Clicking a match opens the existing replay viewer for that server-run match (depends on Phase 8 "Render the server replay").
 - [x] Add a "why did I lose" summary per match: first damage taken, last bot alive, final energy/ammo, and the bot's last 5 instructions executed.
 - Acceptance: a player who lost a match can open the replay and see the tick where they took the most damage.
 

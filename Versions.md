@@ -6,6 +6,21 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Web 0.0.11 — Replay from daily results (10.6) — 2026-10-24
+
+### Added
+- "My matches" on a daily run shows points per match next to win/loss/placement.
+- "Open replay" on each match opens the Workshop with that stored server replay loaded (`/workshop?replayMatch=<matchId>&slot=<BOTn>`), focusing the player's slot. Loads the match and replay from the server; errors show above the viewer.
+- The "Why did I lose?" summary is unchanged.
+
+### Notes
+- The Workshop has no "Run on server" button. It was removed in an older commit (`12b50fb`), so the deep link is the only route into a server replay from the Workshop.
+- Browser check of the deep link not run yet.
+
+### Tests
+- `MyMatches.test.ts`: points and win flag from placements, matches without placements or the player are skipped, deep link URL.
+- `App.test.tsx`: leaderboard query uses `findAllByText` (the old query flaked when two elements matched).
+
 ## Server 0.3.0 / Web 0.0.10 — Fork and edit (10.5) — 2026-10-24
 
 ### Added

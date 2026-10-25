@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { summarizeBotMatch, type BotMatchSummary } from '@coding-game/replay'
 
 import {
@@ -18,10 +19,15 @@ type MatchRow = {
   slot: string
   botId: string
   rank: number | null
+  points: number | null
   won: boolean
 }
 
-function buildRows(matches: ServerDailyRunMatch[], username: string): MatchRow[] {
+export function replayLinkFor(matchId: string, slot: string): string {
+  return `/workshop?replayMatch=${encodeURIComponent(matchId)}&slot=${encodeURIComponent(slot)}`
+}
+
+export function buildRows(matches: ServerDailyRunMatch[], username: string): MatchRow[] {
   const prefix = `${username}/`
   const rows: MatchRow[] = []
   for (const match of matches) {
@@ -33,6 +39,7 @@ function buildRows(matches: ServerDailyRunMatch[], username: string): MatchRow[]
       slot: mine.slot,
       botId: mine.displayName,
       rank: placement?.rank ?? null,
+      points: placement?.points ?? null,
       won: match.result?.winnerSlot === mine.slot,
     })
   }
@@ -165,15 +172,24 @@ export function MyMatches({ baseUrl, runId, username }: Props) {
         const open = openId === id
         const summary = summaries[id]
         const label = row.won ? 'Won' : row.rank ? `Placed #${row.rank}` : 'Lost'
+        const points = row.points != null ? ` · ${row.points} pts` : ''
         return (
           <div key={id} className="panel" style={{ padding: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <span>
-                <strong>{row.botId}</strong> · {label} · {row.match.result?.endReason ?? 'in progress'}
+                <strong>{row.botId}</strong> · {label}{points} · {row.match.result?.endReason ?? 'in progress'}
               </span>
-              <button className="ui-button ui-button-secondary" type="button" onClick={() => toggle(row)}>
-                {open ? 'Hide' : row.won ? 'Show match' : 'Why did I lose?'}
-              </button>
+              <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="ui-button ui-button-secondary" type="button" onClick={() => toggle(row)}>
+                  {open ? 'Hide' : row.won ? 'Show match' : 'Why did I lose?'}
+                </button>
+                <Link
+                  className="ui-button ui-button-secondary"
+                  to={replayLinkFor(id, row.slot)}
+                >
+                  Open replay
+                </Link>
+              </span>
             </div>
             {open ? (
               summary && 'error' in summary ? (
