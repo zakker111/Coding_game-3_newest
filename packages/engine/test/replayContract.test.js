@@ -22,8 +22,8 @@ test('replay contract: header/state shape matches the documented 0.3.0 schema', 
     ],
   })
 
-  assert.equal(replay.schemaVersion, '0.3.0')
-  assert.equal(replay.rulesetVersion, '0.3.0')
+  assert.equal(replay.schemaVersion, '0.4.0')
+  assert.equal(replay.rulesetVersion, '0.4.0')
   assert.deepStrictEqual(
     replay.bots.map((bot) => bot.slotId),
     SLOT_IDS,

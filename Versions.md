@@ -6,6 +6,26 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Ruleset 0.4.0 — Arena sensors (10.1) — 2026-10-25
+
+### Added
+- `DIST_TO_WALL()` (no argument): distance to the nearest arena edge. The existing `DIST_TO_WALL(UP|DOWN|LEFT|RIGHT)` form is unchanged.
+- `MY_SECTOR()`: alias of `SECTOR()`.
+- `ENEMY_COUNT()`: alias of `COUNT_ALIVE_ENEMIES()`.
+- Documented in `BotInstructions.md` §6.3.
+
+### Deferred
+- `ALLY_COUNT()`: no team modes yet.
+- `SECTOR_OF(<LOC>)`: not selected for this step.
+
+### Notes
+- `rulesetVersion` bumped to `0.4.0`. Simulation output is unchanged: the golden replay per-tick hashes match, and only the `coreReplaySha256` values changed because they include the version string.
+
+### Tests
+- `exprEval.test.js`: nearest-wall values at middle, edges, and corners; `MISSING` when no edge data; alias equality and arity errors.
+- `simArenaSensors.test.js`: sensors compile inside `IF ... DO`, no invalid instructions, branches run at walls, match is deterministic, sector border positions.
+- Sensors as move targets (`MOVE MY_SECTOR()`) are rejected by the compiler.
+
 ## Web 0.0.11 — Replay from daily results (10.6) — 2026-10-24
 
 ### Added

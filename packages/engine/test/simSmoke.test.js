@@ -92,8 +92,8 @@ test('runMatchToReplay: end-to-end example match replay is deterministic, ends, 
 
   assert.deepStrictEqual(r2, r1, 'expected deterministic replay output')
 
-  assert.equal(r1.schemaVersion, '0.3.0')
-  assert.equal(r1.rulesetVersion, '0.3.0')
+  assert.equal(r1.schemaVersion, '0.4.0')
+  assert.equal(r1.rulesetVersion, '0.4.0')
   assert.equal(r1.matchSeed, 123)
   assert.ok(r1.tickCap <= 120)
 

@@ -180,7 +180,7 @@ test('GET /api/ruleset returns shared ruleset metadata', async (t) => {
 
   assert.equal(response.statusCode, 200)
   const body = response.json()
-  assert.equal(body.rulesetVersion, '0.3.0')
+  assert.equal(body.rulesetVersion, '0.4.0')
   assert.equal(body.loadoutSlotCount, 3)
   assert.ok(Array.isArray(body.modules))
   assert.ok(body.modules.some((module) => module.id === 'BULLET'))
@@ -788,7 +788,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
   assert.equal(run.runId, 'd_000001')
   assert.equal(run.status, 'complete')
   assert.equal(run.runDate, '2026-05-04')
-  assert.equal(run.rulesetVersion, '0.3.0')
+  assert.equal(run.rulesetVersion, '0.4.0')
   assert.equal(run.matchIds.length, 15)
   assert.equal(run.summary.matchCount, 15)
   assert.equal(run.summary.leaderboard.length, 6)
@@ -843,7 +843,7 @@ test('POST /api/runs/daily creates deterministic daily matches and leaderboard',
     url: `/api/matches/${run.matchIds[0]}/replay`,
   })
   assert.equal(replayResponse.statusCode, 200)
-  assert.equal(replayResponse.json().schemaVersion, '0.3.0')
+  assert.equal(replayResponse.json().schemaVersion, '0.4.0')
   assert.equal(replayResponse.json().bots.length, 4)
 })
 

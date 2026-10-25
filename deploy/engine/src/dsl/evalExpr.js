@@ -179,10 +179,10 @@ function evalNode(node, ctx) {
       return ok(Boolean(resolveBotAlive(ctx, bot.value)))
     }
 
-    if (fn === 'SECTOR') {
-      if (node.arguments.length !== 0) return err('ARITY', 'SECTOR expects 0 arguments')
+    if (fn === 'SECTOR' || fn === 'MY_SECTOR') {
+      if (node.arguments.length !== 0) return err('ARITY', `${fn} expects 0 arguments`)
       const v = resolveIntish(ctx?.sector)
-      if (v == null) return err('MISSING', 'SECTOR not available in ctx')
+      if (v == null) return err('MISSING', `${fn} not available in ctx`)
       return ok(v)
     }
 
@@ -306,10 +306,10 @@ function evalNode(node, ctx) {
       return ok(v)
     }
 
-    if (fn === 'COUNT_ALIVE_ENEMIES') {
-      if (node.arguments.length !== 0) return err('ARITY', 'COUNT_ALIVE_ENEMIES expects 0 arguments')
+    if (fn === 'COUNT_ALIVE_ENEMIES' || fn === 'ENEMY_COUNT') {
+      if (node.arguments.length !== 0) return err('ARITY', `${fn} expects 0 arguments`)
       const v = resolveCountAliveEnemies(ctx)
-      if (!isInt(v)) return err('MISSING', 'COUNT_ALIVE_ENEMIES not available in ctx')
+      if (!isInt(v)) return err('MISSING', `${fn} not available in ctx`)
       return ok(v)
     }
 
@@ -417,6 +417,17 @@ function evalNode(node, ctx) {
       if (z.value < 1 || z.value > 4) return err('RANGE', 'POWERUP_IN_ZONE zone must be 1..4')
 
       return ok(Boolean(resolvePowerupInZone(ctx, type.value, s.value, z.value)))
+    }
+
+    if (fn === 'DIST_TO_WALL' && node.arguments.length === 0) {
+      // Nearest wall in any direction: min over the four arena edges.
+      let best = null
+      for (const dir of /** @type {const} */ (['UP', 'DOWN', 'LEFT', 'RIGHT'])) {
+        const d = resolveDistToArenaEdge(ctx, dir)
+        if (!isInt(d)) return err('MISSING', 'DIST_TO_WALL not available in ctx')
+        if (best == null || d < best) best = d
+      }
+      return ok(best)
     }
 
     if (fn === 'DIST_TO_ARENA_EDGE' || fn === 'DIST_TO_WALL') {

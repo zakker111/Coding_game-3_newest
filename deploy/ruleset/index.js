@@ -1,4 +1,4 @@
-export const RULESET_VERSION = '0.3.0'
+export const RULESET_VERSION = '0.4.0'
 
 export const LOADOUT_SLOT_COUNT = 3
 

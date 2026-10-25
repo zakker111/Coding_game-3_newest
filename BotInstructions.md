@@ -1,6 +1,6 @@
 # Bot Instruction List (v1)
 
-> Current engine: `rulesetVersion = 0.3.0`. Module stats for `FLAMER`, `RAILGUN`, `PULSE`, `CLOAK` are in `Ruleset.md` section A. Notes below that say `0.2.0` still apply to loadout rules and ARMOR/SHIELD.
+> Current engine: `rulesetVersion = 0.4.0` (0.4.0 added the sensor aliases below; no simulation results changed). Module stats for `FLAMER`, `RAILGUN`, `PULSE`, `CLOAK` are in `Ruleset.md` section A. Notes below that say `0.2.0` still apply to loadout rules and ARMOR/SHIELD.
 > Canonical **stable v1 bot language** reference.
 > For future-proof planning (lasers/snipers/teleport/grenades/mines/helpers) without bloating the opcode list, see `BotLanguageDesign.md`.
 
@@ -513,6 +513,7 @@ Bot / target state:
 
 Location (derived from continuous position; tie-break boundaries deterministically, recommended lowest id):
 - `SECTOR()` → int (1..9)
+- `MY_SECTOR()` → int (1..9) (alias of `SECTOR()`)
 - `ZONE()` → int (1..4)
 - `IN_ZONE(<ZONE>)` → bool (alias of `ZONE() == <ZONE>`)
 
@@ -529,6 +530,7 @@ Distances (world units; Manhattan):
 - `DIST_TO_TARGET_MINE()` → int (no valid target mine → `999`)
 - `DIST_TO_CLOSEST_BOT()` → int (none alive → `999`)
 - `COUNT_ALIVE_ENEMIES()` → int
+- `ENEMY_COUNT()` → int (alias of `COUNT_ALIVE_ENEMIES()`; alive enemies, the bot itself excluded)
 - `ENEMIES_IN_RANGE(<N>)` → int
 - `LOWEST_HEALTH_ENEMY_IN_RANGE(<N>)` → int (lowest health among alive enemies within Manhattan range `N`; `0` if none are in range)
 - `DIST_TO_SECTOR(<SECTOR>)` → int
@@ -561,6 +563,7 @@ Bullets/projectiles:
 Arena edges / walls (outer boundary in v1):
 - `DIST_TO_ARENA_EDGE(UP|DOWN|LEFT|RIGHT)` → int (distance from bot collision box; `0` means touching)
 - `DIST_TO_WALL(UP|DOWN|LEFT|RIGHT)` → int (alias of `DIST_TO_ARENA_EDGE`)
+- `DIST_TO_WALL()` → int (no argument: distance to the nearest arena edge in any direction, i.e. the minimum of the four `DIST_TO_ARENA_EDGE` values; `0` means touching a wall or corner)
 
 Bumps (last-tick results):
 - `BUMPED_WALL()` → bool

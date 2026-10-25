@@ -195,3 +195,34 @@ test('evalExpr: unknown identifier returns {ok:false} (does not throw)', () => {
     assert.equal(r.error.code, 'UNKNOWN_IDENTIFIER')
   })
 })
+
+test('evalExpr: DIST_TO_WALL() is the nearest arena edge (min over four directions)', () => {
+  const at = (up, down, left, right) => ({
+    distToArenaEdge: (dir) => ({ UP: up, DOWN: down, LEFT: left, RIGHT: right })[dir],
+  })
+
+  // Middle of the arena: nearest wall is the closest of the four edges.
+  assert.deepStrictEqual(evalExpr('DIST_TO_WALL() == 40', at(40, 100, 90, 70)), { ok: true, value: true })
+  // Corner: two walls at 0, minimum is 0.
+  assert.deepStrictEqual(evalExpr('DIST_TO_WALL() == 0', at(0, 150, 0, 120)), { ok: true, value: true })
+  // Hugging one wall (RIGHT edge at 0) is the minimum even when others are far.
+  assert.deepStrictEqual(evalExpr('DIST_TO_WALL() < 5', at(80, 80, 80, 0)), { ok: true, value: true })
+  // Directional form is unchanged.
+  assert.deepStrictEqual(evalExpr('DIST_TO_WALL(DOWN) == 100', at(40, 100, 90, 70)), { ok: true, value: true })
+})
+
+test('evalExpr: DIST_TO_WALL() reports MISSING when no edge data is in ctx', () => {
+  const r = evalExpr('DIST_TO_WALL()', {})
+  assert.equal(r.ok, false)
+  assert.equal(r.error.code, 'MISSING')
+})
+
+test('evalExpr: MY_SECTOR() aliases SECTOR() and ENEMY_COUNT() aliases COUNT_ALIVE_ENEMIES()', () => {
+  const ctx = { sector: 5, countAliveEnemies: () => 3 }
+  assert.deepStrictEqual(evalExpr('MY_SECTOR() == SECTOR()', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('MY_SECTOR() == 5', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('ENEMY_COUNT() == COUNT_ALIVE_ENEMIES()', ctx), { ok: true, value: true })
+  assert.deepStrictEqual(evalExpr('ENEMY_COUNT() == 3', ctx), { ok: true, value: true })
+  assert.equal(evalExpr('MY_SECTOR(1)', ctx).ok, false)
+  assert.equal(evalExpr('ENEMY_COUNT(1)', ctx).ok, false)
+})

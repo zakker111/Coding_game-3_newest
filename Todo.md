@@ -590,10 +590,10 @@ Rules for this phase
 - Balance changes go through `scripts/balance-weapons-duel.mjs` and `scripts/balance-report.mjs` before merging.
 
 ### 10.1 Bot language: sensor queries
-- [ ] Add arena sensors: `DIST_TO_WALL()`, `MY_SECTOR()`, `ENEMY_COUNT()`, `ALLY_COUNT()` (if team modes land), `SECTOR_OF(<LOC>)`.
-- [ ] Define each sensor in `BotInstructions.md` §2 with its exact return values and edge cases.
-- [ ] Compiler: accept sensors in `IF (...)` conditions; reject them as targets with a clear compile error.
-- [ ] Tests: sensor values at walls, corners, sector borders; determinism across seeds.
+- [x] Add arena sensors: `DIST_TO_WALL()`, `MY_SECTOR()`, `ENEMY_COUNT()`. Deferred: `ALLY_COUNT()` (no team modes), `SECTOR_OF(<LOC>)` (not selected).
+- [x] Define each sensor in `BotInstructions.md` §6.3 with its exact return values and edge cases.
+- [x] Compiler: accept sensors in `IF (...)` conditions (`simArenaSensors.test.js`). Sensors used as move targets are rejected with a compile error.
+- [x] Tests: sensor values at walls, corners, and edges (`exprEval.test.js`); determinism for a sensor-driven match (`simArenaSensors.test.js`). Sector border positions are tested in `simArenaSensors.test.js`.
 - Acceptance: a bot can write `IF (DIST_TO_WALL() < 5) DO MOVE_AWAY_FROM_WALL` and the match replays identically on every run.
 
 ### 10.2 Bot language: variables and memory
