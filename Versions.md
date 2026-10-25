@@ -6,6 +6,23 @@ This project follows **Semantic Versioning** (SemVer): `MAJOR.MINOR.PATCH`.
 - **MINOR**: new features that are backwards-compatible.
 - **PATCH**: bug fixes and small improvements.
 
+## Ruleset 0.5.0 — Variables and event memory (10.2) — 2026-10-25
+
+### Added
+- Registers `V1..V4` alongside `R1..R4`. They work with `SET`, `INC`, `DEC`, `ADD`, `SUB`, and the shorthands `SET_V<n> <0..999>` and `ADD_V<n> <0..999>`. They can be read in conditions. Values clamp to `0..999`.
+- Event memory: `LAST_HIT_TICK()`, `LAST_HIT_SECTOR()`, `LAST_HIT_BY()`, and `TICKS_SINCE_HIT()` (999 if never hit). Updated on every damage event with amount > 0.
+- Registers reset at match start and are included in replay bot state (`registers`, R and V values) for debugging.
+- Documented in `BotInstructions.md` §6.0, §6.2, §6.3.
+
+### Notes
+- `rulesetVersion` bumped to `0.5.0`. Per-tick event and state hashes for the golden scenarios are unchanged. Golden `coreReplaySha256` values changed because they include the version string and the new `registers` field.
+- At most one register write per tick is enforced by the VM's one-instruction-per-tick rule. No extra limit was added.
+- Acceptance check: a bot in sector 5 that is hit twice within 10 ticks (ticks 19 and 25 in the test seeds) moves to sector 1 and ends there. The safe sector is written into the program (sector 1, the spawn sector). The program does not record the last safe sector dynamically; that would need a sector-copy pattern and is left for a later step.
+- Watch-loop timing: a loop N instructions long checks each line once every N ticks, so a hit window must be at least that long. The test program's window is 4 ticks for a 4-line watch loop.
+
+### Tests
+- `variablesMemory.test.js`: V register compile and rejection of `SET_V5`; VM initial values and isolation from R; clamping; reset and replay state; `LAST_HIT_*` values after a hit; defaults before any hit; one write per tick; acceptance match over several seeds.
+
 ## Ruleset 0.4.0 — Arena sensors (10.1) — 2026-10-25
 
 ### Added

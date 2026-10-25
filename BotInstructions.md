@@ -1,6 +1,6 @@
 # Bot Instruction List (v1)
 
-> Current engine: `rulesetVersion = 0.4.0` (0.4.0 added the sensor aliases below; no simulation results changed). Module stats for `FLAMER`, `RAILGUN`, `PULSE`, `CLOAK` are in `Ruleset.md` section A. Notes below that say `0.2.0` still apply to loadout rules and ARMOR/SHIELD.
+> Current engine: `rulesetVersion = 0.5.0` (0.5.0 added the `V1..V4` registers and event memory in §6.0/§6.2/§6.3; 0.4.0 added the sensor aliases; no existing behaviour changed). Module stats for `FLAMER`, `RAILGUN`, `PULSE`, `CLOAK` are in `Ruleset.md` section A. Notes below that say `0.2.0` still apply to loadout rules and ARMOR/SHIELD.
 > Canonical **stable v1 bot language** reference.
 > For future-proof planning (lasers/snipers/teleport/grenades/mines/helpers) without bloating the opcode list, see `BotLanguageDesign.md`.
 
@@ -105,7 +105,7 @@ Rules for these header directives (v1):
 
 - `<BOT>`: `BOT1 | BOT2 | BOT3 | BOT4`
 - `<TYPE>`: `HEALTH | AMMO | ENERGY`
-- `<REG>`: `R1 | R2 | R3 | R4`
+- `<REG>`: `R1 | R2 | R3 | R4 | V1 | V2 | V3 | V4`
 - `<DIR>`: `UP | DOWN | LEFT | RIGHT | UP_LEFT | UP_RIGHT | DOWN_LEFT | DOWN_RIGHT`
 - `<SECTOR>`: `1..9`
 - `<ZONE>`: `1..4`
@@ -465,10 +465,10 @@ Optional convenience:
 
 ### 6.0 Register instructions
 
-The language includes four small integer registers for bot-local state.
+The language includes eight small integer registers for bot-local state: `R1..R4` and `V1..V4`. They behave the same; `V` registers were added in ruleset 0.5.0 so bots can keep more state.
 
-- Registers: `R1`, `R2`, `R3`, `R4`
-- Initial value: `0`
+- Registers: `R1`, `R2`, `R3`, `R4`, `V1`, `V2`, `V3`, `V4`
+- Initial value: `0` (reset at match start)
 - Range: `0..999`
 - Arithmetic clamps into that range (no wraparound)
 
@@ -479,6 +479,10 @@ The language includes four small integer registers for bot-local state.
 | `DEC <REG>` | Subtract `1`. |
 | `ADD <REG> <N>` | Add `N`. |
 | `SUB <REG> <N>` | Subtract `N`. |
+| `SET_V<n> <N>` | Shorthand for `SET V<n> <N>` (`n` = 1..4). |
+| `ADD_V<n> <N>` | Shorthand for `ADD V<n> <N>` (`n` = 1..4). |
+
+The VM runs one instruction per tick, so a bot makes at most one register write per tick.
 
 Expression language is deterministic and C-like.
 
@@ -502,6 +506,10 @@ Expression language is deterministic and C-like.
 | `R2` | int | Bot-local register, initial value `0`. |
 | `R3` | int | Bot-local register, initial value `0`. |
 | `R4` | int | Bot-local register, initial value `0`. |
+| `V1` | int | Bot-local register (ruleset 0.5.0), initial value `0`. Same as `R1`. |
+| `V2` | int | Bot-local register, initial value `0`. |
+| `V3` | int | Bot-local register, initial value `0`. |
+| `V4` | int | Bot-local register, initial value `0`. |
 
 ### 6.3 Built-in functions (must be supported)
 
@@ -514,6 +522,14 @@ Bot / target state:
 Location (derived from continuous position; tie-break boundaries deterministically, recommended lowest id):
 - `SECTOR()` → int (1..9)
 - `MY_SECTOR()` → int (1..9) (alias of `SECTOR()`)
+
+Event memory (ruleset 0.5.0). Updated when this bot takes damage (amount > 0), kept for the rest of the match:
+- `LAST_HIT_TICK()` → int: tick of the most recent hit (`0` if never hit)
+- `LAST_HIT_SECTOR()` → int (1..9): sector the bot was in when last hit (`0` if never hit)
+- `LAST_HIT_BY()` → int: slot number 1..4 of the bot that last hit it (`0` if never hit)
+- `TICKS_SINCE_HIT()` → int: ticks since the last hit (`999` if never hit)
+
+A loop that checks event memory must run often enough to see the window it cares about: a loop that is N instructions long checks each line once every N ticks.
 - `ZONE()` → int (1..4)
 - `IN_ZONE(<ZONE>)` → bool (alias of `ZONE() == <ZONE>`)
 

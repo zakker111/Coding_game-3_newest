@@ -50,7 +50,7 @@ export function initBotVm(program) {
     pc: 1,
     waitRemaining: 0,
     timers: { 1: 0, 2: 0, 3: 0 },
-    vars: { R1: 0, R2: 0, R3: 0, R4: 0 },
+    vars: { R1: 0, R2: 0, R3: 0, R4: 0, V1: 0, V2: 0, V3: 0, V4: 0 },
     target: { botSelector: null, bulletId: null, mineId: null, powerupType: null },
     moveGoal: null,
   }
@@ -77,7 +77,7 @@ export function stepBotVm(vm, observation) {
   const nextVm = {
     ...vm,
     timers: { ...vm.timers },
-    vars: { ...(vm.vars ?? { R1: 0, R2: 0, R3: 0, R4: 0 }) },
+    vars: { ...(vm.vars ?? { R1: 0, R2: 0, R3: 0, R4: 0, V1: 0, V2: 0, V3: 0, V4: 0 }) },
     target: { ...vm.target },
   }
 
@@ -257,7 +257,7 @@ function execInstr(instr, vm, effects) {
 
   if (kind === 'SET_REG') {
     const register = instr.register
-    if (register === 'R1' || register === 'R2' || register === 'R3' || register === 'R4') {
+    if (isRegisterId(register)) {
       vm.vars[register] = clampRegisterValue(instr.value)
     }
     return
@@ -265,7 +265,7 @@ function execInstr(instr, vm, effects) {
 
   if (kind === 'ADD_REG') {
     const register = instr.register
-    if (register === 'R1' || register === 'R2' || register === 'R3' || register === 'R4') {
+    if (isRegisterId(register)) {
       const current = Number.isInteger(vm.vars[register]) ? vm.vars[register] : 0
       const delta = Number.isInteger(instr.delta) ? instr.delta : 0
       vm.vars[register] = clampRegisterValue(current + delta)
@@ -342,6 +342,14 @@ function execInstr(instr, vm, effects) {
   }
 
   // Unknown kinds are treated as INVALID by `stepBotVm`.
+}
+
+/**
+ * Writable registers: R1..R4 and V1..V4.
+ * @param {unknown} r
+ */
+function isRegisterId(r) {
+  return r === 'R1' || r === 'R2' || r === 'R3' || r === 'R4' || r === 'V1' || r === 'V2' || r === 'V3' || r === 'V4'
 }
 
 /**

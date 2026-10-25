@@ -18,7 +18,7 @@ describe('serverSimulation helpers', () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
-          rulesetVersion: '0.4.0',
+          rulesetVersion: '0.5.0',
           loadoutSlotCount: 3,
           modules: [],
         }),
@@ -29,7 +29,7 @@ describe('serverSimulation helpers', () => {
     const result = await fetchServerRuleset('http://127.0.0.1:3000/', fetchMock as any)
 
     expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:3000/api/ruleset', expect.any(Object))
-    expect(result.rulesetVersion).toBe('0.4.0')
+    expect(result.rulesetVersion).toBe('0.5.0')
     expect(result.loadoutSlotCount).toBe(3)
   })
 
@@ -58,7 +58,7 @@ describe('serverSimulation helpers', () => {
 
   it('returns the shared ruleset for local mirror mode', () => {
     const ruleset = getLocalMirroredRuleset()
-    expect(ruleset.rulesetVersion).toBe('0.4.0')
+    expect(ruleset.rulesetVersion).toBe('0.5.0')
     expect(ruleset.loadoutSlotCount).toBe(3)
     expect(ruleset.modules.some((module) => module.id === 'BULLET')).toBe(true)
   })
@@ -79,8 +79,8 @@ describe('serverSimulation helpers', () => {
         now: () => '2026-04-07T00:00:00.000Z',
         hashText: async () => 'hash123',
         runReplay: vi.fn().mockResolvedValue({
-          schemaVersion: '0.4.0',
-          rulesetVersion: '0.4.0',
+          schemaVersion: '0.5.0',
+          rulesetVersion: '0.5.0',
           ticksPerSecond: 1,
           matchSeed: 123,
           tickCap: 12,

@@ -17,7 +17,7 @@ import { parseExpression } from './expr.js'
  */
 
 /**
- * @typedef {'R1' | 'R2' | 'R3' | 'R4'} RegisterId
+ * @typedef {'R1' | 'R2' | 'R3' | 'R4' | 'V1' | 'V2' | 'V3' | 'V4'} RegisterId
  */
 
 /**
@@ -433,11 +433,32 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'CLEAR_TARGET_MINE') return { kind: 'CLEAR_TARGET_MINE' }
   if (op === 'CLEAR_TARGET') return { kind: 'CLEAR_TARGET' }
 
+  // SET_V<n> <0..999> and ADD_V<n> <0..999>: event-memory-independent registers V1..V4.
+  const vSet = op.match(/^SET_V([1-4])$/)
+  if (vSet) {
+    const value = parseNonNegativeInt(parts[1])
+    if (value == null || parts.length !== 2) {
+      errors.push({ line: lineNo, message: `SET_V${vSet[1]} expects: SET_V${vSet[1]} <0..999>` })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'SET_REG', register: /** @type {RegisterId} */ (`V${vSet[1]}`), value }
+  }
+
+  const vAdd = op.match(/^ADD_V([1-4])$/)
+  if (vAdd) {
+    const value = parseNonNegativeInt(parts[1])
+    if (value == null || parts.length !== 2) {
+      errors.push({ line: lineNo, message: `ADD_V${vAdd[1]} expects: ADD_V${vAdd[1]} <0..999>` })
+      return { kind: 'INVALID' }
+    }
+    return { kind: 'ADD_REG', register: /** @type {RegisterId} */ (`V${vAdd[1]}`), delta: value }
+  }
+
   if (op === 'SET') {
     const register = parseRegister(parts[1])
     const value = parseNonNegativeInt(parts[2])
     if (!register || value == null || parts.length !== 3) {
-      errors.push({ line: lineNo, message: 'SET expects: SET R1|R2|R3|R4 <0..999>' })
+      errors.push({ line: lineNo, message: 'SET expects: SET R1|R2|R3|R4|V1|V2|V3|V4 <0..999>' })
       return { kind: 'INVALID' }
     }
     return { kind: 'SET_REG', register, value }
@@ -446,7 +467,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'INC') {
     const register = parseRegister(parts[1])
     if (!register || parts.length !== 2) {
-      errors.push({ line: lineNo, message: 'INC expects: INC R1|R2|R3|R4' })
+      errors.push({ line: lineNo, message: 'INC expects: INC R1|R2|R3|R4|V1|V2|V3|V4' })
       return { kind: 'INVALID' }
     }
     return { kind: 'ADD_REG', register, delta: 1 }
@@ -455,7 +476,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
   if (op === 'DEC') {
     const register = parseRegister(parts[1])
     if (!register || parts.length !== 2) {
-      errors.push({ line: lineNo, message: 'DEC expects: DEC R1|R2|R3|R4' })
+      errors.push({ line: lineNo, message: 'DEC expects: DEC R1|R2|R3|R4|V1|V2|V3|V4' })
       return { kind: 'INVALID' }
     }
     return { kind: 'ADD_REG', register, delta: -1 }
@@ -465,7 +486,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
     const register = parseRegister(parts[1])
     const value = parseNonNegativeInt(parts[2])
     if (!register || value == null || parts.length !== 3) {
-      errors.push({ line: lineNo, message: 'ADD expects: ADD R1|R2|R3|R4 <0..999>' })
+      errors.push({ line: lineNo, message: 'ADD expects: ADD R1|R2|R3|R4|V1|V2|V3|V4 <0..999>' })
       return { kind: 'INVALID' }
     }
     return { kind: 'ADD_REG', register, delta: value }
@@ -475,7 +496,7 @@ function parseSimpleInstruction(line, lineNo, errors) {
     const register = parseRegister(parts[1])
     const value = parseNonNegativeInt(parts[2])
     if (!register || value == null || parts.length !== 3) {
-      errors.push({ line: lineNo, message: 'SUB expects: SUB R1|R2|R3|R4 <0..999>' })
+      errors.push({ line: lineNo, message: 'SUB expects: SUB R1|R2|R3|R4|V1|V2|V3|V4 <0..999>' })
       return { kind: 'INVALID' }
     }
     return { kind: 'ADD_REG', register, delta: -value }
@@ -849,6 +870,7 @@ function parseMoveDir(s) {
 function parseRegister(s) {
   const t = (s ?? '').toUpperCase()
   if (t === 'R1' || t === 'R2' || t === 'R3' || t === 'R4') return t
+  if (t === 'V1' || t === 'V2' || t === 'V3' || t === 'V4') return t
   return null
 }
 

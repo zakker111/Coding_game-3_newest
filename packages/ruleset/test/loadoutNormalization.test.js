@@ -15,7 +15,7 @@ import {
 } from '../src/index.js'
 
 test('ruleset constants match the current stable contract', () => {
-  assert.equal(RULESET_VERSION, '0.4.0')
+  assert.equal(RULESET_VERSION, '0.5.0')
   assert.equal(LOADOUT_SLOT_COUNT, 3)
   assert.deepStrictEqual(EMPTY_LOADOUT, [null, null, null])
   assert.deepStrictEqual(MODULE_IDS, [

@@ -186,6 +186,16 @@ function evalNode(node, ctx) {
       return ok(v)
     }
 
+    // Event memory (Ruleset 0.5.0). Values come from ctx.lastHitTick / lastHitSector /
+    // lastHitBy / ticksSinceHit. 0 means "no hit yet" for the first three; ticksSinceHit is 999 then.
+    if (fn === 'LAST_HIT_TICK' || fn === 'LAST_HIT_SECTOR' || fn === 'LAST_HIT_BY' || fn === 'TICKS_SINCE_HIT') {
+      if (node.arguments.length !== 0) return err('ARITY', `${fn} expects 0 arguments`)
+      const key = { LAST_HIT_TICK: 'lastHitTick', LAST_HIT_SECTOR: 'lastHitSector', LAST_HIT_BY: 'lastHitBy', TICKS_SINCE_HIT: 'ticksSinceHit' }[fn]
+      const v = /** @type {any} */ (ctx)?.[key]
+      if (!isInt(v)) return err('MISSING', `${fn} not available in ctx`)
+      return ok(v)
+    }
+
     if (fn === 'ZONE') {
       if (node.arguments.length !== 0) return err('ARITY', 'ZONE expects 0 arguments')
       const v = resolveIntish(ctx?.zone)

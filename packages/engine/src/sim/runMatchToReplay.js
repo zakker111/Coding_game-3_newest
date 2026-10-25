@@ -168,6 +168,10 @@ export function runMatchToReplay(params) {
       energy: inactive ? 0 : 100,
       alive: !inactive,
       lastDamageByBotId: null,
+      // Event memory (Ruleset 0.5.0): last damage taken. 0 = none yet.
+      lastHitTick: 0,
+      lastHitSector: 0,
+      lastHitBy: 0,
       vm: initBotVm(compiled.program),
       slotCooldowns: [0, 0, 0],
       pendingMove: null,
@@ -246,7 +250,7 @@ export function runMatchToReplay(params) {
     for (const bot of bots) {
       if (!bot.alive) continue
 
-      const observation = buildObservation(bot, bots, bullets, mines, powerupState, drones)
+      const observation = buildObservation(bot, bots, bullets, mines, powerupState, drones, t)
 
       const vmBefore = bot.vm
       const instrBefore = vmBefore?.program?.instructions?.[vmBefore.pc - 1] ?? { kind: 'INVALID' }
@@ -681,6 +685,18 @@ export function runMatchToReplay(params) {
       if (!powerupExists(powerupState, type)) bot.vm.target.powerupType = null
     }
 
+    // Event memory (Ruleset 0.5.0): record each damage hit on its victim. Visible to the
+    // victim's program from the next tick (LAST_HIT_*, TICKS_SINCE_HIT).
+    for (const e of tickEvents) {
+      if (!e || e.type !== 'DAMAGE' || !(typeof e.amount === 'number' && e.amount > 0)) continue
+      const victim = botsById(bots, e.victimBotId)
+      if (!victim) continue
+      const attackerId = e.sourceBotId ?? e.creditedBotId ?? null
+      victim.lastHitTick = t
+      victim.lastHitSector = sectorFromPos(victim.pos)
+      victim.lastHitBy = attackerId ? slotNumberOf(attackerId) : 0
+    }
+
     // --- Match end conditions (Ruleset.md §0.1) ---
 
     // Bot-vs-bot damage detection for stalemate tracking.
@@ -745,6 +761,32 @@ export function runMatchToReplay(params) {
   }
 }
 
+/**
+ * @param {string} botId
+ * @returns {number} slot number 1..4 (0 if unknown)
+ */
+function slotNumberOf(botId) {
+  const m = /^BOT([1-4])$/.exec(String(botId))
+  return m ? Number(m[1]) : 0
+}
+
+/**
+ * @param {any} vars
+ */
+function registersSnapshot(vars) {
+  const v = vars ?? {}
+  return {
+    R1: v.R1 ?? 0,
+    R2: v.R2 ?? 0,
+    R3: v.R3 ?? 0,
+    R4: v.R4 ?? 0,
+    V1: v.V1 ?? 0,
+    V2: v.V2 ?? 0,
+    V3: v.V3 ?? 0,
+    V4: v.V4 ?? 0,
+  }
+}
+
 function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) {
   return {
     t,
@@ -762,6 +804,8 @@ function snapshotState(t, bots, bullets, grenades, mines, drones, powerupState) 
       cloaked: b.cloakTicksRemaining > 0,
       facing: b.lastMoveDir ? { dx: b.lastMoveDir.dx, dy: b.lastMoveDir.dy } : null,
       pc: b.vm?.pc ?? 1,
+      // Registers R1..R4 and V1..V4 (Ruleset 0.5.0). Reset at match start by initBotVm.
+      registers: registersSnapshot(b.vm?.vars),
       targetBulletId: typeof b.vm?.target?.bulletId === 'string' ? b.vm.target.bulletId : null,
       targetMineId: typeof b.vm?.target?.mineId === 'string' ? b.vm.target.mineId : null,
     })),
@@ -850,7 +894,7 @@ function normalizeHeaderBots(botsInput) {
   })
 }
 
-function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
+function buildObservation(bot, bots, bullets, mines, powerupState, drones, tick) {
   const zone = zoneFromPos(bot.pos)
   const sector = sectorFromPos(bot.pos)
   const closestBotDist = distToClosestBot(bot, bots)
@@ -890,6 +934,12 @@ function buildObservation(bot, bots, bullets, mines, powerupState, drones) {
       ENERGY: bot.energy,
       TARGET_HEALTH: targetBot && targetBot.alive ? targetBot.hp : 0,
     },
+
+    // Event memory (Ruleset 0.5.0)
+    lastHitTick: bot.lastHitTick ?? 0,
+    lastHitSector: bot.lastHitSector ?? 0,
+    lastHitBy: bot.lastHitBy ?? 0,
+    ticksSinceHit: bot.lastHitTick ? Math.max(0, tick - bot.lastHitTick) : 999,
 
     // Location
     sector,
@@ -2402,8 +2452,14 @@ function formatInstr(instr) {
   if (kind === 'SET_MOVE') return `SET_MOVE ${formatMoveTarget(instr.target)}`
   if (kind === 'MOVE') return `MOVE ${formatMoveTarget(instr.target)}`
   if (kind === 'CLEAR_MOVE') return 'CLEAR_MOVE'
-  if (kind === 'SET_REG') return `SET ${instr.register} ${instr.value}`
+  if (kind === 'SET_REG') {
+    if (String(instr.register).startsWith('V')) return `SET_${instr.register} ${instr.value}`
+    return `SET ${instr.register} ${instr.value}`
+  }
   if (kind === 'ADD_REG') {
+    if (String(instr.register).startsWith('V')) {
+      return `ADD_${instr.register} ${instr.delta < 0 ? 0 : instr.delta}`
+    }
     if (instr.delta === 1) return `INC ${instr.register}`
     if (instr.delta === -1) return `DEC ${instr.register}`
     if (instr.delta >= 0) return `ADD ${instr.register} ${instr.delta}`

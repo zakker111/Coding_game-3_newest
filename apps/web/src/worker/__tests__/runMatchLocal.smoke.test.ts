@@ -16,7 +16,7 @@ describe('runMatchLocal (smoke)', () => {
 
     const replay = runMatchLocal(12345, 50, bots)
 
-    expect(replay.rulesetVersion).toBe('0.4.0')
+    expect(replay.rulesetVersion).toBe('0.5.0')
     expect(replay.bots).toHaveLength(4)
 
     // With BULLET-equipped bots, we should see bullet spawns.
@@ -36,7 +36,7 @@ describe('runMatchLocal (smoke)', () => {
 
     const replay = runMatchLocal(12345, 50, bots)
 
-    expect(replay.rulesetVersion).toBe('0.4.0')
+    expect(replay.rulesetVersion).toBe('0.5.0')
 
     const anyBulletSpawn = replay.events.flat().some((e) => e.type === 'BULLET_SPAWN')
     expect(anyBulletSpawn).toBe(false)

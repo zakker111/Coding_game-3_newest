@@ -597,10 +597,10 @@ Rules for this phase
 - Acceptance: a bot can write `IF (DIST_TO_WALL() < 5) DO MOVE_AWAY_FROM_WALL` and the match replays identically on every run.
 
 ### 10.2 Bot language: variables and memory
-- [ ] Add spare registers (`V1..V4`) with `SET_V<n> <value>`, `ADD_V<n> <value>`, and read in conditions.
-- [ ] Add event memory: `LAST_HIT_TICK()`, `LAST_HIT_SECTOR()`, `LAST_HIT_BY()` so a bot can remember where and by whom it was hit.
-- [ ] Registers reset at match start and are included in replay bot state for debugging.
-- [ ] Cap the number of register writes per tick at 1 (keeps one-instruction-per-tick rule intact).
+- [x] Add spare registers (`V1..V4`) with `SET_V<n> <value>`, `ADD_V<n> <value>`, and read in conditions.
+- [x] Add event memory: `LAST_HIT_TICK()`, `LAST_HIT_SECTOR()`, `LAST_HIT_BY()` so a bot can remember where and by whom it was hit.
+- [x] Registers reset at match start and are included in replay bot state for debugging.
+- [x] Cap the number of register writes per tick at 1 (keeps one-instruction-per-tick rule intact).
 - Acceptance: a bot can flee to its last safe sector after being hit twice in 10 ticks.
 
 ### 10.3 New modules (finish `docs/NewWeaponsProposal.md`)
